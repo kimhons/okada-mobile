@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:okada_shared/ui/theme/theme.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'providers/auth_provider.dart';
 
 void main() {
   runApp(
@@ -10,68 +13,50 @@ void main() {
   );
 }
 
-class OkadaCustomerApp extends StatelessWidget {
+class OkadaCustomerApp extends ConsumerWidget {
   const OkadaCustomerApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
-      title: 'Okada Customer',
+      title: 'Okada - Customer',
       debugShowCheckedModeBanner: false,
       theme: OkadaTheme.lightTheme,
-      home: const HomePage(),
+      darkTheme: OkadaTheme.darkTheme,
+      themeMode: ThemeMode.light,
+      home: const AuthGate(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+        // TODO: Add more routes
+      },
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+/// Auth Gate - decides whether to show login or home
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Okada Customer'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Okada logo placeholder
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.shopping_bag,
-                size: 60,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Welcome to Okada',
-              style: Theme.of(context).textTheme.displaySmall,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Customer App',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 48),
-            ElevatedButton(
-              onPressed: () {
-                // TODO: Navigate to home screen
-              },
-              child: const Text('Get Started'),
-            ),
-          ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
+    // Show loading while checking auth state
+    if (authState.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
         ),
-      ),
-    );
+      );
+    }
+
+    // Show home if authenticated, otherwise show login
+    if (authState.isAuthenticated) {
+      return const HomeScreen();
+    } else {
+      return const LoginScreen();
+    }
   }
 }
 
