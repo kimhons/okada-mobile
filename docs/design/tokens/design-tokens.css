@@ -1,0 +1,470 @@
+/**
+ * Okada Platform Design Tokens - CSS Variables
+ * Version: 1.0.0
+ * Last Updated: April 2024
+ * 
+ * Usage: Import this file into your main CSS/SCSS file
+ * Example: @import './design-tokens.css';
+ */
+
+:root {
+  /* ========================================
+   * BRAND COLORS
+   * ======================================== */
+  
+  /* Primary Brand Colors */
+  --color-primary: #2D8659; /* Okada Green */
+  --color-primary-hover: #236B47;
+  --color-primary-active: #1A5235;
+  --color-secondary: #FF8C42; /* Orange Accent */
+  
+  /* ========================================
+   * SEMANTIC COLORS
+   * ======================================== */
+  
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* ========================================
+   * NEUTRAL COLORS
+   * ======================================== */
+  
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  
+  /* Gray Scale */
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+  
+  /* Text Colors */
+  --color-text-dark: #1A1A1A;
+  --color-text-medium: #6B7280;
+  
+  /* ========================================
+   * STATUS BADGE COLORS
+   * ======================================== */
+  
+  /* Completed/Active */
+  --badge-completed-bg: #10B981;
+  --badge-completed-text: #FFFFFF;
+  
+  /* Pending */
+  --badge-pending-bg: #F59E0B;
+  --badge-pending-text: #1A1A1A;
+  
+  /* Cancelled/Failed */
+  --badge-cancelled-bg: #EF4444;
+  --badge-cancelled-text: #FFFFFF;
+  
+  /* Processing */
+  --badge-processing-bg: #3B82F6;
+  --badge-processing-text: #FFFFFF;
+  
+  /* ========================================
+   * ROLE BADGE COLORS
+   * ======================================== */
+  
+  /* Customer */
+  --badge-customer-bg: #D1FAE5;
+  --badge-customer-text: #10B981;
+  
+  /* Seller */
+  --badge-seller-bg: #FEF3C7;
+  --badge-seller-text: #F59E0B;
+  
+  /* Rider */
+  --badge-rider-bg: #DBEAFE;
+  --badge-rider-text: #3B82F6;
+  
+  /* Admin */
+  --badge-admin-bg: #E9D5FF;
+  --badge-admin-text: #9333EA;
+  
+  /* ========================================
+   * LOCALIZATION COLORS
+   * ======================================== */
+  
+  --color-mtn: #FFCC00; /* MTN Mobile Money */
+  --color-orange: #FF6600; /* Orange Money */
+  
+  /* Cameroon Flag Colors */
+  --color-cameroon-green: #007A5E;
+  --color-cameroon-red: #CE1126;
+  --color-cameroon-yellow: #FCD116;
+  
+  /* ========================================
+   * TYPOGRAPHY
+   * ======================================== */
+  
+  /* Font Family */
+  --font-family-primary: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  
+  /* Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Font Sizes & Line Heights */
+  --font-size-h1: 32px;
+  --line-height-h1: 40px;
+  
+  --font-size-h2: 24px;
+  --line-height-h2: 32px;
+  
+  --font-size-h3: 20px;
+  --line-height-h3: 28px;
+  
+  --font-size-h4: 18px;
+  --line-height-h4: 24px;
+  
+  --font-size-body-large: 16px;
+  --line-height-body-large: 24px;
+  
+  --font-size-body: 14px;
+  --line-height-body: 20px;
+  
+  --font-size-body-small: 12px;
+  --line-height-body-small: 16px;
+  
+  --font-size-caption: 10px;
+  --line-height-caption: 14px;
+  
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.02em;
+  
+  /* ========================================
+   * SPACING
+   * ======================================== */
+  
+  --spacing-0: 0px;
+  --spacing-1: 4px;   /* XXS */
+  --spacing-2: 8px;   /* XS */
+  --spacing-3: 12px;  /* S */
+  --spacing-4: 16px;  /* M - Base unit */
+  --spacing-6: 24px;  /* L */
+  --spacing-8: 32px;  /* XL */
+  --spacing-12: 48px; /* XXL */
+  --spacing-16: 64px; /* XXXL */
+  
+  /* ========================================
+   * BORDER RADIUS
+   * ======================================== */
+  
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+  
+  /* ========================================
+   * SHADOWS
+   * ======================================== */
+  
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  
+  /* ========================================
+   * BORDERS
+   * ======================================== */
+  
+  /* Border Widths */
+  --border-width-none: 0px;
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 4px;
+  
+  /* Border Colors */
+  --border-color-default: #E5E7EB;
+  --border-color-light: #D1D5DB;
+  --border-color-dark: #9CA3AF;
+  --border-color-primary: #2D8659;
+  --border-color-error: #EF4444;
+  
+  /* ========================================
+   * OPACITY
+   * ======================================== */
+  
+  --opacity-0: 0;
+  --opacity-10: 0.1;
+  --opacity-20: 0.2;
+  --opacity-30: 0.3;
+  --opacity-40: 0.4;
+  --opacity-50: 0.5;
+  --opacity-60: 0.6;
+  --opacity-70: 0.7;
+  --opacity-80: 0.8;
+  --opacity-90: 0.9;
+  --opacity-100: 1;
+  
+  /* ========================================
+   * ANIMATION
+   * ======================================== */
+  
+  /* Duration */
+  --duration-fast: 150ms;
+  --duration-medium: 300ms;
+  --duration-slow: 500ms;
+  --duration-celebration: 1000ms;
+  
+  /* Easing */
+  --easing-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --easing-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --easing-accelerate: cubic-bezier(0.4, 0.0, 1, 1);
+  
+  /* ========================================
+   * BREAKPOINTS
+   * ======================================== */
+  
+  --breakpoint-mobile-min: 375px;
+  --breakpoint-mobile-max: 428px;
+  --breakpoint-tablet-min: 768px;
+  --breakpoint-tablet-max: 1024px;
+  --breakpoint-desktop-min: 1280px;
+  
+  /* ========================================
+   * GRID
+   * ======================================== */
+  
+  /* Mobile */
+  --grid-mobile-columns: 4;
+  --grid-mobile-gutter: 16px;
+  --grid-mobile-margin: 16px;
+  
+  /* Tablet */
+  --grid-tablet-columns: 8;
+  --grid-tablet-gutter: 24px;
+  --grid-tablet-margin: 32px;
+  
+  /* Desktop */
+  --grid-desktop-columns: 12;
+  --grid-desktop-gutter: 24px;
+  --grid-desktop-margin: 48px;
+  
+  /* ========================================
+   * COMPONENT TOKENS
+   * ======================================== */
+  
+  /* Button - Primary */
+  --button-primary-bg: var(--color-primary);
+  --button-primary-bg-hover: var(--color-primary-hover);
+  --button-primary-bg-active: var(--color-primary-active);
+  --button-primary-bg-disabled: var(--color-gray-300);
+  --button-primary-text: var(--color-white);
+  --button-primary-font-size: 16px;
+  --button-primary-font-weight: var(--font-weight-semibold);
+  --button-primary-padding: 16px 24px;
+  --button-primary-radius: var(--radius-md);
+  --button-primary-opacity-disabled: var(--opacity-50);
+  
+  /* Button - Secondary */
+  --button-secondary-bg: var(--color-white);
+  --button-secondary-border: 2px solid var(--color-primary);
+  --button-secondary-text: var(--color-primary);
+  --button-secondary-font-size: 16px;
+  --button-secondary-font-weight: var(--font-weight-semibold);
+  --button-secondary-padding: 16px 24px;
+  --button-secondary-radius: var(--radius-md);
+  
+  /* Button - Destructive */
+  --button-destructive-bg: var(--color-error);
+  --button-destructive-text: var(--color-white);
+  --button-destructive-font-size: 16px;
+  --button-destructive-font-weight: var(--font-weight-semibold);
+  --button-destructive-padding: 16px 24px;
+  --button-destructive-radius: var(--radius-md);
+  
+  /* Input */
+  --input-border: 1px solid var(--color-gray-300);
+  --input-border-focus: 2px solid var(--color-primary);
+  --input-border-error: 2px solid var(--color-error);
+  --input-radius: var(--radius-md);
+  --input-padding: 12px 16px;
+  --input-font-size: var(--font-size-body);
+  --input-font-weight: var(--font-weight-regular);
+  --input-bg-disabled: var(--color-gray-100);
+  --input-opacity-disabled: var(--opacity-50);
+  --input-shadow-focus: 0 0 0 3px rgba(45, 134, 89, 0.1);
+  --input-shadow-error: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  
+  /* Card - Standard */
+  --card-bg: var(--color-white);
+  --card-border: 1px solid var(--color-gray-200);
+  --card-radius: var(--radius-lg);
+  --card-padding: var(--spacing-4);
+  --card-shadow: var(--shadow-md);
+  
+  /* Card - Elevated */
+  --card-elevated-bg: var(--color-white);
+  --card-elevated-border: 1px solid var(--color-gray-200);
+  --card-elevated-radius: var(--radius-lg);
+  --card-elevated-padding: var(--spacing-4);
+  --card-elevated-shadow: var(--shadow-lg);
+  
+  /* Navigation - Bottom Bar */
+  --nav-bottom-height: 64px;
+  --nav-bottom-bg: var(--color-white);
+  --nav-bottom-icon-size: 24px;
+  --nav-bottom-active-color: var(--color-primary);
+  --nav-bottom-inactive-color: var(--color-gray-500);
+  
+  /* Navigation - Sidebar */
+  --nav-sidebar-width: 240px;
+  --nav-sidebar-bg: var(--color-gray-800);
+  --nav-sidebar-active-bg: var(--color-primary);
+  --nav-sidebar-hover-bg: var(--color-gray-700);
+  
+  /* Icons */
+  --icon-size-xs: 16px;
+  --icon-size-sm: 20px;
+  --icon-size-md: 24px;
+  --icon-size-lg: 32px;
+  --icon-size-xl: 48px;
+  --icon-stroke-thin: 1px;
+  --icon-stroke-default: 2px;
+  --icon-stroke-thick: 3px;
+  
+  /* ========================================
+   * ACCESSIBILITY
+   * ======================================== */
+  
+  --touch-target-ios: 44px;
+  --touch-target-android: 48px;
+  --touch-target-spacing: 8px;
+  --contrast-text-min: 4.5;
+  --contrast-interactive-min: 3;
+  --typography-min-size: 12px;
+  --typography-line-height-ratio: 1.5;
+  
+  /* ========================================
+   * LOCALIZATION
+   * ======================================== */
+  
+  --currency-code: "FCFA";
+  --phone-country-code: "+237";
+  --vat-rate: 0.1925;
+  --vat-percentage: "19.25%";
+}
+
+/* ========================================
+ * UTILITY CLASSES
+ * ======================================== */
+
+/* Typography */
+.text-h1 {
+  font-size: var(--font-size-h1);
+  line-height: var(--line-height-h1);
+  font-weight: var(--font-weight-bold);
+}
+
+.text-h2 {
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-h2);
+  font-weight: var(--font-weight-bold);
+}
+
+.text-h3 {
+  font-size: var(--font-size-h3);
+  line-height: var(--line-height-h3);
+  font-weight: var(--font-weight-semibold);
+}
+
+.text-h4 {
+  font-size: var(--font-size-h4);
+  line-height: var(--line-height-h4);
+  font-weight: var(--font-weight-semibold);
+}
+
+.text-body-large {
+  font-size: var(--font-size-body-large);
+  line-height: var(--line-height-body-large);
+  font-weight: var(--font-weight-regular);
+}
+
+.text-body {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  font-weight: var(--font-weight-regular);
+}
+
+.text-body-small {
+  font-size: var(--font-size-body-small);
+  line-height: var(--line-height-body-small);
+  font-weight: var(--font-weight-regular);
+}
+
+.text-caption {
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Colors */
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-error { color: var(--color-error); }
+.text-info { color: var(--color-info); }
+.text-dark { color: var(--color-text-dark); }
+.text-medium { color: var(--color-text-medium); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-success { background-color: var(--color-success); }
+.bg-warning { background-color: var(--color-warning); }
+.bg-error { background-color: var(--color-error); }
+.bg-info { background-color: var(--color-info); }
+.bg-white { background-color: var(--color-white); }
+.bg-gray-100 { background-color: var(--color-gray-100); }
+
+/* Spacing */
+.p-0 { padding: var(--spacing-0); }
+.p-1 { padding: var(--spacing-1); }
+.p-2 { padding: var(--spacing-2); }
+.p-3 { padding: var(--spacing-3); }
+.p-4 { padding: var(--spacing-4); }
+.p-6 { padding: var(--spacing-6); }
+.p-8 { padding: var(--spacing-8); }
+
+.m-0 { margin: var(--spacing-0); }
+.m-1 { margin: var(--spacing-1); }
+.m-2 { margin: var(--spacing-2); }
+.m-3 { margin: var(--spacing-3); }
+.m-4 { margin: var(--spacing-4); }
+.m-6 { margin: var(--spacing-6); }
+.m-8 { margin: var(--spacing-8); }
+
+/* Border Radius */
+.rounded-none { border-radius: var(--radius-none); }
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-xl { border-radius: var(--radius-xl); }
+.rounded-full { border-radius: var(--radius-full); }
+
+/* Shadows */
+.shadow-none { box-shadow: var(--shadow-none); }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+.shadow-2xl { box-shadow: var(--shadow-2xl); }
+

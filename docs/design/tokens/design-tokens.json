@@ -1,0 +1,707 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "Okada Platform Design Tokens",
+  "version": "1.0.0",
+  "description": "Complete design system tokens for Okada e-commerce platform (Cameroon market)",
+  "lastUpdated": "2024-04-01",
+  "colors": {
+    "brand": {
+      "primary": {
+        "value": "#2D8659",
+        "description": "Okada Green - Primary brand color",
+        "usage": "Primary buttons, active states, success messages, branding"
+      },
+      "primaryHover": {
+        "value": "#236B47",
+        "description": "Okada Green hover state"
+      },
+      "primaryActive": {
+        "value": "#1A5235",
+        "description": "Okada Green active/pressed state"
+      },
+      "secondary": {
+        "value": "#FF8C42",
+        "description": "Orange Accent - Secondary brand color",
+        "usage": "Logo, highlights, warnings, call-to-action elements"
+      }
+    },
+    "semantic": {
+      "success": {
+        "value": "#10B981",
+        "description": "Success Green",
+        "usage": "Completed, verified, active states"
+      },
+      "warning": {
+        "value": "#F59E0B",
+        "description": "Warning Yellow",
+        "usage": "Pending, caution states"
+      },
+      "error": {
+        "value": "#EF4444",
+        "description": "Error Red",
+        "usage": "Failed, rejected, error states"
+      },
+      "info": {
+        "value": "#3B82F6",
+        "description": "Info Blue",
+        "usage": "Information, links"
+      }
+    },
+    "neutral": {
+      "white": {
+        "value": "#FFFFFF",
+        "description": "Pure white",
+        "usage": "Primary background, text on dark backgrounds"
+      },
+      "black": {
+        "value": "#000000",
+        "description": "Pure black"
+      },
+      "gray": {
+        "50": {
+          "value": "#F9FAFB",
+          "description": "Lightest gray"
+        },
+        "100": {
+          "value": "#F3F4F6",
+          "description": "Very light gray",
+          "usage": "Backgrounds, cards"
+        },
+        "200": {
+          "value": "#E5E7EB",
+          "description": "Light gray",
+          "usage": "Borders, dividers"
+        },
+        "300": {
+          "value": "#D1D5DB",
+          "description": "Medium-light gray",
+          "usage": "Disabled states, borders"
+        },
+        "400": {
+          "value": "#9CA3AF",
+          "description": "Medium gray"
+        },
+        "500": {
+          "value": "#6B7280",
+          "description": "Medium-dark gray",
+          "usage": "Secondary text, icons"
+        },
+        "600": {
+          "value": "#4B5563",
+          "description": "Dark gray"
+        },
+        "700": {
+          "value": "#374151",
+          "description": "Darker gray"
+        },
+        "800": {
+          "value": "#1F2937",
+          "description": "Very dark gray",
+          "usage": "Admin sidebar background"
+        },
+        "900": {
+          "value": "#111827",
+          "description": "Darkest gray",
+          "usage": "Primary text, headers"
+        }
+      },
+      "darkText": {
+        "value": "#1A1A1A",
+        "description": "Primary text color"
+      },
+      "mediumText": {
+        "value": "#6B7280",
+        "description": "Secondary text color"
+      }
+    },
+    "badges": {
+      "status": {
+        "completed": {
+          "background": "#10B981",
+          "text": "#FFFFFF",
+          "description": "Completed/Active status"
+        },
+        "pending": {
+          "background": "#F59E0B",
+          "text": "#1A1A1A",
+          "description": "Pending status"
+        },
+        "cancelled": {
+          "background": "#EF4444",
+          "text": "#FFFFFF",
+          "description": "Cancelled/Failed status"
+        },
+        "processing": {
+          "background": "#3B82F6",
+          "text": "#FFFFFF",
+          "description": "Processing status"
+        }
+      },
+      "roles": {
+        "customer": {
+          "background": "#D1FAE5",
+          "text": "#10B981",
+          "description": "Customer role badge"
+        },
+        "seller": {
+          "background": "#FEF3C7",
+          "text": "#F59E0B",
+          "description": "Seller role badge"
+        },
+        "rider": {
+          "background": "#DBEAFE",
+          "text": "#3B82F6",
+          "description": "Rider role badge"
+        },
+        "admin": {
+          "background": "#E9D5FF",
+          "text": "#9333EA",
+          "description": "Admin role badge"
+        }
+      }
+    },
+    "localization": {
+      "mtn": {
+        "primary": "#FFCC00",
+        "description": "MTN Mobile Money brand color (yellow)"
+      },
+      "orange": {
+        "primary": "#FF6600",
+        "description": "Orange Money brand color"
+      },
+      "cameroon": {
+        "flag": {
+          "green": "#007A5E",
+          "red": "#CE1126",
+          "yellow": "#FCD116"
+        }
+      }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "primary": {
+        "value": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "description": "Primary font family - Inter (Sans-serif)"
+      }
+    },
+    "fontWeight": {
+      "regular": {
+        "value": 400,
+        "description": "Regular weight"
+      },
+      "medium": {
+        "value": 500,
+        "description": "Medium weight"
+      },
+      "semibold": {
+        "value": 600,
+        "description": "Semibold weight"
+      },
+      "bold": {
+        "value": 700,
+        "description": "Bold weight"
+      }
+    },
+    "fontSize": {
+      "h1": {
+        "value": "32px",
+        "lineHeight": "40px",
+        "fontWeight": 700,
+        "description": "Heading 1 - Large page titles"
+      },
+      "h2": {
+        "value": "24px",
+        "lineHeight": "32px",
+        "fontWeight": 700,
+        "description": "Heading 2 - Section titles"
+      },
+      "h3": {
+        "value": "20px",
+        "lineHeight": "28px",
+        "fontWeight": 600,
+        "description": "Heading 3 - Subsection titles"
+      },
+      "h4": {
+        "value": "18px",
+        "lineHeight": "24px",
+        "fontWeight": 600,
+        "description": "Heading 4 - Card titles"
+      },
+      "bodyLarge": {
+        "value": "16px",
+        "lineHeight": "24px",
+        "fontWeight": 400,
+        "description": "Body Large - Important body text"
+      },
+      "body": {
+        "value": "14px",
+        "lineHeight": "20px",
+        "fontWeight": 400,
+        "description": "Body - Default body text"
+      },
+      "bodySmall": {
+        "value": "12px",
+        "lineHeight": "16px",
+        "fontWeight": 400,
+        "description": "Body Small - Secondary information"
+      },
+      "caption": {
+        "value": "10px",
+        "lineHeight": "14px",
+        "fontWeight": 500,
+        "description": "Caption - Labels, metadata"
+      }
+    },
+    "letterSpacing": {
+      "tight": {
+        "value": "-0.02em",
+        "description": "Tight letter spacing for headings"
+      },
+      "normal": {
+        "value": "0em",
+        "description": "Normal letter spacing"
+      },
+      "wide": {
+        "value": "0.02em",
+        "description": "Wide letter spacing for labels"
+      }
+    }
+  },
+  "spacing": {
+    "0": {
+      "value": "0px",
+      "description": "No spacing"
+    },
+    "1": {
+      "value": "4px",
+      "description": "XXS - Extra extra small"
+    },
+    "2": {
+      "value": "8px",
+      "description": "XS - Extra small"
+    },
+    "3": {
+      "value": "12px",
+      "description": "S - Small"
+    },
+    "4": {
+      "value": "16px",
+      "description": "M - Medium (base unit)"
+    },
+    "6": {
+      "value": "24px",
+      "description": "L - Large"
+    },
+    "8": {
+      "value": "32px",
+      "description": "XL - Extra large"
+    },
+    "12": {
+      "value": "48px",
+      "description": "XXL - Extra extra large"
+    },
+    "16": {
+      "value": "64px",
+      "description": "XXXL - Extra extra extra large"
+    }
+  },
+  "borderRadius": {
+    "none": {
+      "value": "0px",
+      "description": "No border radius"
+    },
+    "sm": {
+      "value": "4px",
+      "description": "Small - Subtle rounding"
+    },
+    "md": {
+      "value": "8px",
+      "description": "Medium - Standard buttons, inputs"
+    },
+    "lg": {
+      "value": "12px",
+      "description": "Large - Cards, modals"
+    },
+    "xl": {
+      "value": "16px",
+      "description": "Extra large - Special elements"
+    },
+    "full": {
+      "value": "9999px",
+      "description": "Full - Circular elements, pills"
+    }
+  },
+  "shadows": {
+    "none": {
+      "value": "none",
+      "description": "No shadow"
+    },
+    "sm": {
+      "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      "description": "Small shadow - Subtle elevation"
+    },
+    "md": {
+      "value": "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+      "description": "Medium shadow - Standard cards"
+    },
+    "lg": {
+      "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+      "description": "Large shadow - Elevated cards"
+    },
+    "xl": {
+      "value": "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+      "description": "Extra large shadow - Modals, popovers"
+    },
+    "2xl": {
+      "value": "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+      "description": "2X large shadow - Floating elements"
+    }
+  },
+  "borders": {
+    "width": {
+      "none": {
+        "value": "0px"
+      },
+      "thin": {
+        "value": "1px",
+        "description": "Standard border width"
+      },
+      "medium": {
+        "value": "2px",
+        "description": "Emphasized borders, focus states"
+      },
+      "thick": {
+        "value": "4px",
+        "description": "Heavy emphasis"
+      }
+    },
+    "color": {
+      "default": {
+        "value": "#E5E7EB",
+        "description": "Default border color"
+      },
+      "light": {
+        "value": "#D1D5DB",
+        "description": "Light border color"
+      },
+      "dark": {
+        "value": "#9CA3AF",
+        "description": "Dark border color"
+      },
+      "primary": {
+        "value": "#2D8659",
+        "description": "Primary border color (Okada Green)"
+      },
+      "error": {
+        "value": "#EF4444",
+        "description": "Error border color"
+      }
+    }
+  },
+  "opacity": {
+    "0": {
+      "value": 0,
+      "description": "Fully transparent"
+    },
+    "10": {
+      "value": 0.1
+    },
+    "20": {
+      "value": 0.2
+    },
+    "30": {
+      "value": 0.3
+    },
+    "40": {
+      "value": 0.4
+    },
+    "50": {
+      "value": 0.5,
+      "description": "Half transparent - Disabled states"
+    },
+    "60": {
+      "value": 0.6
+    },
+    "70": {
+      "value": 0.7
+    },
+    "80": {
+      "value": 0.8
+    },
+    "90": {
+      "value": 0.9
+    },
+    "100": {
+      "value": 1,
+      "description": "Fully opaque"
+    }
+  },
+  "animation": {
+    "duration": {
+      "fast": {
+        "value": "150ms",
+        "description": "Fast animations - Hover, focus"
+      },
+      "medium": {
+        "value": "300ms",
+        "description": "Medium animations - Page transitions, modals"
+      },
+      "slow": {
+        "value": "500ms",
+        "description": "Slow animations - Complex animations"
+      },
+      "celebration": {
+        "value": "1000ms",
+        "description": "Celebration animations - Success states"
+      }
+    },
+    "easing": {
+      "standard": {
+        "value": "cubic-bezier(0.4, 0.0, 0.2, 1)",
+        "description": "Standard easing - Default transitions"
+      },
+      "decelerate": {
+        "value": "cubic-bezier(0.0, 0.0, 0.2, 1)",
+        "description": "Decelerate easing - Elements entering"
+      },
+      "accelerate": {
+        "value": "cubic-bezier(0.4, 0.0, 1, 1)",
+        "description": "Accelerate easing - Elements exiting"
+      }
+    }
+  },
+  "breakpoints": {
+    "mobile": {
+      "min": "375px",
+      "max": "428px",
+      "description": "Mobile devices - Primary target for Customer/Seller/Rider apps"
+    },
+    "tablet": {
+      "min": "768px",
+      "max": "1024px",
+      "description": "Tablet devices"
+    },
+    "desktop": {
+      "min": "1280px",
+      "description": "Desktop devices - Admin Dashboard"
+    }
+  },
+  "grid": {
+    "mobile": {
+      "columns": 4,
+      "gutter": "16px",
+      "margin": "16px"
+    },
+    "tablet": {
+      "columns": 8,
+      "gutter": "24px",
+      "margin": "32px"
+    },
+    "desktop": {
+      "columns": 12,
+      "gutter": "24px",
+      "margin": "48px"
+    }
+  },
+  "components": {
+    "button": {
+      "primary": {
+        "background": "#2D8659",
+        "backgroundHover": "#236B47",
+        "backgroundActive": "#1A5235",
+        "backgroundDisabled": "#D1D5DB",
+        "text": "#FFFFFF",
+        "fontSize": "16px",
+        "fontWeight": 600,
+        "padding": "16px 24px",
+        "borderRadius": "8px",
+        "opacity": {
+          "disabled": 0.5
+        }
+      },
+      "secondary": {
+        "background": "#FFFFFF",
+        "border": "2px solid #2D8659",
+        "text": "#2D8659",
+        "fontSize": "16px",
+        "fontWeight": 600,
+        "padding": "16px 24px",
+        "borderRadius": "8px"
+      },
+      "destructive": {
+        "background": "#EF4444",
+        "text": "#FFFFFF",
+        "fontSize": "16px",
+        "fontWeight": 600,
+        "padding": "16px 24px",
+        "borderRadius": "8px"
+      }
+    },
+    "input": {
+      "default": {
+        "border": "1px solid #D1D5DB",
+        "borderRadius": "8px",
+        "padding": "12px 16px",
+        "fontSize": "14px",
+        "fontWeight": 400
+      },
+      "focus": {
+        "border": "2px solid #2D8659",
+        "shadow": "0 0 0 3px rgba(45, 134, 89, 0.1)"
+      },
+      "error": {
+        "border": "2px solid #EF4444",
+        "shadow": "0 0 0 3px rgba(239, 68, 68, 0.1)"
+      },
+      "disabled": {
+        "background": "#F3F4F6",
+        "opacity": 0.5
+      }
+    },
+    "card": {
+      "standard": {
+        "background": "#FFFFFF",
+        "border": "1px solid #E5E7EB",
+        "borderRadius": "12px",
+        "padding": "16px",
+        "shadow": "0px 1px 3px rgba(0, 0, 0, 0.1)"
+      },
+      "elevated": {
+        "background": "#FFFFFF",
+        "border": "1px solid #E5E7EB",
+        "borderRadius": "12px",
+        "padding": "16px",
+        "shadow": "0px 4px 6px rgba(0, 0, 0, 0.1)"
+      }
+    },
+    "navigation": {
+      "bottomBar": {
+        "height": "64px",
+        "background": "#FFFFFF",
+        "iconSize": "24px",
+        "activeColor": "#2D8659",
+        "inactiveColor": "#6B7280"
+      },
+      "sidebar": {
+        "width": "240px",
+        "background": "#1F2937",
+        "activeBackground": "#2D8659",
+        "hoverBackground": "#374151"
+      }
+    }
+  },
+  "icons": {
+    "sizes": {
+      "xs": "16px",
+      "sm": "20px",
+      "md": "24px",
+      "lg": "32px",
+      "xl": "48px"
+    },
+    "strokeWidth": {
+      "thin": "1px",
+      "default": "2px",
+      "thick": "3px"
+    }
+  },
+  "accessibility": {
+    "touchTarget": {
+      "ios": {
+        "minSize": "44px",
+        "description": "Minimum touch target size for iOS"
+      },
+      "android": {
+        "minSize": "48px",
+        "description": "Minimum touch target size for Android"
+      },
+      "spacing": "8px",
+      "description": "Minimum spacing between touch targets"
+    },
+    "contrast": {
+      "textOnWhite": {
+        "minRatio": 4.5,
+        "description": "WCAG AA minimum contrast ratio for text on white"
+      },
+      "interactive": {
+        "minRatio": 3,
+        "description": "WCAG AA minimum contrast ratio for interactive elements"
+      }
+    },
+    "typography": {
+      "minSize": "12px",
+      "lineHeightRatio": 1.5
+    }
+  },
+  "localization": {
+    "currency": {
+      "code": "FCFA",
+      "symbol": "FCFA",
+      "position": "after",
+      "description": "Central African CFA franc - Always use FCFA, not XAF"
+    },
+    "phoneNumber": {
+      "countryCode": "+237",
+      "format": "+237 6XX XXX XXX",
+      "description": "Cameroon phone number format"
+    },
+    "tax": {
+      "vat": {
+        "rate": 0.1925,
+        "percentage": "19.25%",
+        "description": "Cameroon VAT rate"
+      }
+    },
+    "languages": {
+      "primary": "en",
+      "secondary": "fr",
+      "description": "English primary, French secondary (bilingual support)"
+    },
+    "regions": {
+      "douala": {
+        "name": "Douala",
+        "languagePreference": {
+          "english": 0.7,
+          "french": 0.3
+        }
+      },
+      "yaounde": {
+        "name": "Yaoundé",
+        "languagePreference": {
+          "english": 0.6,
+          "french": 0.4
+        }
+      },
+      "bamenda": {
+        "name": "Bamenda",
+        "languagePreference": {
+          "english": 0.85,
+          "french": 0.15
+        }
+      }
+    }
+  },
+  "platformSpecific": {
+    "customerApp": {
+      "screens": 30,
+      "navigation": "bottomTabBar",
+      "tabs": ["Home", "Categories", "Cart", "Orders", "Profile"]
+    },
+    "sellerApp": {
+      "screens": 65,
+      "navigation": "bottomTabBar + hamburgerMenu",
+      "tabs": ["Dashboard", "Products", "Orders", "Analytics", "More"]
+    },
+    "riderApp": {
+      "screens": 60,
+      "navigation": "bottomTabBar + quickActions",
+      "tabs": ["Dashboard", "Orders", "Earnings", "Profile"]
+    },
+    "adminDashboard": {
+      "screens": 78,
+      "navigation": "leftSidebar + topHeader",
+      "sections": ["Dashboard", "Orders", "Users", "Riders", "Sellers", "Products", "Analytics", "Reports", "Settings"]
+    }
+  }
+}
+
