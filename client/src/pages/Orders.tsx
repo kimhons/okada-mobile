@@ -1,0 +1,342 @@
+import { useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Search, Eye, MapPin, Package } from "lucide-react";
+import { toast } from "sonner";
+
+const statusColors = {
+  pending: "bg-gray-100 text-gray-800",
+  confirmed: "bg-blue-100 text-blue-800",
+  rider_assigned: "bg-purple-100 text-purple-800",
+  in_transit: "bg-indigo-100 text-indigo-800",
+  quality_verification: "bg-yellow-100 text-yellow-800",
+  waiting_approval: "bg-orange-100 text-orange-800",
+  delivered: "bg-green-100 text-green-800",
+  cancelled: "bg-red-100 text-red-800",
+  rejected: "bg-red-100 text-red-800",
+};
+
+const statusOptions = [
+  { value: "", label: "All Statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "rider_assigned", label: "Rider Assigned" },
+  { value: "in_transit", label: "In Transit" },
+  { value: "quality_verification", label: "Quality Verification" },
+  { value: "waiting_approval", label: "Waiting Approval" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+export default function Orders() {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+
+  const { data: orders, isLoading, refetch } = trpc.orders.list.useQuery({
+    search: search || undefined,
+    status: statusFilter || undefined,
+  });
+
+  const { data: orderDetails } = trpc.orders.getById.useQuery(
+    { id: selectedOrderId! },
+    { enabled: selectedOrderId !== null }
+  );
+
+  const updateStatus = trpc.orders.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Order status updated successfully");
+      refetch();
+      setSelectedOrderId(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to update status: ${error.message}`);
+    },
+  });
+
+  const formatCurrency = (amount: number) => {
+    return `${(amount / 100).toLocaleString()} FCFA`;
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Orders</h1>
+        <p className="text-muted-foreground mt-1">
+          Manage and track all customer orders
+        </p>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+          <CardDescription>Search and filter orders</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by order number or address..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Orders List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Orders List</CardTitle>
+          <CardDescription>
+            {orders?.length || 0} orders found
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading orders...
+            </div>
+          ) : orders && orders.length > 0 ? (
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Package className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-foreground">
+                          {order.orderNumber}
+                        </p>
+                        <Badge
+                          className={`${
+                            statusColors[order.status as keyof typeof statusColors]
+                          }`}
+                        >
+                          {order.status.replace(/_/g, " ")}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {order.deliveryAddress.substring(0, 60)}...
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDate(order.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-bold text-foreground">
+                        {formatCurrency(order.total)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.paymentMethod.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedOrderId(order.id)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No orders found
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Order Details Dialog */}
+      <Dialog open={selectedOrderId !== null} onOpenChange={() => setSelectedOrderId(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+            <DialogDescription>
+              {orderDetails?.order?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+
+          {orderDetails && (
+            <div className="space-y-6">
+              {/* Order Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge
+                    className={`mt-1 ${
+                      statusColors[orderDetails.order?.status as keyof typeof statusColors]
+                    }`}
+                  >
+                    {orderDetails.order?.status.replace(/_/g, " ")}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="font-bold text-lg mt-1">
+                    {formatCurrency(orderDetails.order?.total || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Payment Method</p>
+                  <p className="font-medium mt-1">
+                    {orderDetails.order?.paymentMethod.replace(/_/g, " ")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Payment Status</p>
+                  <p className="font-medium mt-1">
+                    {orderDetails.order?.paymentStatus}
+                  </p>
+                </div>
+              </div>
+
+              {/* Delivery Address */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <p className="font-semibold">Delivery Address</p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {orderDetails.order?.deliveryAddress}
+                </p>
+              </div>
+
+              {/* Order Items */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="h-4 w-4 text-primary" />
+                  <p className="font-semibold">Order Items</p>
+                </div>
+                <div className="space-y-2">
+                  {orderDetails.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex justify-between items-center p-3 bg-accent/30 rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{item.productName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Quantity: {item.quantity}
+                        </p>
+                      </div>
+                      <p className="font-semibold">{formatCurrency(item.total)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quality Photos */}
+              {orderDetails.photos.length > 0 && (
+                <div>
+                  <p className="font-semibold mb-3">Quality Verification Photos</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {orderDetails.photos.map((photo) => (
+                      <div key={photo.id} className="relative">
+                        <img
+                          src={photo.photoUrl}
+                          alt="Quality verification"
+                          className="w-full h-32 object-cover rounded-lg border border-border"
+                        />
+                        <Badge
+                          className={`absolute top-2 right-2 ${
+                            photo.approvalStatus === "approved"
+                              ? "bg-green-100 text-green-800"
+                              : photo.approvalStatus === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {photo.approvalStatus}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Update Status */}
+              <div>
+                <p className="font-semibold mb-3">Update Order Status</p>
+                <div className="flex gap-2 flex-wrap">
+                  {statusOptions.slice(1).map((status) => (
+                    <Button
+                      key={status.value}
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        updateStatus.mutate({
+                          orderId: selectedOrderId!,
+                          status: status.value,
+                        })
+                      }
+                      disabled={orderDetails.order?.status === status.value}
+                    >
+                      {status.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+

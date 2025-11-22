@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, like, and, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, qualityPhotos, riderEarnings } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,139 @@ export async function getUser(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Order Management Functions
+
+export async function getAllOrders(filters?: {
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(orders);
+
+  // Apply filters
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(orders.status, filters.status as any));
+  }
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(orders.orderNumber, `%${filters.search}%`),
+        like(orders.deliveryAddress, `%${filters.search}%`)
+      )
+    );
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  // Order by most recent first
+  query = query.orderBy(desc(orders.createdAt)) as any;
+
+  // Apply pagination
+  if (filters?.limit) {
+    query = query.limit(filters.limit) as any;
+  }
+  if (filters?.offset) {
+    query = query.offset(filters.offset) as any;
+  }
+
+  return await query;
+}
+
+export async function getOrderById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getOrderItems(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+}
+
+export async function getOrderQualityPhotos(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(qualityPhotos).where(eq(qualityPhotos.orderId, orderId));
+}
+
+export async function updateOrderStatus(orderId: number, status: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.update(orders)
+    .set({ status: status as any, updatedAt: new Date() })
+    .where(eq(orders.id, orderId));
+
+  return await getOrderById(orderId);
+}
+
+// Rider Management Functions
+
+export async function getAllRiders(filters?: {
+  status?: string;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(riders);
+
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(riders.status, filters.status as any));
+  }
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(riders.name, `%${filters.search}%`),
+        like(riders.phone, `%${filters.search}%`)
+      )
+    );
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  return await query;
+}
+
+export async function getRiderById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(riders).where(eq(riders.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+// Dashboard Statistics
+
+export async function getDashboardStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [orderCount] = await db.select({ count: sql<number>`count(*)` }).from(orders);
+  const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
+  const [riderCount] = await db.select({ count: sql<number>`count(*)` }).from(riders);
+  const [revenueSum] = await db.select({ sum: sql<number>`sum(total)` }).from(orders).where(eq(orders.paymentStatus, 'paid'));
+
+  return {
+    totalOrders: orderCount.count || 0,
+    totalUsers: userCount.count || 0,
+    totalRiders: riderCount.count || 0,
+    totalRevenue: revenueSum.sum || 0,
+  };
+}
+
