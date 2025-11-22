@@ -225,3 +225,71 @@ export async function getDashboardStats() {
   };
 }
 
+// Analytics Functions
+
+export async function getRevenueByPeriod(period: 'day' | 'week' | 'month') {
+  const db = await getDb();
+  if (!db) return [];
+
+  let dateFormat: string;
+  switch (period) {
+    case 'day':
+      dateFormat = '%Y-%m-%d';
+      break;
+    case 'week':
+      dateFormat = '%Y-%u';
+      break;
+    case 'month':
+      dateFormat = '%Y-%m';
+      break;
+  }
+
+  const results = await db
+    .select({
+      period: sql<string>`DATE_FORMAT(created_at, ${dateFormat})`,
+      revenue: sql<number>`SUM(total)`,
+      orderCount: sql<number>`COUNT(*)`,
+    })
+    .from(orders)
+    .where(eq(orders.paymentStatus, 'paid'))
+    .groupBy(sql`DATE_FORMAT(created_at, ${dateFormat})`)
+    .orderBy(sql`DATE_FORMAT(created_at, ${dateFormat})`);
+
+  return results;
+}
+
+export async function getOrdersByStatus() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      status: orders.status,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(orders)
+    .groupBy(orders.status);
+
+  return results;
+}
+
+export async function getTopRiders(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      riderId: riderEarnings.riderId,
+      riderName: riders.name,
+      totalEarnings: sql<number>`SUM(${riderEarnings.amount})`,
+      deliveryCount: sql<number>`COUNT(*)`,
+    })
+    .from(riderEarnings)
+    .leftJoin(riders, eq(riderEarnings.riderId, riders.id))
+    .groupBy(riderEarnings.riderId, riders.name)
+    .orderBy(desc(sql`SUM(${riderEarnings.amount})`))
+    .limit(limit);
+
+  return results;
+}
+

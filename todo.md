@@ -14,10 +14,10 @@
 - [x] Quality verification photos review
 
 ## Phase 3: Analytics & Reporting
-- [ ] Dashboard overview with key metrics
-- [ ] Revenue charts (daily, weekly, monthly)
-- [ ] Order statistics and trends
-- [ ] Rider performance metrics
+- [x] Dashboard overview with key metrics
+- [x] Revenue charts (daily, weekly, monthly)
+- [x] Order statistics and trends
+- [x] Rider performance metrics
 - [ ] Export reports functionality
 
 ## Phase 4: User & Rider Management

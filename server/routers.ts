@@ -55,6 +55,24 @@ export const appRouter = router({
       return await db.getDashboardStats();
     }),
   }),
+
+  analytics: router({
+    revenueByPeriod: protectedProcedure
+      .input(z.object({ period: z.enum(['day', 'week', 'month']) }))
+      .query(async ({ input }) => {
+        return await db.getRevenueByPeriod(input.period);
+      }),
+    
+    ordersByStatus: protectedProcedure.query(async () => {
+      return await db.getOrdersByStatus();
+    }),
+    
+    topRiders: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getTopRiders(input?.limit || 10);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
