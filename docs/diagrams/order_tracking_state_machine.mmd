@@ -1,0 +1,62 @@
+stateDiagram-v2
+    [*] --> OrderPlaced: Customer places order
+    
+    OrderPlaced --> Confirmed: Seller confirms
+    Confirmed --> RiderAssigned: Rider accepts
+    
+    RiderAssigned --> InTransit: Rider picks up order
+    RiderAssigned --> CancelledNoRider: No rider available
+    
+    InTransit --> Delayed: ETA exceeded
+    InTransit --> ArrivingSoon: Within 5 min of destination
+    
+    Delayed --> DelayWarning: System detects delay
+    DelayWarning --> DelayOptions: Customer views options
+    DelayOptions --> InTransit: Customer waits
+    DelayOptions --> CancelledByCustomer: Customer cancels
+    DelayOptions --> CompensationApplied: System offers credit
+    
+    CompensationApplied --> InTransit: Customer accepts
+    
+    ArrivingSoon --> Delivered: Rider arrives
+    InTransit --> Delivered: Rider arrives
+    
+    Delivered --> QualityVerification: Photos ready
+    QualityVerification --> Completed: Customer approves
+    QualityVerification --> Rejected: Customer rejects
+    
+    OrderPlaced --> CancelledByCustomer: Customer cancels
+    Confirmed --> CancelledByCustomer: Customer cancels
+    RiderAssigned --> CancelledByCustomer: Customer cancels
+    
+    Confirmed --> CancelledBySeller: Seller cancels
+    RiderAssigned --> CancelledBySeller: Seller cancels
+    
+    CancelledByCustomer --> RefundProcessing: Refund initiated
+    CancelledBySeller --> RefundProcessing: Refund initiated
+    CancelledNoRider --> RefundProcessing: Refund initiated
+    Rejected --> RefundProcessing: Refund initiated
+    
+    RefundProcessing --> RefundCompleted: Payment processed
+    RefundCompleted --> [*]
+    Completed --> [*]
+    
+    note right of Delayed
+        Delay Detection:
+        - ETA exceeded by 15+ min
+        - Rider not moving
+        - Traffic detected
+    end note
+    
+    note right of CompensationApplied
+        Automatic Compensation:
+        - 500 FCFA for 30+ min delay
+        - 1000 FCFA for 60+ min delay
+    end note
+    
+    note right of QualityVerification
+        KEY DIFFERENTIATOR:
+        Customer reviews 3 photos
+        taken by rider
+    end note
+

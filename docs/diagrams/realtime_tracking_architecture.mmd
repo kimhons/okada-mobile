@@ -1,0 +1,49 @@
+graph TB
+    subgraph "Customer App (Flutter)"
+        A[OrderTrackingScreen]
+        B[OrderTrackingProvider]
+        C[WebSocketClient]
+        D[GoogleMapsWidget]
+        E[OkadaApiClient]
+    end
+    
+    subgraph "Backend (Laravel)"
+        F[REST API Endpoints]
+        G[WebSocket Server]
+        H[Delay Detection Service]
+        I[Compensation Service]
+        J[Database]
+    end
+    
+    subgraph "Rider App (Flutter)"
+        K[Location Service]
+        L[Background Task]
+    end
+    
+    A --> B
+    B --> C
+    B --> D
+    B --> E
+    
+    E -->|GET /orders/:id/tracking| F
+    C -->|wss://tracking/:orderId| G
+    
+    K --> L
+    L -->|POST /deliveries/:id/location| F
+    
+    F --> J
+    G --> J
+    H --> J
+    I --> J
+    
+    H -->|Detect delay| G
+    I -->|Apply credit| F
+    
+    G -->|location_update| C
+    G -->|delivery_delayed| C
+    
+    style A fill:#2D8659,color:#fff
+    style K fill:#2D8659,color:#fff
+    style G fill:#FFA500,color:#fff
+    style H fill:#FFA500,color:#fff
+

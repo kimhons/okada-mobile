@@ -1,0 +1,49 @@
+sequenceDiagram
+    participant Customer as Customer App
+    participant WS as WebSocket Server
+    participant Backend as Backend API
+    participant DelayService as Delay Detection
+    participant CompService as Compensation Service
+    participant DB as Database
+    
+    Note over DelayService: Runs every 2 minutes
+    DelayService->>DB: Check all in-transit orders
+    DB-->>DelayService: Order #12345 ETA exceeded
+    
+    DelayService->>DelayService: Calculate new ETA
+    DelayService->>DB: Update order status to "delayed"
+    DelayService->>WS: Broadcast delay event
+    
+    WS->>Customer: {"event": "delivery_delayed", "data": {...}}
+    Customer->>Customer: Show yellow warning banner
+    Customer->>Customer: Display new ETA: 45 min
+    
+    Note over Customer: Customer sees delay warning
+    
+    alt Customer waits (no action)
+        Customer->>Customer: Continue tracking
+    else Customer views options
+        Customer->>Customer: Navigate to DelayOptionsScreen
+        alt Customer cancels order
+            Customer->>Backend: POST /orders/:id/cancel
+            Backend->>DB: Update status to "cancelled"
+            Backend->>CompService: Initiate full refund
+            Backend-->>Customer: Cancellation confirmed
+        else Customer contacts support
+            Customer->>Backend: POST /support/tickets
+            Backend-->>Customer: Support ticket created
+        end
+    end
+    
+    Note over DelayService: Check if delay > 30 min
+    DelayService->>DelayService: Delay is 35 minutes
+    DelayService->>CompService: Apply compensation
+    CompService->>DB: Add 500 FCFA credit
+    CompService->>WS: Broadcast compensation event
+    
+    WS->>Customer: {"event": "compensation_applied", "data": {...}}
+    Customer->>Customer: Show green compensation banner
+    Customer->>Customer: Update order total
+    
+    Note over Customer: Positive experience recovery!
+
