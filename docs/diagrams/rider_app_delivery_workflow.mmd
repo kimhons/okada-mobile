@@ -1,0 +1,45 @@
+flowchart TD
+    Start([Rider Opens App]) --> Dashboard[Rider Dashboard]
+    Dashboard --> Online{Toggle Online?}
+    Online -->|Yes| AvailableOrders[View Available Orders]
+    Online -->|No| Dashboard
+    
+    AvailableOrders --> SelectOrder[Select Order]
+    SelectOrder --> OrderDetail[View Order Details]
+    OrderDetail --> Accept{Accept Order?}
+    
+    Accept -->|No| AvailableOrders
+    Accept -->|Yes| Navigate[Navigate to Pickup]
+    
+    Navigate --> Arrived[Arrive at Seller]
+    Arrived --> Collect[Collect Products]
+    Collect --> CapturePhotos[📸 Capture Quality Photos]
+    
+    CapturePhotos --> Photo1[Take Photo 1]
+    Photo1 --> Photo2[Take Photo 2]
+    Photo2 --> Photo3[Take Photo 3]
+    Photo3 --> ReviewPhotos[Review Photos]
+    
+    ReviewPhotos --> PhotosOK{Photos OK?}
+    PhotosOK -->|No| CapturePhotos
+    PhotosOK -->|Yes| UploadPhotos[Upload to Server]
+    
+    UploadPhotos --> WaitApproval[Wait for Customer Approval]
+    WaitApproval --> Approved{Customer Approved?}
+    
+    Approved -->|Rejected| ReturnProducts[Return Products to Seller]
+    ReturnProducts --> End1([Order Cancelled])
+    
+    Approved -->|Approved| NavigateCustomer[Navigate to Customer]
+    NavigateCustomer --> DeliverOrder[Deliver Order]
+    DeliverOrder --> MarkComplete[Mark as Complete]
+    MarkComplete --> EarningsSummary[View Earnings]
+    EarningsSummary --> End2([Delivery Complete])
+    
+    style CapturePhotos fill:#2D8659,stroke:#1a5233,color:#fff
+    style Photo1 fill:#2D8659,stroke:#1a5233,color:#fff
+    style Photo2 fill:#2D8659,stroke:#1a5233,color:#fff
+    style Photo3 fill:#2D8659,stroke:#1a5233,color:#fff
+    style ReviewPhotos fill:#2D8659,stroke:#1a5233,color:#fff
+    style UploadPhotos fill:#2D8659,stroke:#1a5233,color:#fff
+
