@@ -122,6 +122,109 @@ export const appRouter = router({
         return { success };
       }),
   }),
+
+  products: router({
+    list: protectedProcedure
+      .input(z.object({ search: z.string().optional(), categoryId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllProducts(input);
+      }),
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductById(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        slug: z.string(),
+        description: z.string().optional(),
+        price: z.number(),
+        categoryId: z.number(),
+        imageUrl: z.string().optional(),
+        stock: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create products');
+        }
+        return await db.createProduct(input);
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        price: z.number().optional(),
+        categoryId: z.number().optional(),
+        imageUrl: z.string().optional(),
+        stock: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update products');
+        }
+        const { id, ...updates } = input;
+        return await db.updateProduct(id, updates);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete products');
+        }
+        return await db.deleteProduct(input.id);
+      }),
+  }),
+
+  categories: router({
+    list: protectedProcedure.query(async () => {
+      return await db.getAllCategories();
+    }),
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCategoryById(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        slug: z.string(),
+        description: z.string().optional(),
+        imageUrl: z.string().optional(),
+        parentId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create categories');
+        }
+        return await db.createCategory(input);
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update categories');
+        }
+        const { id, ...updates } = input;
+        return await db.updateCategory(id, updates);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete categories');
+        }
+        return await db.deleteCategory(input.id);
+      }),
+  }),
+
+
 });
 
 export type AppRouter = typeof appRouter;
+

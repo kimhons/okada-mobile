@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, qualityPhotos, riderEarnings } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -384,5 +384,156 @@ export async function getRiderDeliveries(riderId: number) {
     .from(orders)
     .where(eq(orders.riderId, riderId))
     .orderBy(desc(orders.createdAt));
+}
+
+
+
+// Product Management Queries
+
+export async function getAllProducts(filters?: { search?: string; categoryId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(products);
+
+  if (filters?.search) {
+    const searchTerm = `%${filters.search}%`;
+    query = query.where(
+      sql`${products.name} LIKE ${searchTerm} OR ${products.description} LIKE ${searchTerm}`
+    ) as any;
+  }
+
+  if (filters?.categoryId) {
+    query = query.where(eq(products.categoryId, filters.categoryId)) as any;
+  }
+
+  return await query.orderBy(desc(products.createdAt));
+}
+
+export async function getProductById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createProduct(product: {
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  categoryId: number;
+  imageUrl?: string;
+  stock: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(products).values(product);
+    return await getProductById(result[0].insertId);
+  } catch (error) {
+    console.error('[Database] Failed to create product:', error);
+    return null;
+  }
+}
+
+export async function updateProduct(id: number, updates: {
+  name?: string;
+  description?: string;
+  price?: number;
+  categoryId?: number;
+  imageUrl?: string;
+  stock?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    await db.update(products).set(updates).where(eq(products.id, id));
+    return await getProductById(id);
+  } catch (error) {
+    console.error('[Database] Failed to update product:', error);
+    return null;
+  }
+}
+
+export async function deleteProduct(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.delete(products).where(eq(products.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to delete product:', error);
+    return false;
+  }
+}
+
+// Category Management Queries
+
+export async function getAllCategories() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(categories).orderBy(categories.name);
+}
+
+export async function getCategoryById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createCategory(category: {
+  name: string;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
+  parentId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(categories).values(category);
+    return await getCategoryById(result[0].insertId);
+  } catch (error) {
+    console.error('[Database] Failed to create category:', error);
+    return null;
+  }
+}
+
+export async function updateCategory(id: number, updates: {
+  name?: string;
+  description?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    await db.update(categories).set(updates).where(eq(categories.id, id));
+    return await getCategoryById(id);
+  } catch (error) {
+    console.error('[Database] Failed to update category:', error);
+    return null;
+  }
+}
+
+export async function deleteCategory(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.delete(categories).where(eq(categories.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to delete category:', error);
+    return false;
+  }
 }
 
