@@ -18,6 +18,7 @@ import SellerDetail from "./pages/SellerDetail";
 import FinancialOverview from "./pages/FinancialOverview";
 import CommissionSettings from "./pages/CommissionSettings";
 import PaymentTransactions from "./pages/PaymentTransactions";
+import PayoutManagement from "./pages/PayoutManagement";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/financial" component={() => <DashboardLayout><FinancialOverview /></DashboardLayout>} />
       <Route path="/commission-settings" component={() => <DashboardLayout><CommissionSettings /></DashboardLayout>} />
       <Route path="/payment-transactions" component={() => <DashboardLayout><PaymentTransactions /></DashboardLayout>} />
+      <Route path="/payout-management" component={() => <DashboardLayout><PayoutManagement /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
