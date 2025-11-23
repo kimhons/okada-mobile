@@ -69,6 +69,7 @@
 ## Bug Fixes
 - [x] Fix tRPC client error: "Unexpected token '<', "<!doctype "... is not valid JSON" (Resolved - was temporary issue, dashboard now loading correctly)
 - [x] Fix Select.Item error on Orders page: empty string value not allowed (Changed empty string to "all" value)
+- [x] Fix tRPC error on Revenue Analytics: No procedure found on path "financial.getRevenueAnalytics" (Added missing procedure to financial router)
 
 
 

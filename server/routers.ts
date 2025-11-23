@@ -395,6 +395,16 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.processPayoutBatch(input.payoutIds);
       }),
+
+    getRevenueAnalytics: protectedProcedure.query(async () => {
+      // Return mock data for now - can be replaced with real analytics later
+      return {
+        totalRevenue: 1250000000, // 12.5M FCFA in cents
+        commissionEarned: 187500000, // 1.875M FCFA in cents
+        growthRate: 8.5,
+        monthlyRevenue: 125000000, // 1.25M FCFA in cents
+      };
+    }),
   }),
 
   // Customer Support
