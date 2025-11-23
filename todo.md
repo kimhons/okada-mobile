@@ -90,7 +90,7 @@
 - [x] Screen 26: Revenue Analytics (revenue breakdown, growth)
 - [x] Screen 29: Payment Transactions (MTN/Orange Money transactions)
 - [x] Screen 67: Payout Management (process payouts in FCFA)
-- [ ] Screen 72: Mobile Money Analytics (27.4M MTN, 15.1M Orange FCFA)
+- [x] Screen 72: Mobile Money Analytics (27.4M MTN, 15.1M Orange FCFA)
 
 ### MEDIUM PRIORITY - Operations
 - [ ] Screen 18: Notifications Center (send notifications, history)
@@ -167,7 +167,7 @@
 - [x] Screen 26: Revenue Analytics (revenue breakdown, growth)
 - [x] Screen 29: Payment Transactions (MTN/Orange Money transactions)
 - [x] Screen 67: Payout Management (process payouts in FCFA)
-- [ ] Screen 72: Mobile Money Analytics (27.4M MTN, 15.1M Orange FCFA)
+- [x] Screen 72: Mobile Money Analytics (27.4M MTN, 15.1M Orange FCFA)
 - [x] Screen 23: Customer Support (tickets, chat, resolution)
 - [x] Screen 24: Support Ticket Detail (ticket info, messages, resolve)
 - [ ] Screen 21: Delivery Zones (Douala, Yaoundé zones, fees)
