@@ -36,7 +36,7 @@ const statusColors = {
 };
 
 const statusOptions = [
-  { value: "", label: "All Statuses" },
+  { value: "all", label: "All Statuses" },
   { value: "pending", label: "Pending" },
   { value: "confirmed", label: "Confirmed" },
   { value: "rider_assigned", label: "Rider Assigned" },
@@ -49,12 +49,12 @@ const statusOptions = [
 
 export default function Orders() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
   const { data: orders, isLoading, refetch } = trpc.orders.list.useQuery({
     search: search || undefined,
-    status: statusFilter || undefined,
+    status: statusFilter === "all" ? undefined : statusFilter,
   });
 
   const { data: orderDetails } = trpc.orders.getById.useQuery(
