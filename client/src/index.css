@@ -170,3 +170,51 @@
     }
   }
 }
+
+  /* Mobile-responsive table improvements */
+  .mobile-table-scroll {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+  }
+
+  /* Mobile-friendly dialog sizing */
+  @media (max-width: 640px) {
+    [role="dialog"] {
+      max-width: 95vw !important;
+      max-height: 90vh !important;
+    }
+  }
+
+  /* Responsive text sizing for mobile */
+  .responsive-heading {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  .responsive-subheading {
+    @apply text-base sm:text-lg;
+  }
+
+  /* Mobile-optimized button groups */
+  .button-group-mobile {
+    @apply flex flex-col sm:flex-row gap-2;
+  }
+
+  /* Responsive card grid */
+  .card-grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  /* Mobile-friendly form layouts */
+  .form-grid-responsive {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+  }
+
+  /* Hide on mobile, show on desktop */
+  .hide-mobile {
+    @apply hidden sm:block;
+  }
+
+  /* Show on mobile, hide on desktop */
+  .show-mobile {
+    @apply block sm:hidden;
+  }
+

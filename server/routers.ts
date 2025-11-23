@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { notifyOwner } from "./_core/notification";
 
 export const appRouter = router({
   system: systemRouter,
@@ -175,6 +176,40 @@ export const appRouter = router({
         }
         return await db.deleteProduct(input.id);
       }),
+    bulkCreate: protectedProcedure
+      .input(z.array(z.object({
+        name: z.string(),
+        slug: z.string(),
+        description: z.string().optional(),
+        price: z.number(),
+        categoryId: z.number(),
+        imageUrl: z.string().optional(),
+        stock: z.number(),
+      })))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can bulk create products');
+        }
+        const results = await Promise.all(
+          input.map((product) => db.createProduct(product))
+        );
+        return { created: results.length };
+      }),
+    
+    bulkUpdatePrices: protectedProcedure
+      .input(z.array(z.object({
+        id: z.number(),
+        price: z.number(),
+      })))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can bulk update prices');
+        }
+        const results = await Promise.all(
+          input.map((update) => db.updateProduct(update.id, { price: update.price }))
+        );
+        return { updated: results.length };
+      }),
   }),
 
   categories: router({
@@ -223,8 +258,41 @@ export const appRouter = router({
       }),
   }),
 
+  // Notification triggers for key events
+  notifications: router({
+    // Trigger notification when order status changes to quality_verification
+    onQualityVerification: protectedProcedure
+      .input(z.object({ orderId: z.number(), orderNumber: z.string() }))
+      .mutation(async ({ input }) => {
+        await notifyOwner({
+          title: "Quality Verification Required",
+          content: `Order ${input.orderNumber} is awaiting quality verification. Please review the uploaded photos.`,
+        });
+        return { success: true };
+      }),
 
+    // Trigger notification when new rider applies
+    onNewRiderApplication: protectedProcedure
+      .input(z.object({ riderName: z.string(), riderId: z.number() }))
+      .mutation(async ({ input }) => {
+        await notifyOwner({
+          title: "New Rider Application",
+          content: `${input.riderName} (ID: ${input.riderId}) has submitted a new rider application. Please review and approve/reject.`,
+        });
+        return { success: true };
+      }),
+
+    // Trigger notification when order is delivered
+    onOrderDelivered: protectedProcedure
+      .input(z.object({ orderId: z.number(), orderNumber: z.string(), total: z.number() }))
+      .mutation(async ({ input }) => {
+        await notifyOwner({
+          title: "Order Delivered Successfully",
+          content: `Order ${input.orderNumber} has been delivered. Total: ${(input.total / 100).toLocaleString()} FCFA`,
+        });
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
-
