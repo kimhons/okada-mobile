@@ -21,11 +21,11 @@
 - [ ] Export reports functionality
 
 ## Phase 4: User & Rider Management
-- [ ] Users list with search and filters
-- [ ] User details and activity history
-- [ ] Riders list with performance metrics
-- [ ] Rider approval/rejection workflow
-- [ ] Rider documents verification
+- [x] Users list with search and filters
+- [x] User details and activity history
+- [x] Riders list with performance metrics
+- [x] Rider approval/rejection workflow
+- [x] Rider status management (approve, reject, suspend)
 
 ## Phase 5: Product & Category Management
 - [ ] Products list with search and filters

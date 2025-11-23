@@ -73,6 +73,55 @@ export const appRouter = router({
         return await db.getTopRiders(input?.limit || 10);
       }),
   }),
+
+  users: router({
+    list: protectedProcedure
+      .input(z.object({ search: z.string().optional(), role: z.string().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllUsers(input);
+      }),
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const user = await db.getUserById(input.id);
+        const userOrders = await db.getUserOrders(input.id);
+        return { user, orders: userOrders };
+      }),
+    updateRole: protectedProcedure
+      .input(z.object({ userId: z.number(), role: z.enum(['admin', 'user']) }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update user roles');
+        }
+        const success = await db.updateUserRole(input.userId, input.role);
+        return { success };
+      }),
+  }),
+
+  riders: router({
+    list: protectedProcedure
+      .input(z.object({ search: z.string().optional(), status: z.string().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllRiders(input);
+      }),
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const rider = await db.getRiderById(input.id);
+        const earnings = await db.getRiderEarnings(input.id);
+        const deliveries = await db.getRiderDeliveries(input.id);
+        return { rider, earnings, deliveries };
+      }),
+    updateStatus: protectedProcedure
+      .input(z.object({ riderId: z.number(), status: z.enum(['pending', 'approved', 'rejected', 'suspended']) }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update rider status');
+        }
+        const success = await db.updateRiderStatus(input.riderId, input.status);
+        return { success };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

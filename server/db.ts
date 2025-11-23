@@ -206,6 +206,19 @@ export async function getRiderById(id: number) {
   return result.length > 0 ? result[0] : null;
 }
 
+export async function updateRiderStatus(riderId: number, status: 'pending' | 'approved' | 'rejected' | 'suspended') {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(riders).set({ status }).where(eq(riders.id, riderId));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to update rider status:', error);
+    return false;
+  }
+}
+
 // Dashboard Statistics
 
 export async function getDashboardStats() {
@@ -291,5 +304,85 @@ export async function getTopRiders(limit: number = 10) {
     .limit(limit);
 
   return results;
+}
+
+
+
+// User Management Queries
+
+export async function getAllUsers(filters?: { search?: string; role?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(users);
+
+  if (filters?.search) {
+    const searchTerm = `%${filters.search}%`;
+    query = query.where(
+      sql`${users.name} LIKE ${searchTerm} OR ${users.email} LIKE ${searchTerm}`
+    ) as any;
+  }
+
+  if (filters?.role) {
+    query = query.where(eq(users.role, filters.role as any)) as any;
+  }
+
+  return await query.orderBy(desc(users.createdAt));
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserOrders(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(orders)
+    .where(eq(orders.customerId, userId))
+    .orderBy(desc(orders.createdAt));
+}
+
+export async function updateUserRole(userId: number, role: 'admin' | 'user') {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(users).set({ role }).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to update user role:', error);
+    return false;
+  }
+}
+
+// Additional Rider Management Queries (getAllRiders and updateRiderStatus are defined above)
+
+export async function getRiderEarnings(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(riderEarnings)
+    .where(eq(riderEarnings.riderId, riderId))
+    .orderBy(desc(riderEarnings.createdAt));
+}
+
+export async function getRiderDeliveries(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(orders)
+    .where(eq(orders.riderId, riderId))
+    .orderBy(desc(orders.createdAt));
 }
 
