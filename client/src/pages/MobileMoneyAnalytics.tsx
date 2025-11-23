@@ -1,4 +1,6 @@
 import { trpc } from "@/lib/trpc";
+import * as React from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { exportToCSV } from "@/lib/exportUtils";
 import {
@@ -8,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Smartphone, TrendingUp, CheckCircle, XCircle, DollarSign, Activity, Download } from "lucide-react";
+import { Smartphone, TrendingUp, CheckCircle, XCircle, DollarSign, Activity, Download, Calendar } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -27,12 +29,21 @@ import {
 
 export default function MobileMoneyAnalytics() {
   const { data: analytics, isLoading } = trpc.financial.getMobileMoneyAnalytics.useQuery();
+  const [dateRange, setDateRange] = React.useState<{ from: Date; to: Date }>({
+    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+    to: new Date(),
+  });
+  const [showDatePicker, setShowDatePicker] = React.useState(false);
 
   const formatCurrency = (cents: number) => {
     return `${(cents / 100).toLocaleString()} FCFA`;
   };
 
   const handleExportCSV = () => {
+    const fromTime = dateRange.from.getTime();
+    const toTime = dateRange.to.getTime();
+    const timeRange = toTime - fromTime;
+
     // Prepare transaction data for export
     const transactionData = [
       // MTN Money transactions
@@ -41,7 +52,7 @@ export default function MobileMoneyAnalytics() {
         transactionId: `MTN-${String(i + 1).padStart(6, '0')}`,
         amount: Math.floor(Math.random() * 50000) + 1000,
         status: Math.random() > 0.035 ? "Successful" : "Failed",
-        timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        timestamp: new Date(fromTime + Math.random() * timeRange).toISOString(),
       })),
       // Orange Money transactions
       ...Array.from({ length: 4521 }, (_, i) => ({
@@ -49,12 +60,17 @@ export default function MobileMoneyAnalytics() {
         transactionId: `ORG-${String(i + 1).padStart(6, '0')}`,
         amount: Math.floor(Math.random() * 50000) + 1000,
         status: Math.random() > 0.058 ? "Successful" : "Failed",
-        timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        timestamp: new Date(fromTime + Math.random() * timeRange).toISOString(),
       })),
     ];
 
-    // Sort by timestamp descending
-    transactionData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    // Filter by date range and sort by timestamp descending
+    const filteredData = transactionData
+      .filter((t) => {
+        const tTime = new Date(t.timestamp).getTime();
+        return tTime >= fromTime && tTime <= toTime;
+      })
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     // Add summary row at the top
     const summaryData = [
@@ -83,9 +99,12 @@ export default function MobileMoneyAnalytics() {
       { provider: "TRANSACTION DETAILS", transactionId: "", amount: "", status: "", timestamp: "" },
     ];
 
+    const fromDate = dateRange.from.toISOString().split('T')[0];
+    const toDate = dateRange.to.toISOString().split('T')[0];
+    
     exportToCSV(
-      [...summaryData, ...transactionData],
-      `mobile-money-analytics-${new Date().toISOString().split('T')[0]}.csv`
+      [...summaryData, ...filteredData],
+      `mobile-money-analytics-${fromDate}-to-${toDate}.csv`
     );
   };
 
@@ -177,14 +196,49 @@ export default function MobileMoneyAnalytics() {
             Track MTN Money and Orange Money performance, transaction success rates, and trends
           </p>
         </div>
-        <Button
-          onClick={handleExportCSV}
-          variant="outline"
-          className="gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Export to CSV
-        </Button>
+        <div className="flex gap-2">
+          <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                {dateRange.from.toLocaleDateString()} - {dateRange.to.toLocaleDateString()}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">From Date</label>
+                  <input
+                    type="date"
+                    value={dateRange.from.toISOString().split('T')[0]}
+                    onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">To Date</label>
+                  <input
+                    type="date"
+                    value={dateRange.to.toISOString().split('T')[0]}
+                    onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <Button onClick={() => setShowDatePicker(false)} className="w-full">
+                  Apply
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button
+            onClick={handleExportCSV}
+            variant="outline"
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export to CSV
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

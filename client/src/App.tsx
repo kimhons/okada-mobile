@@ -21,6 +21,7 @@ import PaymentTransactions from "./pages/PaymentTransactions";
 import PayoutManagement from "./pages/PayoutManagement";
 import RevenueAnalytics from "./pages/RevenueAnalytics";
 import MobileMoneyAnalytics from "./pages/MobileMoneyAnalytics";
+import DeliveryZones from "./pages/DeliveryZones";
 import CustomerSupport from "./pages/CustomerSupport";
 import SupportTicketDetail from "./pages/SupportTicketDetail";
 
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/payout-management" component={() => <DashboardLayout><PayoutManagement /></DashboardLayout>} />
       <Route path="/revenue-analytics" component={() => <DashboardLayout><RevenueAnalytics /></DashboardLayout>} />
       <Route path="/mobile-money-analytics" component={() => <DashboardLayout><MobileMoneyAnalytics /></DashboardLayout>} />
+      <Route path="/delivery-zones" component={() => <DashboardLayout><DeliveryZones /></DashboardLayout>} />
       <Route path="/support" component={() => <DashboardLayout><CustomerSupport /></DashboardLayout>} />
       <Route path="/support/:id" component={() => <DashboardLayout><SupportTicketDetail /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />

@@ -332,3 +332,33 @@ export const deliveryZones = mysqlTable("deliveryZones", {
 export type DeliveryZone = typeof deliveryZones.$inferSelect;
 export type InsertDeliveryZone = typeof deliveryZones.$inferInsert;
 
+
+
+// Payment Gateway Integration tables
+export const paymentGatewayConfig = mysqlTable("payment_gateway_config", {
+  id: int("id").autoincrement().primaryKey(),
+  provider: mysqlEnum("provider", ["mtn_money", "orange_money"]).notNull(),
+  apiKey: varchar("apiKey", { length: 255 }),
+  apiSecret: varchar("apiSecret", { length: 255 }),
+  webhookUrl: varchar("webhookUrl", { length: 512 }),
+  isActive: boolean("isActive").default(false).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const paymentGatewaySyncLog = mysqlTable("payment_gateway_sync_log", {
+  id: int("id").autoincrement().primaryKey(),
+  provider: mysqlEnum("provider", ["mtn_money", "orange_money"]).notNull(),
+  syncType: mysqlEnum("syncType", ["manual", "automatic", "webhook"]).notNull(),
+  status: mysqlEnum("status", ["success", "failed", "partial"]).notNull(),
+  transactionsSynced: int("transactionsSynced").default(0).notNull(),
+  errorMessage: text("errorMessage"),
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+});
+
+export type PaymentGatewayConfig = typeof paymentGatewayConfig.$inferSelect;
+export type InsertPaymentGatewayConfig = typeof paymentGatewayConfig.$inferInsert;
+export type PaymentGatewaySyncLog = typeof paymentGatewaySyncLog.$inferSelect;
+export type InsertPaymentGatewaySyncLog = typeof paymentGatewaySyncLog.$inferInsert;
+

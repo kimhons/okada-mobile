@@ -405,6 +405,70 @@ export const appRouter = router({
         monthlyRevenue: 125000000, // 1.25M FCFA in cents
       };
     }),
+
+    // Payment Gateway Integration
+    getGatewayConfig: protectedProcedure
+      .input(z.object({ provider: z.enum(["mtn_money", "orange_money"]) }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view gateway config');
+        }
+        const { PaymentGatewayService } = await import("./paymentGatewayService");
+        return await PaymentGatewayService.getConfig(input.provider);
+      }),
+
+    updateGatewayConfig: protectedProcedure
+      .input(z.object({
+        provider: z.enum(["mtn_money", "orange_money"]),
+        apiKey: z.string().optional(),
+        apiSecret: z.string().optional(),
+        webhookUrl: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update gateway config');
+        }
+        const { provider, ...config } = input;
+        const { PaymentGatewayService } = await import("./paymentGatewayService");
+        await PaymentGatewayService.updateConfig(provider, config);
+        return { success: true };
+      }),
+
+    syncGatewayTransactions: protectedProcedure
+      .input(z.object({
+        provider: z.enum(["mtn_money", "orange_money"]),
+        fromDate: z.string(),
+        toDate: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can sync transactions');
+        }
+        const { PaymentGatewayService } = await import("./paymentGatewayService");
+        const fromDate = new Date(input.fromDate);
+        const toDate = new Date(input.toDate);
+        
+        let transactions;
+        if (input.provider === "mtn_money") {
+          transactions = await PaymentGatewayService.syncMTNMoneyTransactions(fromDate, toDate);
+        } else {
+          transactions = await PaymentGatewayService.syncOrangeMoneyTransactions(fromDate, toDate);
+        }
+        
+        await PaymentGatewayService.saveTransactions(transactions);
+        return { synced: transactions.length };
+      }),
+
+    getSyncLogs: protectedProcedure
+      .input(z.object({ provider: z.enum(["mtn_money", "orange_money"]).optional() }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view sync logs');
+        }
+        const { PaymentGatewayService } = await import("./paymentGatewayService");
+        return await PaymentGatewayService.getSyncLogs(input?.provider);
+      }),
   }),
 
   // Customer Support
