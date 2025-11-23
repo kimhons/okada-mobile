@@ -19,6 +19,9 @@ import FinancialOverview from "./pages/FinancialOverview";
 import CommissionSettings from "./pages/CommissionSettings";
 import PaymentTransactions from "./pages/PaymentTransactions";
 import PayoutManagement from "./pages/PayoutManagement";
+import RevenueAnalytics from "./pages/RevenueAnalytics";
+import CustomerSupport from "./pages/CustomerSupport";
+import SupportTicketDetail from "./pages/SupportTicketDetail";
 
 function Router() {
   return (
@@ -37,6 +40,9 @@ function Router() {
       <Route path="/commission-settings" component={() => <DashboardLayout><CommissionSettings /></DashboardLayout>} />
       <Route path="/payment-transactions" component={() => <DashboardLayout><PaymentTransactions /></DashboardLayout>} />
       <Route path="/payout-management" component={() => <DashboardLayout><PayoutManagement /></DashboardLayout>} />
+      <Route path="/revenue-analytics" component={() => <DashboardLayout><RevenueAnalytics /></DashboardLayout>} />
+      <Route path="/support" component={() => <DashboardLayout><CustomerSupport /></DashboardLayout>} />
+      <Route path="/support/:id" component={() => <DashboardLayout><SupportTicketDetail /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
