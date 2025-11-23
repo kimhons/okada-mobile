@@ -1,6 +1,6 @@
-import { eq, desc, like, and, or, sql } from "drizzle-orm";
+import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -534,6 +534,437 @@ export async function deleteCategory(id: number) {
   } catch (error) {
     console.error('[Database] Failed to delete category:', error);
     return false;
+  }
+}
+
+
+
+
+// ==================== Quality Verification Management ====================
+
+export async function getPendingQualityPhotos() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const photos = await db
+    .select({
+      id: qualityPhotos.id,
+      orderId: qualityPhotos.orderId,
+      orderNumber: orders.orderNumber,
+      photoUrl: qualityPhotos.photoUrl,
+      uploadedBy: qualityPhotos.uploadedBy,
+      riderName: riders.name,
+      approvalStatus: qualityPhotos.approvalStatus,
+      createdAt: qualityPhotos.createdAt,
+      customerName: users.name,
+      deliveryAddress: orders.deliveryAddress,
+    })
+    .from(qualityPhotos)
+    .leftJoin(orders, eq(qualityPhotos.orderId, orders.id))
+    .leftJoin(riders, eq(qualityPhotos.uploadedBy, riders.id))
+    .leftJoin(users, eq(orders.customerId, users.id))
+    .where(eq(qualityPhotos.approvalStatus, "pending"))
+    .orderBy(desc(qualityPhotos.createdAt));
+
+  return photos;
+}
+
+export async function getQualityPhotosByOrderId(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const photos = await db
+    .select()
+    .from(qualityPhotos)
+    .where(eq(qualityPhotos.orderId, orderId))
+    .orderBy(desc(qualityPhotos.createdAt));
+
+  return photos;
+}
+
+export async function approveQualityPhoto(photoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(qualityPhotos)
+    .set({ approvalStatus: "approved", updatedAt: new Date() })
+    .where(eq(qualityPhotos.id, photoId));
+
+  return { success: true };
+}
+
+export async function rejectQualityPhoto(photoId: number, reason: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(qualityPhotos)
+    .set({
+      approvalStatus: "rejected",
+      rejectionReason: reason,
+      updatedAt: new Date(),
+    })
+    .where(eq(qualityPhotos.id, photoId));
+
+  return { success: true };
+}
+
+export async function getQualityPhotoAnalytics() {
+  const db = await getDb();
+  if (!db) {
+    return {
+      totalPhotos: 0,
+      approvedPhotos: 0,
+      rejectedPhotos: 0,
+      pendingPhotos: 0,
+      approvalRate: 0,
+    };
+  }
+
+  const [stats] = await db
+    .select({
+      totalPhotos: count(),
+      approvedPhotos: count(
+        sql`CASE WHEN ${qualityPhotos.approvalStatus} = 'approved' THEN 1 END`
+      ),
+      rejectedPhotos: count(
+        sql`CASE WHEN ${qualityPhotos.approvalStatus} = 'rejected' THEN 1 END`
+      ),
+      pendingPhotos: count(
+        sql`CASE WHEN ${qualityPhotos.approvalStatus} = 'pending' THEN 1 END`
+      ),
+    })
+    .from(qualityPhotos);
+
+  const approvalRate =
+    stats.totalPhotos > 0
+      ? Math.round((stats.approvedPhotos / stats.totalPhotos) * 100)
+      : 0;
+
+  return {
+    ...stats,
+    approvalRate,
+  };
+}
+
+// ==================== Seller Management ====================
+
+export async function getAllSellers() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const sellersList = await db
+    .select({
+      id: sellers.id,
+      userId: sellers.userId,
+      businessName: sellers.businessName,
+      businessType: sellers.businessType,
+      businessEmail: sellers.businessEmail,
+      businessPhone: sellers.businessPhone,
+      status: sellers.status,
+      totalSales: sellers.totalSales,
+      totalOrders: sellers.totalOrders,
+      rating: sellers.rating,
+      commissionRate: sellers.commissionRate,
+      createdAt: sellers.createdAt,
+      ownerName: users.name,
+      ownerEmail: users.email,
+    })
+    .from(sellers)
+    .leftJoin(users, eq(sellers.userId, users.id))
+    .orderBy(desc(sellers.createdAt));
+
+  return sellersList;
+}
+
+export async function getSellerById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [seller] = await db
+    .select({
+      id: sellers.id,
+      userId: sellers.userId,
+      businessName: sellers.businessName,
+      businessType: sellers.businessType,
+      businessAddress: sellers.businessAddress,
+      businessPhone: sellers.businessPhone,
+      businessEmail: sellers.businessEmail,
+      taxId: sellers.taxId,
+      bankName: sellers.bankName,
+      bankAccountNumber: sellers.bankAccountNumber,
+      mobileMoneyProvider: sellers.mobileMoneyProvider,
+      mobileMoneyNumber: sellers.mobileMoneyNumber,
+      status: sellers.status,
+      verificationDocuments: sellers.verificationDocuments,
+      commissionRate: sellers.commissionRate,
+      totalSales: sellers.totalSales,
+      totalOrders: sellers.totalOrders,
+      rating: sellers.rating,
+      createdAt: sellers.createdAt,
+      updatedAt: sellers.updatedAt,
+      ownerName: users.name,
+      ownerEmail: users.email,
+      ownerPhone: users.phone,
+    })
+    .from(sellers)
+    .leftJoin(users, eq(sellers.userId, users.id))
+    .where(eq(sellers.id, id))
+    .limit(1);
+
+  return seller;
+}
+
+export async function updateSellerStatus(
+  id: number,
+  status: "pending" | "approved" | "rejected" | "suspended"
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(sellers)
+    .set({ status, updatedAt: new Date() })
+    .where(eq(sellers.id, id));
+
+  return { success: true };
+}
+
+export async function getSellerProducts(sellerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const sellerProducts = await db
+    .select()
+    .from(products)
+    .where(eq(products.sellerId, sellerId))
+    .orderBy(desc(products.createdAt));
+
+  return sellerProducts;
+}
+
+
+
+
+// ============================================================================
+// Financial Management
+// ============================================================================
+
+export async function getFinancialOverview() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [ordersData, payoutsData, transactionsData] = await Promise.all([
+    db.select().from(orders),
+    db.select().from(sellerPayouts),
+    db.select().from(paymentTransactions),
+  ]);
+
+  const totalRevenue = ordersData.reduce((sum, order) => sum + (order.total || 0), 0);
+  const totalPayouts = payoutsData.reduce((sum, payout) => sum + (payout.amount || 0), 0);
+  const pendingPayouts = payoutsData
+    .filter((p) => p.status === "pending")
+    .reduce((sum, payout) => sum + (payout.amount || 0), 0);
+
+  return {
+    totalRevenue,
+    totalPayouts,
+    pendingPayouts,
+    netRevenue: totalRevenue - totalPayouts,
+    transactionCount: transactionsData.length,
+  };
+}
+
+export async function getCommissionSettings() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(commissionSettings);
+}
+
+export async function updateCommissionSetting(id: number, updates: Partial<InsertCommissionSetting>) {
+  const db = await getDb();
+  if (!db) return { success: false };
+  
+  try {
+    await db.update(commissionSettings).set(updates).where(eq(commissionSettings.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating commission setting:", error);
+    return { success: false };
+  }
+}
+
+export async function getPaymentTransactions(limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(paymentTransactions).limit(limit).orderBy(desc(paymentTransactions.createdAt));
+}
+
+export async function getMobileMoneyAnalytics() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const transactions = await db.select().from(paymentTransactions);
+
+  const mtnTotal = transactions
+    .filter((t) => t.provider === "mtn_money" && t.status === "completed")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const orangeTotal = transactions
+    .filter((t) => t.provider === "orange_money" && t.status === "completed")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const cashTotal = transactions
+    .filter((t) => t.provider === "cash" && t.status === "completed")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  return {
+    mtnMoney: mtnTotal,
+    orangeMoney: orangeTotal,
+    cash: cashTotal,
+    total: mtnTotal + orangeTotal + cashTotal,
+  };
+}
+
+export async function getPendingPayouts() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(sellerPayouts)
+    .where(eq(sellerPayouts.status, "pending"))
+    .orderBy(desc(sellerPayouts.createdAt));
+}
+
+export async function processPayoutBatch(payoutIds: number[]) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    for (const id of payoutIds) {
+      await db
+        .update(sellerPayouts)
+        .set({ status: "completed", processedAt: new Date() })
+        .where(eq(sellerPayouts.id, id));
+    }
+    return { success: true, processed: payoutIds.length };
+  } catch (error) {
+    console.error("Error processing payouts:", error);
+    return { success: false };
+  }
+}
+
+// ============================================================================
+// Customer Support
+// ============================================================================
+
+export async function getAllSupportTickets() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
+}
+
+export async function getSupportTicketById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(supportTickets).where(eq(supportTickets.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getSupportTicketMessages(ticketId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(supportTicketMessages)
+    .where(eq(supportTicketMessages.ticketId, ticketId))
+    .orderBy(supportTicketMessages.createdAt);
+}
+
+export async function addSupportTicketMessage(message: InsertSupportTicketMessage) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    await db.insert(supportTicketMessages).values(message);
+    return { success: true };
+  } catch (error) {
+    console.error("Error adding ticket message:", error);
+    return { success: false };
+  }
+}
+
+export async function updateSupportTicketStatus(id: number, status: "open" | "in_progress" | "resolved" | "closed") {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    const updates: any = { status };
+    if (status === "resolved" || status === "closed") {
+      updates.resolvedAt = new Date();
+    }
+    await db.update(supportTickets).set(updates).where(eq(supportTickets.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating ticket status:", error);
+    return { success: false };
+  }
+}
+
+// ============================================================================
+// Delivery Zones
+// ============================================================================
+
+export async function getAllDeliveryZones() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(deliveryZones).orderBy(deliveryZones.city, deliveryZones.name);
+}
+
+export async function getDeliveryZoneById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(deliveryZones).where(eq(deliveryZones.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createDeliveryZone(zone: InsertDeliveryZone) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    await db.insert(deliveryZones).values(zone);
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating delivery zone:", error);
+    return { success: false };
+  }
+}
+
+export async function updateDeliveryZone(id: number, updates: Partial<InsertDeliveryZone>) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    await db.update(deliveryZones).set(updates).where(eq(deliveryZones.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating delivery zone:", error);
+    return { success: false };
+  }
+}
+
+export async function deleteDeliveryZone(id: number) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    await db.delete(deliveryZones).where(eq(deliveryZones.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting delivery zone:", error);
+    return { success: false };
   }
 }
 

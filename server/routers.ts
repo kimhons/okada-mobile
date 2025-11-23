@@ -293,6 +293,207 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // Quality Verification Management
+  qualityVerification: router({
+    getPendingPhotos: protectedProcedure.query(async () => {
+      return await db.getPendingQualityPhotos();
+    }),
+
+    getPhotosByOrder: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getQualityPhotosByOrderId(input.orderId);
+      }),
+
+    approvePhoto: protectedProcedure
+      .input(z.object({ photoId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.approveQualityPhoto(input.photoId);
+      }),
+
+    rejectPhoto: protectedProcedure
+      .input(z.object({ photoId: z.number(), reason: z.string() }))
+      .mutation(async ({ input }) => {
+        return await db.rejectQualityPhoto(input.photoId, input.reason);
+      }),
+
+    getAnalytics: protectedProcedure.query(async () => {
+      return await db.getQualityPhotoAnalytics();
+    }),
+  }),
+
+  // Seller Management
+  sellers: router({
+    getAll: protectedProcedure.query(async () => {
+      return await db.getAllSellers();
+    }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSellerById(input.id);
+      }),
+
+    updateStatus: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.enum(["pending", "approved", "rejected", "suspended"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await db.updateSellerStatus(input.id, input.status);
+      }),
+
+    getProducts: protectedProcedure
+      .input(z.object({ sellerId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSellerProducts(input.sellerId);
+      }),
+  }),
+
+  // Financial Management
+  financial: router({
+    getOverview: protectedProcedure.query(async () => {
+      return await db.getFinancialOverview();
+    }),
+
+    getCommissionSettings: protectedProcedure.query(async () => {
+      return await db.getCommissionSettings();
+    }),
+
+    updateCommissionSetting: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          value: z.number().optional(),
+          isActive: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        return await db.updateCommissionSetting(id, updates);
+      }),
+
+    getPaymentTransactions: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getPaymentTransactions(input?.limit);
+      }),
+
+    getMobileMoneyAnalytics: protectedProcedure.query(async () => {
+      return await db.getMobileMoneyAnalytics();
+    }),
+
+    getPendingPayouts: protectedProcedure.query(async () => {
+      return await db.getPendingPayouts();
+    }),
+
+    processPayouts: protectedProcedure
+      .input(z.object({ payoutIds: z.array(z.number()) }))
+      .mutation(async ({ input }) => {
+        return await db.processPayoutBatch(input.payoutIds);
+      }),
+  }),
+
+  // Customer Support
+  support: router({
+    getAllTickets: protectedProcedure.query(async () => {
+      return await db.getAllSupportTickets();
+    }),
+
+    getTicketById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSupportTicketById(input.id);
+      }),
+
+    getTicketMessages: protectedProcedure
+      .input(z.object({ ticketId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSupportTicketMessages(input.ticketId);
+      }),
+
+    addMessage: protectedProcedure
+      .input(
+        z.object({
+          ticketId: z.number(),
+          userId: z.number(),
+          message: z.string(),
+          isStaff: z.boolean(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await db.addSupportTicketMessage(input);
+      }),
+
+    updateStatus: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          status: z.enum(["open", "in_progress", "resolved", "closed"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await db.updateSupportTicketStatus(input.id, input.status);
+      }),
+  }),
+
+  // Delivery Zones Management
+  deliveryZones: router({
+    getAll: protectedProcedure.query(async () => {
+      return await db.getAllDeliveryZones();
+    }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getDeliveryZoneById(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string(),
+          city: z.string(),
+          description: z.string().optional(),
+          baseFee: z.number(),
+          perKmFee: z.number(),
+          minDeliveryTime: z.number().optional(),
+          maxDeliveryTime: z.number().optional(),
+          isActive: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await db.createDeliveryZone(input);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().optional(),
+          description: z.string().optional(),
+          baseFee: z.number().optional(),
+          perKmFee: z.number().optional(),
+          minDeliveryTime: z.number().optional(),
+          maxDeliveryTime: z.number().optional(),
+          isActive: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        return await db.updateDeliveryZone(id, updates);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteDeliveryZone(input.id);
+      }),
+  }),
 });
 
-export type AppRouter = typeof appRouter;
+export type AppRouter = typeof appRouter;;
+

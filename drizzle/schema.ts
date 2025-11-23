@@ -189,3 +189,146 @@ export const notifications = mysqlTable("notifications", {
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
 
+
+/**
+ * Sellers table for marketplace vendor management
+ */
+export const sellers = mysqlTable("sellers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(), // Reference to users table
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  businessType: varchar("businessType", { length: 100 }),
+  businessAddress: text("businessAddress"),
+  businessPhone: varchar("businessPhone", { length: 20 }),
+  businessEmail: varchar("businessEmail", { length: 320 }),
+  taxId: varchar("taxId", { length: 100 }),
+  bankName: varchar("bankName", { length: 100 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 50 }),
+  mobileMoneyProvider: mysqlEnum("mobileMoneyProvider", ["mtn_money", "orange_money"]),
+  mobileMoneyNumber: varchar("mobileMoneyNumber", { length: 20 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "suspended"]).default("pending").notNull(),
+  verificationDocuments: text("verificationDocuments"), // JSON array of document URLs
+  commissionRate: int("commissionRate").default(15).notNull(), // Platform commission percentage
+  totalSales: int("totalSales").default(0).notNull(), // In FCFA cents
+  totalOrders: int("totalOrders").default(0).notNull(),
+  rating: int("rating").default(0), // Stored as integer (e.g., 45 for 4.5)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Seller = typeof sellers.$inferSelect;
+export type InsertSeller = typeof sellers.$inferInsert;
+
+/**
+ * Seller payouts table for financial management
+ */
+export const sellerPayouts = mysqlTable("sellerPayouts", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("sellerId").notNull(),
+  amount: int("amount").notNull(), // In FCFA cents
+  platformFee: int("platformFee").notNull(), // In FCFA cents
+  netAmount: int("netAmount").notNull(), // In FCFA cents
+  paymentMethod: mysqlEnum("paymentMethod", ["bank_transfer", "mtn_money", "orange_money"]).notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  transactionId: varchar("transactionId", { length: 100 }),
+  processedAt: timestamp("processedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SellerPayout = typeof sellerPayouts.$inferSelect;
+export type InsertSellerPayout = typeof sellerPayouts.$inferInsert;
+
+
+/**
+ * Payment transactions table for MTN/Orange Money tracking
+ */
+export const paymentTransactions = mysqlTable("paymentTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  transactionId: varchar("transactionId", { length: 100 }).notNull().unique(),
+  provider: mysqlEnum("provider", ["mtn_money", "orange_money", "cash"]).notNull(),
+  amount: int("amount").notNull(), // In FCFA cents
+  status: mysqlEnum("status", ["pending", "completed", "failed", "refunded"]).default("pending").notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }),
+  reference: varchar("reference", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
+export type InsertPaymentTransaction = typeof paymentTransactions.$inferInsert;
+
+/**
+ * Commission settings table for platform configuration
+ */
+export const commissionSettings = mysqlTable("commissionSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  entityType: mysqlEnum("entityType", ["seller", "rider"]).notNull(),
+  commissionType: mysqlEnum("commissionType", ["percentage", "fixed"]).notNull(),
+  value: int("value").notNull(), // Percentage or cents
+  minAmount: int("minAmount").default(0), // In FCFA cents
+  maxAmount: int("maxAmount"), // In FCFA cents
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CommissionSetting = typeof commissionSettings.$inferSelect;
+export type InsertCommissionSetting = typeof commissionSettings.$inferInsert;
+
+/**
+ * Support tickets table for customer support
+ */
+export const supportTickets = mysqlTable("supportTickets", {
+  id: int("id").autoincrement().primaryKey(),
+  ticketNumber: varchar("ticketNumber", { length: 50 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  category: mysqlEnum("category", ["order", "payment", "delivery", "technical", "other"]).notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  status: mysqlEnum("status", ["open", "in_progress", "resolved", "closed"]).default("open").notNull(),
+  assignedTo: int("assignedTo"), // Admin user ID
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = typeof supportTickets.$inferInsert;
+
+/**
+ * Support ticket messages table
+ */
+export const supportTicketMessages = mysqlTable("supportTicketMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  ticketId: int("ticketId").notNull(),
+  userId: int("userId").notNull(),
+  message: text("message").notNull(),
+  isStaff: boolean("isStaff").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SupportTicketMessage = typeof supportTicketMessages.$inferSelect;
+export type InsertSupportTicketMessage = typeof supportTicketMessages.$inferInsert;
+
+/**
+ * Delivery zones table for zone-based pricing
+ */
+export const deliveryZones = mysqlTable("deliveryZones", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  city: varchar("city", { length: 100 }).notNull(),
+  description: text("description"),
+  baseFee: int("baseFee").notNull(), // In FCFA cents
+  perKmFee: int("perKmFee").notNull(), // In FCFA cents
+  minDeliveryTime: int("minDeliveryTime"), // In minutes
+  maxDeliveryTime: int("maxDeliveryTime"), // In minutes
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DeliveryZone = typeof deliveryZones.$inferSelect;
+export type InsertDeliveryZone = typeof deliveryZones.$inferInsert;
+

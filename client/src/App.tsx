@@ -11,6 +11,12 @@ import Users from "./pages/Users";
 import Riders from "./pages/Riders";
 import Products from "./pages/Products";
 import Analytics from "./pages/Analytics";
+import QualityVerification from "./pages/QualityVerification";
+import QualityPhotoAnalytics from "./pages/QualityPhotoAnalytics";
+import Sellers from "./pages/Sellers";
+import SellerDetail from "./pages/SellerDetail";
+import FinancialOverview from "./pages/FinancialOverview";
+import CommissionSettings from "./pages/CommissionSettings";
 
 function Router() {
   return (
@@ -21,6 +27,12 @@ function Router() {
       <Route path="/riders" component={() => <DashboardLayout><Riders /></DashboardLayout>} />
       <Route path="/products" component={() => <DashboardLayout><Products /></DashboardLayout>} />
       <Route path="/analytics" component={() => <DashboardLayout><Analytics /></DashboardLayout>} />
+      <Route path="/quality-verification" component={() => <DashboardLayout><QualityVerification /></DashboardLayout>} />
+      <Route path="/quality-analytics" component={() => <DashboardLayout><QualityPhotoAnalytics /></DashboardLayout>} />
+      <Route path="/sellers" component={() => <DashboardLayout><Sellers /></DashboardLayout>} />
+      <Route path="/sellers/:id" component={() => <DashboardLayout><SellerDetail /></DashboardLayout>} />
+      <Route path="/financial" component={() => <DashboardLayout><FinancialOverview /></DashboardLayout>} />
+      <Route path="/commission-settings" component={() => <DashboardLayout><CommissionSettings /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
