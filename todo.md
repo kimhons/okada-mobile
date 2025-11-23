@@ -42,8 +42,12 @@
 
 
 ## New Features (Current Implementation)
-- [ ] Real-time order tracking map integration
-- [ ] Export reports functionality (PDF/Excel)
+- [x] Order tracking timeline visualization
+- [x] Export reports functionality (PDF/Excel)
+- [x] Export Analytics to PDF
+- [x] Export Orders to PDF and Excel
+- [x] Export Users to Excel
+- [x] Export Riders to Excel
 - [x] Product & Category Management CRUD operations
 - [x] Category management interface
 - [x] Inventory tracking system

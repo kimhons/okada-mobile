@@ -18,8 +18,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Search, Eye, MapPin, Package } from "lucide-react";
+import { Search, Eye, MapPin, Package, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import { exportOrdersToPDF, exportOrdersToExcel } from "@/lib/exportUtils";
+import OrderTrackingTimeline from "@/components/OrderTrackingTimeline";
 
 const statusColors = {
   pending: "bg-gray-100 text-gray-800",
@@ -86,13 +88,49 @@ export default function Orders() {
     });
   };
 
+  const handleExportPDF = () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    exportOrdersToPDF(orders);
+    toast.success("Orders exported to PDF");
+  };
+
+  const handleExportExcel = () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    exportOrdersToExcel(orders);
+    toast.success("Orders exported to Excel");
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Orders</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage and track all customer orders
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Orders</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage and track all customer orders
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleExportPDF}
+            variant="outline"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button
+            onClick={handleExportExcel}
+            className="bg-[#2D8659] hover:bg-[#236B47]"
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -214,6 +252,27 @@ export default function Orders() {
 
           {orderDetails && (
             <div className="space-y-6">
+              {/* Tracking Timeline */}
+              <OrderTrackingTimeline
+                order={{
+                  id: orderDetails.order!.id,
+                  orderNumber: orderDetails.order!.orderNumber,
+                  status: orderDetails.order!.status,
+                  pickupLocation: orderDetails.order!.pickupAddress || "Pickup location",
+                  deliveryLocation: orderDetails.order!.deliveryAddress,
+                  createdAt: orderDetails.order!.createdAt,
+                  updatedAt: orderDetails.order!.updatedAt,
+                }}
+                rider={
+                  orderDetails.order!.riderId
+                    ? {
+                        name: "Rider #" + orderDetails.order!.riderId,
+                        phone: "N/A",
+                      }
+                    : undefined
+                }
+              />
+
               {/* Order Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>

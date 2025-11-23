@@ -24,12 +24,39 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, DollarSign, Package, Users } from "lucide-react";
+import { TrendingUp, DollarSign, Package, Users, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { exportAnalyticsToPDF } from "@/lib/exportUtils";
+import { toast } from "sonner";
 
 const COLORS = ["#2D8659", "#F4A460", "#4682B4", "#9370DB", "#FF6B6B", "#4ECDC4", "#FFD93D", "#95E1D3"];
 
 export default function Analytics() {
   const [revenuePeriod, setRevenuePeriod] = useState<"day" | "week" | "month">("day");
+
+  const handleExportPDF = () => {
+    if (!dashboardStats || !revenueData || !ordersByStatus) {
+      toast.error("Data not loaded yet");
+      return;
+    }
+
+    const analyticsData = {
+      totalOrders: dashboardStats.totalOrders,
+      totalRevenue: dashboardStats.totalRevenue,
+      activeUsers: dashboardStats.totalUsers,
+      activeRiders: dashboardStats.totalRiders,
+      ordersByStatus: ordersByStatus.reduce((acc, item) => {
+        acc[item.status] = item.count;
+        return acc;
+      }, {} as Record<string, number>),
+      revenueByPeriod: revenueData.map((item) => ({
+        date: item.period,
+        revenue: item.revenue,
+      })),
+    };
+
+    exportAnalyticsToPDF(analyticsData);
+    toast.success("Analytics report exported to PDF");
+  };
 
   const { data: revenueData, isLoading: revenueLoading } = trpc.analytics.revenueByPeriod.useQuery({
     period: revenuePeriod,
@@ -73,11 +100,20 @@ export default function Analytics() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Analytics & Reporting</h1>
-        <p className="text-muted-foreground mt-1">
-          Track performance metrics and business insights
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Analytics & Reporting</h1>
+          <p className="text-muted-foreground mt-1">
+            Track performance metrics and business insights
+          </p>
+        </div>
+        <Button
+          onClick={handleExportPDF}
+          className="bg-[#2D8659] hover:bg-[#236B47]"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          Export PDF Report
+        </Button>
       </div>
 
       {/* Key Metrics */}

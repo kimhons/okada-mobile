@@ -26,8 +26,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, UserCircle, ShoppingBag, Calendar } from "lucide-react";
+import { Search, UserCircle, ShoppingBag, Calendar, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import { exportUsersToExcel } from "@/lib/exportUtils";
 
 export default function Users() {
   const [search, setSearch] = useState("");
@@ -72,9 +73,25 @@ export default function Users() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-        <p className="text-gray-600 mt-1">Manage customer accounts and permissions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-1">Manage customer accounts and permissions</p>
+        </div>
+        <Button
+          onClick={() => {
+            if (!users || users.length === 0) {
+              toast.error("No users to export");
+              return;
+            }
+            exportUsersToExcel(users);
+            toast.success("Users exported to Excel");
+          }}
+          className="bg-[#2D8659] hover:bg-[#236B47]"
+        >
+          <FileSpreadsheet className="h-4 w-4 mr-2" />
+          Export Excel
+        </Button>
       </div>
 
       {/* Filters */}

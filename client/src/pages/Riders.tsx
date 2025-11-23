@@ -38,8 +38,10 @@ import {
   Star,
   Phone,
   MapPin,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
+import { exportRidersToExcel } from "@/lib/exportUtils";
 
 export default function Riders() {
   const [search, setSearch] = useState("");
@@ -118,11 +120,27 @@ export default function Riders() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Rider Management</h1>
-        <p className="text-gray-600 mt-1">
-          Manage rider applications, approvals, and performance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Rider Management</h1>
+          <p className="text-gray-600 mt-1">
+            Manage rider applications, approvals, and performance
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            if (!riders || riders.length === 0) {
+              toast.error("No riders to export");
+              return;
+            }
+            exportRidersToExcel(riders);
+            toast.success("Riders exported to Excel");
+          }}
+          className="bg-[#2D8659] hover:bg-[#236B47]"
+        >
+          <FileSpreadsheet className="h-4 w-4 mr-2" />
+          Export Excel
+        </Button>
       </div>
 
       {/* Filters */}
