@@ -86,7 +86,7 @@
 - [ ] Screen 15: Financial Overview (revenue, payouts in FCFA)
 - [x] Screen 17: Commission Settings (platform fee, rider split)
 - [ ] Screen 26: Revenue Analytics (revenue breakdown, growth)
-- [ ] Screen 29: Payment Transactions (MTN/Orange Money transactions)
+- [x] Screen 29: Payment Transactions (MTN/Orange Money transactions)
 - [ ] Screen 67: Payout Management (process payouts in FCFA)
 - [ ] Screen 72: Mobile Money Analytics (27.4M MTN, 15.1M Orange FCFA)
 
@@ -163,7 +163,7 @@
 - [x] Screen 15: Financial Overview (revenue, payouts in FCFA)
 - [x] Screen 17: Commission Settings (platform fee, rider split)
 - [ ] Screen 26: Revenue Analytics (revenue breakdown, growth)
-- [ ] Screen 29: Payment Transactions (MTN/Orange Money transactions)
+- [x] Screen 29: Payment Transactions (MTN/Orange Money transactions)
 - [ ] Screen 67: Payout Management (process payouts in FCFA)
 - [ ] Screen 72: Mobile Money Analytics (27.4M MTN, 15.1M Orange FCFA)
 - [ ] Screen 23: Customer Support (tickets, chat, resolution)

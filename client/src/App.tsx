@@ -17,6 +17,7 @@ import Sellers from "./pages/Sellers";
 import SellerDetail from "./pages/SellerDetail";
 import FinancialOverview from "./pages/FinancialOverview";
 import CommissionSettings from "./pages/CommissionSettings";
+import PaymentTransactions from "./pages/PaymentTransactions";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/sellers/:id" component={() => <DashboardLayout><SellerDetail /></DashboardLayout>} />
       <Route path="/financial" component={() => <DashboardLayout><FinancialOverview /></DashboardLayout>} />
       <Route path="/commission-settings" component={() => <DashboardLayout><CommissionSettings /></DashboardLayout>} />
+      <Route path="/payment-transactions" component={() => <DashboardLayout><PaymentTransactions /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
