@@ -9,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Plus, Calendar, Clock, Mail, Trash2, Edit, Play, Pause } from "lucide-react";
+import { Plus, Calendar, Clock, Mail, Trash2, Edit, Play, Pause, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ScheduledReports() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingReport, setEditingReport] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -74,6 +76,21 @@ export default function ScheduledReports() {
       toast.error(error.message || "Failed to delete scheduled report");
     },
   });
+
+  const previewMutation = trpc.scheduledReports.preview.useQuery(
+    { id: previewData?.id || 0 },
+    {
+      enabled: !!previewData?.id,
+      onSuccess: (data) => {
+        setPreviewData({ ...previewData, ...data });
+        setShowPreviewDialog(true);
+      },
+      onError: (error: any) => {
+        toast.error(error.message || "Failed to generate preview");
+        setPreviewData(null);
+      },
+    }
+  );
 
   const resetForm = () => {
     setName("");
@@ -385,6 +402,14 @@ export default function ScheduledReports() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => setPreviewData({ id: report.id })}
+                      title="Preview Report"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleToggleActive(report.id, report.isActive)}
                       title={report.isActive ? "Pause" : "Resume"}
                     >
@@ -456,6 +481,60 @@ export default function ScheduledReports() {
           ))}
         </div>
       )}
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Email Preview</DialogTitle>
+            <DialogDescription>
+              Preview of the email that will be sent to recipients
+            </DialogDescription>
+          </DialogHeader>
+          {previewMutation.isLoading ? (
+            <div className="py-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-4 text-muted-foreground">Generating preview...</p>
+            </div>
+          ) : previewData && previewMutation.data ? (
+            <div className="space-y-4">
+              <div className="grid gap-2 p-4 bg-muted rounded-lg">
+                <div>
+                  <span className="text-sm font-medium">Subject: </span>
+                  <span className="text-sm">{previewMutation.data.subject}</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium">To: </span>
+                  <span className="text-sm">{previewMutation.data.recipients}</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium">Period: </span>
+                  <span className="text-sm">{previewMutation.data.periodType}</span>
+                </div>
+              </div>
+              <div className="border rounded-lg overflow-hidden">
+                <iframe
+                  srcDoc={previewMutation.data.html}
+                  className="w-full"
+                  style={{ height: '600px' }}
+                  title="Email Preview"
+                />
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPreviewDialog(false);
+                setPreviewData(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

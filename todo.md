@@ -426,3 +426,19 @@
 - [x] Add "Last Sent" and "Next Send" timestamps to subscription records
 - [x] Test all CRUD operations and scheduled sending (27/27 tests passed)
 
+
+
+
+## Preview Report Feature for Scheduled Reports
+- [x] Implement backend procedure to generate preview email content
+- [x] Accept scheduled report ID as input parameter
+- [x] Generate comparison data based on report's period type
+- [x] Create email HTML using same template as actual send
+- [x] Return preview HTML without sending email
+- [x] Add "Preview" button to each scheduled report card
+- [x] Create preview modal dialog to display email content
+- [x] Show email subject, recipients, and HTML content in modal
+- [x] Add "Close" button to preview modal
+- [x] Test preview generation for all period types (32/32 tests passed)
+- [x] Test preview modal UI and interactions
+

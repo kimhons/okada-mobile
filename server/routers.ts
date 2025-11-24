@@ -3271,6 +3271,266 @@ export const appRouter = router({
 
         return { success: true };
       }),
+
+    // Preview scheduled report email
+    preview: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const report = await db.getScheduledReportById(input.id);
+        
+        if (!report) {
+          throw new Error("Scheduled report not found");
+        }
+
+        // Generate comparison data using the same logic as emailPeriodComparisonReport
+        const getPeriodDates = (periodType: string) => {
+          const now = new Date();
+          const currentStart = new Date(now);
+          const currentEnd = new Date(now);
+          const previousStart = new Date(now);
+          const previousEnd = new Date(now);
+
+          if (periodType === "week") {
+            const dayOfWeek = currentEnd.getDay();
+            currentStart.setDate(currentEnd.getDate() - dayOfWeek);
+            currentStart.setHours(0, 0, 0, 0);
+            currentEnd.setHours(23, 59, 59, 999);
+            previousStart.setDate(currentStart.getDate() - 7);
+            previousEnd.setDate(currentStart.getDate() - 1);
+            previousEnd.setHours(23, 59, 59, 999);
+          } else if (periodType === "month") {
+            currentStart.setDate(1);
+            currentStart.setHours(0, 0, 0, 0);
+            currentEnd.setMonth(currentEnd.getMonth() + 1, 0);
+            currentEnd.setHours(23, 59, 59, 999);
+            previousStart.setMonth(currentStart.getMonth() - 1, 1);
+            previousStart.setHours(0, 0, 0, 0);
+            previousEnd.setDate(0);
+            previousEnd.setHours(23, 59, 59, 999);
+          } else if (periodType === "quarter") {
+            const currentQuarter = Math.floor(currentEnd.getMonth() / 3);
+            currentStart.setMonth(currentQuarter * 3, 1);
+            currentStart.setHours(0, 0, 0, 0);
+            currentEnd.setMonth(currentQuarter * 3 + 3, 0);
+            currentEnd.setHours(23, 59, 59, 999);
+            previousStart.setMonth(currentStart.getMonth() - 3, 1);
+            previousStart.setHours(0, 0, 0, 0);
+            previousEnd.setMonth(currentStart.getMonth(), 0);
+            previousEnd.setHours(23, 59, 59, 999);
+          } else if (periodType === "year") {
+            currentStart.setMonth(0, 1);
+            currentStart.setHours(0, 0, 0, 0);
+            currentEnd.setMonth(11, 31);
+            currentEnd.setHours(23, 59, 59, 999);
+            previousStart.setFullYear(currentStart.getFullYear() - 1, 0, 1);
+            previousStart.setHours(0, 0, 0, 0);
+            previousEnd.setFullYear(currentStart.getFullYear() - 1, 11, 31);
+            previousEnd.setHours(23, 59, 59, 999);
+          }
+
+          return { currentStart, currentEnd, previousStart, previousEnd };
+        };
+
+        const { currentStart, currentEnd, previousStart, previousEnd } = getPeriodDates(report.periodType);
+
+        const currentTransactions = await db.getTransactionsByDateRange(currentStart, currentEnd);
+        const previousTransactions = await db.getTransactionsByDateRange(previousStart, previousEnd);
+
+        const calculateMetrics = (transactions: any[]) => {
+          const completed = transactions.filter(t => t.status === "completed");
+          const totalRevenue = completed.reduce((sum, t) => sum + t.amount, 0);
+          const successRate = transactions.length > 0
+            ? (completed.length / transactions.length) * 100
+            : 0;
+          const avgAmount = completed.length > 0 ? totalRevenue / completed.length : 0;
+
+          const byType = transactions.reduce((acc: any, t) => {
+            if (!acc[t.type]) acc[t.type] = { count: 0, revenue: 0 };
+            acc[t.type].count++;
+            if (t.status === "completed") acc[t.type].revenue += t.amount;
+            return acc;
+          }, {});
+
+          const byStatus = transactions.reduce((acc: any, t) => {
+            if (!acc[t.status]) acc[t.status] = 0;
+            acc[t.status]++;
+            return acc;
+          }, {});
+
+          return {
+            totalTransactions: transactions.length,
+            totalRevenue,
+            successRate,
+            avgAmount,
+            byType,
+            byStatus,
+          };
+        };
+
+        const current = calculateMetrics(currentTransactions);
+        const previous = calculateMetrics(previousTransactions);
+
+        const calculateChange = (current: number, previous: number) => {
+          if (previous === 0) return current > 0 ? 100 : 0;
+          return ((current - previous) / previous) * 100;
+        };
+
+        const getPeriodLabel = (periodType: string) => {
+          const labels: Record<string, string> = {
+            week: "Week over Week",
+            month: "Month over Month",
+            quarter: "Quarter over Quarter",
+            year: "Year over Year",
+          };
+          return labels[periodType] || periodType;
+        };
+
+        // Generate email HTML
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <div style="max-width: 900px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+      <h1 style="margin: 0; color: white; font-size: 28px;">OKADA Admin Dashboard</h1>
+      <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Transaction Analytics Report</p>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 30px;">
+      <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151;">Hello,</p>
+      
+      ${report.customMessage ? `
+      <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+        <p style="margin: 0; color: #065f46; font-size: 14px;">${report.customMessage}</p>
+      </div>
+      ` : ''}
+
+      <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 20px;">${getPeriodLabel(report.periodType)} Comparison</h2>
+
+      <!-- Metrics Cards -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px;">
+        <!-- Total Transactions -->
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; background-color: #fafafa;">
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Total Transactions</div>
+          <div style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">${current.totalTransactions.toLocaleString()}</div>
+          <div style="font-size: 13px; color: #6b7280;">
+            Previous: ${previous.totalTransactions.toLocaleString()}
+            <span style="color: ${calculateChange(current.totalTransactions, previous.totalTransactions) >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600; margin-left: 8px;">
+              ${calculateChange(current.totalTransactions, previous.totalTransactions) >= 0 ? '↑' : '↓'} ${Math.abs(calculateChange(current.totalTransactions, previous.totalTransactions)).toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        <!-- Success Rate -->
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; background-color: #fafafa;">
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Success Rate</div>
+          <div style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">${current.successRate.toFixed(1)}%</div>
+          <div style="font-size: 13px; color: #6b7280;">
+            Previous: ${previous.successRate.toFixed(1)}%
+            <span style="color: ${(current.successRate - previous.successRate) >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600; margin-left: 8px;">
+              ${(current.successRate - previous.successRate) >= 0 ? '↑' : '↓'} ${Math.abs(current.successRate - previous.successRate).toFixed(1)}pp
+            </span>
+          </div>
+        </div>
+
+        <!-- Total Revenue -->
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; background-color: #fafafa;">
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Total Revenue</div>
+          <div style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">${(current.totalRevenue / 100).toLocaleString()} FCFA</div>
+          <div style="font-size: 13px; color: #6b7280;">
+            Previous: ${(previous.totalRevenue / 100).toLocaleString()} FCFA
+            <span style="color: ${calculateChange(current.totalRevenue, previous.totalRevenue) >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600; margin-left: 8px;">
+              ${calculateChange(current.totalRevenue, previous.totalRevenue) >= 0 ? '↑' : '↓'} ${Math.abs(calculateChange(current.totalRevenue, previous.totalRevenue)).toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        <!-- Average Amount -->
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; background-color: #fafafa;">
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Average Amount</div>
+          <div style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">${(current.avgAmount / 100).toLocaleString()} FCFA</div>
+          <div style="font-size: 13px; color: #6b7280;">
+            Previous: ${(previous.avgAmount / 100).toLocaleString()} FCFA
+            <span style="color: ${calculateChange(current.avgAmount, previous.avgAmount) >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600; margin-left: 8px;">
+              ${calculateChange(current.avgAmount, previous.avgAmount) >= 0 ? '↑' : '↓'} ${Math.abs(calculateChange(current.avgAmount, previous.avgAmount)).toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Table -->
+      <h3 style="margin: 30px 0 15px 0; color: #1f2937; font-size: 18px;">Detailed Comparison</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <thead>
+          <tr style="background-color: #f9fafb;">
+            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 13px; font-weight: 600;">Metric</th>
+            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 13px; font-weight: 600;">Current</th>
+            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 13px; font-weight: 600;">Previous</th>
+            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 13px; font-weight: 600;">Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #374151; font-size: 14px;">Total Transactions</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; text-align: right; font-weight: 600;">${current.totalTransactions.toLocaleString()}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; text-align: right;">${previous.totalTransactions.toLocaleString()}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; text-align: right; font-weight: 600; color: ${calculateChange(current.totalTransactions, previous.totalTransactions) >= 0 ? '#10b981' : '#ef4444'};">${calculateChange(current.totalTransactions, previous.totalTransactions) >= 0 ? '+' : ''}${calculateChange(current.totalTransactions, previous.totalTransactions).toFixed(1)}%</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #374151; font-size: 14px;">Success Rate</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; text-align: right; font-weight: 600;">${current.successRate.toFixed(1)}%</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; text-align: right;">${previous.successRate.toFixed(1)}%</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; text-align: right; font-weight: 600; color: ${(current.successRate - previous.successRate) >= 0 ? '#10b981' : '#ef4444'};">${(current.successRate - previous.successRate) >= 0 ? '+' : ''}${(current.successRate - previous.successRate).toFixed(1)}pp</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #374151; font-size: 14px;">Total Revenue</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-size: 14px; text-align: right; font-weight: 600;">${(current.totalRevenue / 100).toLocaleString()} FCFA</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; text-align: right;">${(previous.totalRevenue / 100).toLocaleString()} FCFA</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; text-align: right; font-weight: 600; color: ${calculateChange(current.totalRevenue, previous.totalRevenue) >= 0 ? '#10b981' : '#ef4444'};">${calculateChange(current.totalRevenue, previous.totalRevenue) >= 0 ? '+' : ''}${calculateChange(current.totalRevenue, previous.totalRevenue).toFixed(1)}%</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; color: #374151; font-size: 14px;">Average Amount</td>
+            <td style="padding: 12px; color: #1f2937; font-size: 14px; text-align: right; font-weight: 600;">${(current.avgAmount / 100).toLocaleString()} FCFA</td>
+            <td style="padding: 12px; color: #6b7280; font-size: 14px; text-align: right;">${(previous.avgAmount / 100).toLocaleString()} FCFA</td>
+            <td style="padding: 12px; font-size: 14px; text-align: right; font-weight: 600; color: ${calculateChange(current.avgAmount, previous.avgAmount) >= 0 ? '#10b981' : '#ef4444'};">${calculateChange(current.avgAmount, previous.avgAmount) >= 0 ? '+' : ''}${calculateChange(current.avgAmount, previous.avgAmount).toFixed(1)}%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Footer -->
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px;">
+        <p style="margin: 0 0 10px 0;">This is an automated report from OKADA Admin Dashboard.</p>
+        <p style="margin: 0; color: #9ca3af;">Report generated on ${new Date().toLocaleString()} | Report ID: ${report.id}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+        `.trim();
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "preview_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: input.id.toString(),
+          details: `Previewed scheduled report: ${report.name}`,
+        });
+
+        return {
+          reportName: report.name,
+          periodType: report.periodType,
+          recipients: report.recipients,
+          subject: `Transaction Analytics Report - ${getPeriodLabel(report.periodType)}`,
+          html: emailHtml,
+        };
+      }),
   }),
 });
 
