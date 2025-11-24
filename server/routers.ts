@@ -2008,7 +2008,90 @@ export const appRouter = router({
         return transaction;
       }),
     
-    updateTransaction: protectedProcedure
+    exportTransactionsCSV: protectedProcedure
+      .input(z.object({
+        type: z.string().optional(),
+        status: z.string().optional(),
+        search: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        minAmount: z.number().optional(),
+        maxAmount: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const transactions = await db.getAllTransactions(input);
+        
+        // Generate CSV content
+        const headers = ['Transaction ID', 'Type', 'Amount (FCFA)', 'Status', 'Description', 'User ID', 'Order ID', 'Payout ID', 'Created At'];
+        const rows = transactions.map(t => [
+          t.transactionId,
+          t.type,
+          (t.amount / 100).toFixed(2),
+          t.status,
+          t.description || '',
+          t.userId || '',
+          t.orderId || '',
+          t.payoutId || '',
+          new Date(t.createdAt).toISOString()
+        ]);
+        
+        const csvContent = [
+          headers.join(','),
+          ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+        
+        await db.createActivityLog({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || 'Unknown',
+          action: 'export',
+          entityType: 'transaction',
+          entityId: 0, // 0 for bulk exports
+          details: `Exported ${transactions.length} transactions to CSV`,
+        });
+        
+        return { content: csvContent, count: transactions.length };
+      }),
+
+    exportTransactionsExcel: protectedProcedure
+      .input(z.object({
+        type: z.string().optional(),
+        status: z.string().optional(),
+        search: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        minAmount: z.number().optional(),
+        maxAmount: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const transactions = await db.getAllTransactions(input);
+        
+        // For Excel, we'll return the data and let the frontend handle the Excel generation
+        // using a library like xlsx
+        const data = transactions.map(t => ({
+          'Transaction ID': t.transactionId,
+          'Type': t.type,
+          'Amount (FCFA)': (t.amount / 100).toFixed(2),
+          'Status': t.status,
+          'Description': t.description || '',
+          'User ID': t.userId || '',
+          'Order ID': t.orderId || '',
+          'Payout ID': t.payoutId || '',
+          'Created At': new Date(t.createdAt).toISOString()
+        }));
+        
+        await db.createActivityLog({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || 'Unknown',
+          action: 'export',
+          entityType: 'transaction',
+          entityId: 0, // 0 for bulk exports
+          details: `Exported ${transactions.length} transactions to Excel`,
+        });
+        
+        return { data, count: transactions.length };
+      }),
+
+    deleteTransaction: protectedProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["pending", "completed", "failed", "cancelled"]).optional(),

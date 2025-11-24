@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Receipt, DollarSign, TrendingUp, CheckCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Receipt, DollarSign, TrendingUp, CheckCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, X, Download, FileSpreadsheet } from "lucide-react";
+import { toast } from "sonner";
 
 export default function TransactionHistory() {
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -26,6 +27,76 @@ export default function TransactionHistory() {
   const [maxAmount, setMaxAmount] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "amount" | "type" | "status">("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const exportCSV = trpc.financial.exportTransactionsCSV.useMutation({
+    onSuccess: (data) => {
+      // Create a blob and download
+      const blob = new Blob([data.content], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success(`Exported ${data.count} transactions to CSV`);
+    },
+    onError: () => {
+      toast.error("Failed to export transactions");
+    },
+  });
+
+  const exportExcel = trpc.financial.exportTransactionsExcel.useMutation({
+    onSuccess: (data) => {
+      // For Excel, we'll use the same CSV format for now
+      // In a real app, you'd use a library like xlsx to generate proper Excel files
+      const headers = Object.keys(data.data[0] || {});
+      const rows = data.data.map(row => headers.map(h => row[h as keyof typeof row]));
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transactions_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success(`Exported ${data.count} transactions to Excel`);
+    },
+    onError: () => {
+      toast.error("Failed to export transactions");
+    },
+  });
+
+  const handleExportCSV = () => {
+    exportCSV.mutate({
+      type: typeFilter || undefined,
+      status: statusFilter || undefined,
+      search: searchQuery || undefined,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      minAmount: minAmount ? parseFloat(minAmount) * 100 : undefined,
+      maxAmount: maxAmount ? parseFloat(maxAmount) * 100 : undefined,
+    });
+  };
+
+  const handleExportExcel = () => {
+    exportExcel.mutate({
+      type: typeFilter || undefined,
+      status: statusFilter || undefined,
+      search: searchQuery || undefined,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      minAmount: minAmount ? parseFloat(minAmount) * 100 : undefined,
+      maxAmount: maxAmount ? parseFloat(maxAmount) * 100 : undefined,
+    });
+  };
 
   const { data: transactions = [], isLoading, refetch } = trpc.financial.getAllTransactions.useQuery({
     type: typeFilter || undefined,
@@ -179,12 +250,32 @@ export default function TransactionHistory() {
               <CardTitle>Filters</CardTitle>
               <CardDescription>Filter and sort transactions</CardDescription>
             </div>
-            {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4 mr-2" />
-                Clear Filters
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExportCSV}
+                disabled={exportCSV.isPending || transactions.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
               </Button>
-            )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExportExcel}
+                disabled={exportExcel.isPending || transactions.length === 0}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export Excel
+              </Button>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <X className="h-4 w-4 mr-2" />
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

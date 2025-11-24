@@ -283,3 +283,14 @@
 - [x] Write comprehensive tests for sorting functionality (100% pass rate - 7/7 tests passed)
 - [x] All transaction filtering and sorting tests passed (22/22 tests - 100% pass rate)
 
+
+
+## Transaction Export Feature
+- [x] Add backend procedure for CSV export
+- [x] Add backend procedure for Excel export
+- [x] Add export buttons to transaction history UI
+- [x] Support exporting filtered results
+- [x] Include all transaction fields in export
+- [x] Add proper file naming with timestamp
+- [x] Write comprehensive tests for export functionality (100% pass rate - 13/13 tests passed)
+
