@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1275,5 +1275,181 @@ export async function getRecentBackups(limit: number = 10) {
   if (!db) throw new Error("Database not available");
   
   return await db.select().from(backupLogs).orderBy(desc(backupLogs.createdAt)).limit(limit);
+}
+
+
+
+// ============================================================================
+// Support & Help Functions
+// ============================================================================
+
+// FAQ Management
+export async function getAllFaqs(filters?: {
+  category?: string;
+  isPublished?: boolean;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(faqs);
+
+  const conditions = [];
+  if (filters?.category) {
+    conditions.push(eq(faqs.category, filters.category));
+  }
+  if (filters?.isPublished !== undefined) {
+    conditions.push(eq(faqs.isPublished, filters.isPublished));
+  }
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(faqs.question, `%${filters.search}%`),
+        like(faqs.answer, `%${filters.search}%`)
+      )
+    );
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  return await (query as any).orderBy(faqs.order, desc(faqs.createdAt));
+}
+
+export async function getFaqById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(faqs).where(eq(faqs.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createFaq(data: InsertFaq) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(faqs).values(data);
+}
+
+export async function updateFaq(id: number, data: Partial<InsertFaq>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(faqs).set(data).where(eq(faqs.id, id));
+}
+
+export async function deleteFaq(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(faqs).where(eq(faqs.id, id));
+}
+
+export async function incrementFaqViews(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(faqs).set({ views: sql`${faqs.views} + 1` }).where(eq(faqs.id, id));
+}
+
+export async function voteFaqHelpful(id: number, helpful: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (helpful) {
+    return await db.update(faqs).set({ helpful: sql`${faqs.helpful} + 1` }).where(eq(faqs.id, id));
+  } else {
+    return await db.update(faqs).set({ notHelpful: sql`${faqs.notHelpful} + 1` }).where(eq(faqs.id, id));
+  }
+}
+
+// Help Documentation Management
+export async function getAllHelpDocs(filters?: {
+  category?: string;
+  isPublished?: boolean;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(helpDocs);
+
+  const conditions = [];
+  if (filters?.category) {
+    conditions.push(eq(helpDocs.category, filters.category));
+  }
+  if (filters?.isPublished !== undefined) {
+    conditions.push(eq(helpDocs.isPublished, filters.isPublished));
+  }
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(helpDocs.title, `%${filters.search}%`),
+        like(helpDocs.content, `%${filters.search}%`)
+      )
+    );
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  return await (query as any).orderBy(desc(helpDocs.createdAt));
+}
+
+export async function getHelpDocById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(helpDocs).where(eq(helpDocs.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getHelpDocBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(helpDocs).where(eq(helpDocs.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function createHelpDoc(data: InsertHelpDoc) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(helpDocs).values(data);
+}
+
+export async function updateHelpDoc(id: number, data: Partial<InsertHelpDoc>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(helpDocs).set(data).where(eq(helpDocs.id, id));
+}
+
+export async function deleteHelpDoc(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(helpDocs).where(eq(helpDocs.id, id));
+}
+
+export async function incrementHelpDocViews(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(helpDocs).set({ views: sql`${helpDocs.views} + 1` }).where(eq(helpDocs.id, id));
+}
+
+export async function voteHelpDocHelpful(id: number, helpful: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (helpful) {
+    return await db.update(helpDocs).set({ helpful: sql`${helpDocs.helpful} + 1` }).where(eq(helpDocs.id, id));
+  } else {
+    return await db.update(helpDocs).set({ notHelpful: sql`${helpDocs.notHelpful} + 1` }).where(eq(helpDocs.id, id));
+  }
 }
 

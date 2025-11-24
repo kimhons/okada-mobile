@@ -52,6 +52,9 @@ const menuItems = [
   { icon: Shield, label: "Audit Trail", path: "/audit-trail" },
   { icon: Database, label: "Backup & Restore", path: "/backup-restore" },
   { icon: Key, label: "API Management", path: "/api-management" },
+  { icon: HelpCircle, label: "FAQ Management", path: "/faq-management" },
+  { icon: Ticket, label: "Support Tickets", path: "/support-tickets" },
+  { icon: BookOpen, label: "Help Documentation", path: "/help-documentation" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

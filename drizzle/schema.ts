@@ -466,3 +466,47 @@ export const backupLogs = mysqlTable("backupLogs", {
 export type BackupLog = typeof backupLogs.$inferSelect;
 export type InsertBackupLog = typeof backupLogs.$inferInsert;
 
+
+/**
+ * FAQ table for frequently asked questions
+ */
+export const faqs = mysqlTable("faqs", {
+  id: int("id").autoincrement().primaryKey(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  category: varchar("category", { length: 100 }),
+  order: int("order").default(0).notNull(), // Display order
+  isPublished: boolean("isPublished").default(true).notNull(),
+  views: int("views").default(0).notNull(),
+  helpful: int("helpful").default(0).notNull(), // Helpful votes
+  notHelpful: int("notHelpful").default(0).notNull(), // Not helpful votes
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Faq = typeof faqs.$inferSelect;
+export type InsertFaq = typeof faqs.$inferInsert;
+
+/**
+ * Help Documentation table for knowledge base articles
+ */
+export const helpDocs = mysqlTable("helpDocs", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 100 }),
+  tags: text("tags"), // Comma-separated tags
+  isPublished: boolean("isPublished").default(true).notNull(),
+  views: int("views").default(0).notNull(),
+  helpful: int("helpful").default(0).notNull(),
+  notHelpful: int("notHelpful").default(0).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type HelpDoc = typeof helpDocs.$inferSelect;
+export type InsertHelpDoc = typeof helpDocs.$inferInsert;
+

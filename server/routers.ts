@@ -916,6 +916,181 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // Support & Help
+  support: router({
+    // FAQ Management
+    getAllFaqs: protectedProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        isPublished: z.boolean().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllFaqs(input || {});
+      }),
+    
+    getFaqById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getFaqById(input.id);
+      }),
+    
+    createFaq: protectedProcedure
+      .input(z.object({
+        question: z.string(),
+        answer: z.string(),
+        category: z.string().optional(),
+        order: z.number().optional(),
+        isPublished: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createFaq({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_faq",
+          entityType: "faq",
+          details: JSON.stringify({ question: input.question }),
+        });
+        
+        return { success: true };
+      }),
+    
+    updateFaq: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        question: z.string().optional(),
+        answer: z.string().optional(),
+        category: z.string().optional(),
+        order: z.number().optional(),
+        isPublished: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        await db.updateFaq(id, rest);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_faq",
+          entityType: "faq",
+          entityId: id,
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteFaq: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteFaq(input.id);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_faq",
+          entityType: "faq",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Help Documentation Management
+    getAllHelpDocs: protectedProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        isPublished: z.boolean().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllHelpDocs(input || {});
+      }),
+    
+    getHelpDocById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getHelpDocById(input.id);
+      }),
+    
+    createHelpDoc: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        slug: z.string(),
+        content: z.string(),
+        category: z.string().optional(),
+        tags: z.string().optional(),
+        isPublished: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createHelpDoc({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_help_doc",
+          entityType: "help_doc",
+          details: JSON.stringify({ title: input.title }),
+        });
+        
+        return { success: true };
+      }),
+    
+    updateHelpDoc: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        slug: z.string().optional(),
+        content: z.string().optional(),
+        category: z.string().optional(),
+        tags: z.string().optional(),
+        isPublished: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        await db.updateHelpDoc(id, rest);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_help_doc",
+          entityType: "help_doc",
+          entityId: id,
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteHelpDoc: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteHelpDoc(input.id);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_help_doc",
+          entityType: "help_doc",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

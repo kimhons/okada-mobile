@@ -32,6 +32,9 @@ import AdminUsers from "./pages/admin-users";
 import AuditTrail from "./pages/audit-trail";
 import BackupRestore from "./pages/backup-restore";
 import APIManagement from "./pages/api-management";
+import FAQManagement from "./pages/faq-management";
+import SupportTickets from "./pages/support-tickets";
+import HelpDocumentation from "./pages/help-documentation";
 
 function Router() {
   return (
@@ -63,6 +66,9 @@ function Router() {
       <Route path="/audit-trail" component={() => <DashboardLayout><AuditTrail /></DashboardLayout>} />
       <Route path="/backup-restore" component={() => <DashboardLayout><BackupRestore /></DashboardLayout>} />
       <Route path="/api-management" component={() => <DashboardLayout><APIManagement /></DashboardLayout>} />
+      <Route path="/faq-management" component={() => <DashboardLayout><FAQManagement /></DashboardLayout>} />
+      <Route path="/support-tickets" component={() => <DashboardLayout><SupportTickets /></DashboardLayout>} />
+      <Route path="/help-documentation" component={() => <DashboardLayout><HelpDocumentation /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
