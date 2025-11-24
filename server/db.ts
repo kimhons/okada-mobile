@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1164,5 +1164,116 @@ export async function recordCampaignUsage(data: InsertCampaignUsage) {
   await db.update(campaigns)
     .set({ usageCount: sql`${campaigns.usageCount} + 1` })
     .where(eq(campaigns.id, data.campaignId));
+}
+
+
+
+
+// ============================================================================
+// Settings & Configuration Functions
+// ============================================================================
+
+// Admin Users Management
+export async function getAllAdminUsers() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Return all users for admin management (not just admins)
+  return await db.select().from(users);
+}
+
+export async function promoteUserToAdmin(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(users).set({ role: "admin" }).where(eq(users.id, userId));
+}
+
+export async function demoteAdminToUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(users).set({ role: "user" }).where(eq(users.id, userId));
+}
+
+// API Keys Management
+export async function createApiKey(data: InsertApiKey) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(apiKeys).values(data);
+}
+
+export async function getAllApiKeys() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(apiKeys).orderBy(desc(apiKeys.createdAt));
+}
+
+export async function getApiKeyById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(apiKeys).where(eq(apiKeys.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateApiKey(id: number, data: Partial<InsertApiKey>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(apiKeys).set(data).where(eq(apiKeys.id, id));
+}
+
+export async function deleteApiKey(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.delete(apiKeys).where(eq(apiKeys.id, id));
+}
+
+export async function updateApiKeyLastUsed(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, id));
+}
+
+// Backup & Restore
+export async function createBackupLog(data: InsertBackupLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(backupLogs).values(data);
+}
+
+export async function getAllBackupLogs() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(backupLogs).orderBy(desc(backupLogs.createdAt));
+}
+
+export async function getBackupLogById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(backupLogs).where(eq(backupLogs.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateBackupLog(id: number, data: Partial<InsertBackupLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(backupLogs).set(data).where(eq(backupLogs.id, id));
+}
+
+export async function getRecentBackups(limit: number = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(backupLogs).orderBy(desc(backupLogs.createdAt)).limit(limit);
 }
 

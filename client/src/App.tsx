@@ -28,6 +28,10 @@ import NotificationsCenter from "./pages/NotificationsCenter";
 import NotificationHistory from "./pages/NotificationHistory";
 import ActivityLog from "./pages/ActivityLog";
 import PromotionalCampaigns from "./pages/PromotionalCampaigns";
+import AdminUsers from "./pages/admin-users";
+import AuditTrail from "./pages/audit-trail";
+import BackupRestore from "./pages/backup-restore";
+import APIManagement from "./pages/api-management";
 
 function Router() {
   return (
@@ -55,6 +59,10 @@ function Router() {
       <Route path="/notification-history" component={() => <DashboardLayout><NotificationHistory /></DashboardLayout>} />
       <Route path="/activity-log" component={() => <DashboardLayout><ActivityLog /></DashboardLayout>} />
       <Route path="/campaigns" component={() => <DashboardLayout><PromotionalCampaigns /></DashboardLayout>} />
+      <Route path="/admin-users" component={() => <DashboardLayout><AdminUsers /></DashboardLayout>} />
+      <Route path="/audit-trail" component={() => <DashboardLayout><AuditTrail /></DashboardLayout>} />
+      <Route path="/backup-restore" component={() => <DashboardLayout><BackupRestore /></DashboardLayout>} />
+      <Route path="/api-management" component={() => <DashboardLayout><APIManagement /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

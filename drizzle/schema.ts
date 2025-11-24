@@ -425,3 +425,44 @@ export const campaignUsage = mysqlTable("campaign_usage", {
 export type CampaignUsage = typeof campaignUsage.$inferSelect;
 export type InsertCampaignUsage = typeof campaignUsage.$inferInsert;
 
+
+
+
+/**
+ * API Keys table for third-party integrations
+ */
+export const apiKeys = mysqlTable("apiKeys", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  key: varchar("key", { length: 255 }).notNull().unique(),
+  secret: text("secret"),
+  permissions: text("permissions"), // JSON array of permissions
+  isActive: boolean("isActive").default(true).notNull(),
+  lastUsedAt: timestamp("lastUsedAt"),
+  expiresAt: timestamp("expiresAt"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = typeof apiKeys.$inferInsert;
+
+/**
+ * Backup Logs table for database backup history
+ */
+export const backupLogs = mysqlTable("backupLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  size: int("size"), // File size in bytes
+  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),
+  type: mysqlEnum("type", ["manual", "automatic"]).default("manual").notNull(),
+  errorMessage: text("errorMessage"),
+  createdBy: int("createdBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type BackupLog = typeof backupLogs.$inferSelect;
+export type InsertBackupLog = typeof backupLogs.$inferInsert;
+

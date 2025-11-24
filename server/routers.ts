@@ -740,7 +740,183 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // Settings & Configuration
+  settings: router({
+    // Admin Users Management
+    getAllAdminUsers: protectedProcedure.query(async () => {
+      return await db.getAllAdminUsers();
+    }),
+    
+    promoteUserToAdmin: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.promoteUserToAdmin(input.userId);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "promote_user_to_admin",
+          entityType: "user",
+          entityId: input.userId,
+        });
+        
+        return { success: true };
+      }),
+    
+    demoteAdminToUser: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.demoteAdminToUser(input.userId);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "demote_admin_to_user",
+          entityType: "user",
+          entityId: input.userId,
+        });
+        
+        return { success: true };
+      }),
+    
+    // API Keys Management
+    getAllApiKeys: protectedProcedure.query(async () => {
+      return await db.getAllApiKeys();
+    }),
+    
+    createApiKey: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        key: z.string(),
+        secret: z.string().optional(),
+        permissions: z.string().optional(),
+        expiresAt: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const data: any = {
+          ...input,
+          createdBy: ctx.user.id,
+        };
+        
+        if (input.expiresAt) {
+          data.expiresAt = new Date(input.expiresAt);
+        }
+        
+        await db.createApiKey(data);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_api_key",
+          entityType: "api_key",
+          details: JSON.stringify({ name: input.name }),
+        });
+        
+        return { success: true };
+      }),
+    
+    updateApiKey: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        isActive: z.boolean().optional(),
+        permissions: z.string().optional(),
+        expiresAt: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, expiresAt, ...rest } = input;
+        const updateData: any = { ...rest };
+        
+        if (expiresAt) {
+          updateData.expiresAt = new Date(expiresAt);
+        }
+        
+        await db.updateApiKey(id, updateData);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_api_key",
+          entityType: "api_key",
+          entityId: id,
+          details: JSON.stringify(updateData),
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteApiKey: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteApiKey(input.id);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_api_key",
+          entityType: "api_key",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Backup & Restore
+    getAllBackupLogs: protectedProcedure.query(async () => {
+      return await db.getAllBackupLogs();
+    }),
+    
+    createBackup: protectedProcedure
+      .input(z.object({
+        filename: z.string(),
+        type: z.enum(["manual", "automatic"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createBackupLog({
+          filename: input.filename,
+          type: input.type,
+          status: "pending",
+          createdBy: ctx.user.id,
+        });
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_backup",
+          entityType: "backup",
+          details: JSON.stringify({ filename: input.filename, type: input.type }),
+        });
+        
+        return { success: true };
+      }),
+    
+    updateBackupLog: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "completed", "failed"]).optional(),
+        size: z.number().optional(),
+        errorMessage: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...rest } = input;
+        const updateData: any = { ...rest };
+        
+        if (input.status === "completed" || input.status === "failed") {
+          updateData.completedAt = new Date();
+        }
+        
+        await db.updateBackupLog(id, updateData);
+        return { success: true };
+      }),
+  }),
 });
 
-export type AppRouter = typeof appRouter;;
+export type AppRouter = typeof appRouter;
 

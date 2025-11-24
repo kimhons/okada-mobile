@@ -43,6 +43,13 @@
       "when": 1763942500900,
       "tag": "0005_cuddly_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1763943502728,
+      "tag": "0006_ambiguous_microbe",
+      "breakpoints": true
     }
   ]
 }
