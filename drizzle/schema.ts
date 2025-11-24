@@ -581,3 +581,67 @@ export const exportHistory = mysqlTable("exportHistory", {
 export type ExportHistory = typeof exportHistory.$inferSelect;
 export type InsertExportHistory = typeof exportHistory.$inferInsert;
 
+
+/**
+ * Email Templates table for managing email communications
+ */
+export const emailTemplates = mysqlTable("emailTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(), // HTML email body
+  category: varchar("category", { length: 100 }), // order, user, rider, system
+  variables: text("variables"), // JSON array of available template variables
+  isActive: boolean("isActive").default(true).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
+
+/**
+ * Notification Preferences table for user notification settings
+ */
+export const notificationPreferences = mysqlTable("notificationPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  emailNotifications: boolean("emailNotifications").default(true).notNull(),
+  pushNotifications: boolean("pushNotifications").default(true).notNull(),
+  smsNotifications: boolean("smsNotifications").default(false).notNull(),
+  orderUpdates: boolean("orderUpdates").default(true).notNull(),
+  promotions: boolean("promotions").default(true).notNull(),
+  newsletter: boolean("newsletter").default(false).notNull(),
+  riderUpdates: boolean("riderUpdates").default(true).notNull(),
+  paymentAlerts: boolean("paymentAlerts").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+/**
+ * Push Notifications Log table for tracking sent notifications
+ */
+export const pushNotificationsLog = mysqlTable("pushNotificationsLog", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: mysqlEnum("type", ["info", "success", "warning", "error"]).default("info").notNull(),
+  targetAudience: mysqlEnum("targetAudience", ["all", "users", "riders", "sellers", "specific"]).notNull(),
+  targetUserIds: text("targetUserIds"), // Comma-separated user IDs for specific targeting
+  sentCount: int("sentCount").default(0).notNull(),
+  deliveredCount: int("deliveredCount").default(0).notNull(),
+  clickedCount: int("clickedCount").default(0).notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "failed"]).default("pending").notNull(),
+  scheduledFor: timestamp("scheduledFor"),
+  sentBy: int("sentBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  sentAt: timestamp("sentAt"),
+});
+
+export type PushNotificationLog = typeof pushNotificationsLog.$inferSelect;
+export type InsertPushNotificationLog = typeof pushNotificationsLog.$inferInsert;
+

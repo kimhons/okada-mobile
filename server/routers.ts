@@ -1346,6 +1346,247 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // Notifications router for email templates, push notifications, and preferences
+  notifications: router({
+    // Email Templates
+    getAllEmailTemplates: protectedProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        isActive: z.boolean().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllEmailTemplates(input);
+      }),
+    
+    getEmailTemplateById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getEmailTemplateById(input.id);
+      }),
+    
+    createEmailTemplate: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        subject: z.string(),
+        body: z.string(),
+        category: z.string().optional(),
+        variables: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createEmailTemplate({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_email_template",
+          entityType: "email_template",
+          details: `Created email template: ${input.name}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    updateEmailTemplate: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        subject: z.string().optional(),
+        body: z.string().optional(),
+        category: z.string().optional(),
+        variables: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        await db.updateEmailTemplate(id, rest);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_email_template",
+          entityType: "email_template",
+          details: `Updated email template ID: ${id}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteEmailTemplate: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteEmailTemplate(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_email_template",
+          entityType: "email_template",
+          details: `Deleted email template ID: ${input.id}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Push Notifications
+    getAllPushNotifications: protectedProcedure
+      .input(z.object({
+        type: z.string().optional(),
+        targetAudience: z.string().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllPushNotifications(input);
+      }),
+    
+    getPushNotificationById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPushNotificationById(input.id);
+      }),
+    
+    createPushNotification: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        message: z.string(),
+        type: z.enum(["info", "success", "warning", "error"]).optional(),
+        targetAudience: z.enum(["all", "users", "riders", "sellers", "specific"]),
+        targetUserIds: z.string().optional(),
+        scheduledFor: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createPushNotification({
+          ...input,
+          sentBy: ctx.user.id,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_push_notification",
+          entityType: "push_notification",
+          details: `Created push notification: ${input.title}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    updatePushNotification: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "sent", "failed"]).optional(),
+        sentCount: z.number().optional(),
+        deliveredCount: z.number().optional(),
+        clickedCount: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...rest } = input;
+        await db.updatePushNotification(id, rest);
+        return { success: true };
+      }),
+    
+    deletePushNotification: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deletePushNotification(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_push_notification",
+          entityType: "push_notification",
+          details: `Deleted push notification ID: ${input.id}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Notification Preferences
+    getAllNotificationPreferences: protectedProcedure
+      .query(async () => {
+        return await db.getAllNotificationPreferences();
+      }),
+    
+    getNotificationPreferenceByUserId: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getNotificationPreferenceByUserId(input.userId);
+      }),
+    
+    createNotificationPreference: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        emailNotifications: z.boolean().optional(),
+        pushNotifications: z.boolean().optional(),
+        smsNotifications: z.boolean().optional(),
+        orderUpdates: z.boolean().optional(),
+        promotions: z.boolean().optional(),
+        newsletter: z.boolean().optional(),
+        riderUpdates: z.boolean().optional(),
+        paymentAlerts: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createNotificationPreference(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_notification_preference",
+          entityType: "notification_preference",
+          details: `Created notification preferences for user ID: ${input.userId}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    updateNotificationPreference: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        emailNotifications: z.boolean().optional(),
+        pushNotifications: z.boolean().optional(),
+        smsNotifications: z.boolean().optional(),
+        orderUpdates: z.boolean().optional(),
+        promotions: z.boolean().optional(),
+        newsletter: z.boolean().optional(),
+        riderUpdates: z.boolean().optional(),
+        paymentAlerts: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { userId, ...rest } = input;
+        await db.updateNotificationPreference(userId, rest);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_notification_preference",
+          entityType: "notification_preference",
+          details: `Updated notification preferences for user ID: ${userId}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteNotificationPreference: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteNotificationPreference(input.userId);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_notification_preference",
+          entityType: "notification_preference",
+          details: `Deleted notification preferences for user ID: ${input.userId}`,
+        });
+        
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

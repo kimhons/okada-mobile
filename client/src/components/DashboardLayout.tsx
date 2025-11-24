@@ -58,6 +58,9 @@ const menuItems = [
   { icon: FileText, label: "Report Builder", path: "/report-builder" },
   { icon: Calendar, label: "Scheduled Reports", path: "/scheduled-reports" },
   { icon: Download, label: "Data Export", path: "/data-export" },
+  { icon: Bell, label: "Push Notifications", path: "/push-notifications" },
+  { icon: Mail, label: "Email Templates", path: "/email-templates" },
+  { icon: Settings, label: "Notification Preferences", path: "/notification-preferences" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

@@ -38,6 +38,9 @@ import HelpDocumentation from "./pages/help-documentation";
 import ReportBuilder from "./pages/report-builder";
 import ScheduledReports from "./pages/scheduled-reports";
 import DataExport from "./pages/data-export";
+import PushNotifications from "./pages/push-notifications";
+import EmailTemplates from "./pages/email-templates";
+import NotificationPreferences from "./pages/notification-preferences";
 
 function Router() {
   return (
@@ -75,6 +78,9 @@ function Router() {
       <Route path="/report-builder" component={() => <DashboardLayout><ReportBuilder /></DashboardLayout>} />
       <Route path="/scheduled-reports" component={() => <DashboardLayout><ScheduledReports /></DashboardLayout>} />
       <Route path="/data-export" component={() => <DashboardLayout><DataExport /></DashboardLayout>} />
+      <Route path="/push-notifications" component={() => <DashboardLayout><PushNotifications /></DashboardLayout>} />
+      <Route path="/email-templates" component={() => <DashboardLayout><EmailTemplates /></DashboardLayout>} />
+      <Route path="/notification-preferences" component={() => <DashboardLayout><NotificationPreferences /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

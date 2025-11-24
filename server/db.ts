@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1659,5 +1659,203 @@ export async function deleteExportHistory(id: number) {
   if (!db) throw new Error("Database not available");
 
   return await db.delete(exportHistory).where(eq(exportHistory.id, id));
+}
+
+
+
+// ============================================================================
+// Email Templates Management
+// ============================================================================
+
+export async function getAllEmailTemplates(filters?: {
+  category?: string;
+  isActive?: boolean;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters?.category) {
+    conditions.push(eq(emailTemplates.category, filters.category));
+  }
+
+  if (filters?.isActive !== undefined) {
+    conditions.push(eq(emailTemplates.isActive, filters.isActive));
+  }
+
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(emailTemplates.name, `%${filters.search}%`),
+        like(emailTemplates.subject, `%${filters.search}%`)
+      )
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(emailTemplates)
+    .where(whereClause)
+    .orderBy(desc(emailTemplates.createdAt));
+}
+
+export async function getEmailTemplateById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(emailTemplates).where(eq(emailTemplates.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createEmailTemplate(data: InsertEmailTemplate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(emailTemplates).values(data);
+}
+
+export async function updateEmailTemplate(id: number, data: Partial<InsertEmailTemplate>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(emailTemplates).set(data).where(eq(emailTemplates.id, id));
+}
+
+export async function deleteEmailTemplate(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+}
+
+// ============================================================================
+// Notification Preferences Management
+// ============================================================================
+
+export async function getAllNotificationPreferences() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(notificationPreferences)
+    .orderBy(desc(notificationPreferences.createdAt));
+}
+
+export async function getNotificationPreferenceByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(notificationPreferences)
+    .where(eq(notificationPreferences.userId, userId))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function createNotificationPreference(data: InsertNotificationPreference) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(notificationPreferences).values(data);
+}
+
+export async function updateNotificationPreference(userId: number, data: Partial<InsertNotificationPreference>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .update(notificationPreferences)
+    .set(data)
+    .where(eq(notificationPreferences.userId, userId));
+}
+
+export async function deleteNotificationPreference(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .delete(notificationPreferences)
+    .where(eq(notificationPreferences.userId, userId));
+}
+
+// ============================================================================
+// Push Notifications Management
+// ============================================================================
+
+export async function getAllPushNotifications(filters?: {
+  type?: string;
+  targetAudience?: string;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters?.type) {
+    conditions.push(eq(pushNotificationsLog.type, filters.type as any));
+  }
+
+  if (filters?.targetAudience) {
+    conditions.push(eq(pushNotificationsLog.targetAudience, filters.targetAudience as any));
+  }
+
+  if (filters?.status) {
+    conditions.push(eq(pushNotificationsLog.status, filters.status as any));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(pushNotificationsLog)
+    .where(whereClause)
+    .orderBy(desc(pushNotificationsLog.createdAt));
+}
+
+export async function getPushNotificationById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(pushNotificationsLog)
+    .where(eq(pushNotificationsLog.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function createPushNotification(data: InsertPushNotificationLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(pushNotificationsLog).values(data);
+}
+
+export async function updatePushNotification(id: number, data: Partial<InsertPushNotificationLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .update(pushNotificationsLog)
+    .set(data)
+    .where(eq(pushNotificationsLog.id, id));
+}
+
+export async function deletePushNotification(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .delete(pushNotificationsLog)
+    .where(eq(pushNotificationsLog.id, id));
 }
 
