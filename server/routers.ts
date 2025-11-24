@@ -1091,6 +1091,261 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // Reports & Export
+  reports: router({
+    // Custom Reports
+    getAllReports: protectedProcedure
+      .input(z.object({
+        reportType: z.string().optional(),
+        isPublic: z.boolean().optional(),
+        createdBy: z.number().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllReports(input || {});
+      }),
+    
+    getReportById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getReportById(input.id);
+      }),
+    
+    createReport: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        reportType: z.string(),
+        filters: z.string().optional(),
+        columns: z.string().optional(),
+        groupBy: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
+        chartType: z.string().optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createReport({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_report",
+          entityType: "report",
+          details: `Created report: ${input.name}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    updateReport: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        reportType: z.string().optional(),
+        filters: z.string().optional(),
+        columns: z.string().optional(),
+        groupBy: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
+        chartType: z.string().optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        await db.updateReport(id, rest);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_report",
+          entityType: "report",
+          entityId: id,
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteReport: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteReport(input.id);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_report",
+          entityType: "report",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+
+    // Scheduled Reports
+    getAllScheduledReports: protectedProcedure
+      .input(z.object({
+        reportId: z.number().optional(),
+        frequency: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllScheduledReports(input || {});
+      }),
+    
+    getScheduledReportById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getScheduledReportById(input.id);
+      }),
+    
+    createScheduledReport: protectedProcedure
+      .input(z.object({
+        reportId: z.number(),
+        name: z.string(),
+        frequency: z.enum(["daily", "weekly", "monthly"]),
+        dayOfWeek: z.number().optional(),
+        dayOfMonth: z.number().optional(),
+        time: z.string(),
+        recipients: z.string(),
+        format: z.enum(["pdf", "csv", "excel"]),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createScheduledReport({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_scheduled_report",
+          entityType: "scheduled_report",
+          details: `Created scheduled report: ${input.name}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    updateScheduledReport: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        reportId: z.number().optional(),
+        name: z.string().optional(),
+        frequency: z.enum(["daily", "weekly", "monthly"]).optional(),
+        dayOfWeek: z.number().optional(),
+        dayOfMonth: z.number().optional(),
+        time: z.string().optional(),
+        recipients: z.string().optional(),
+        format: z.enum(["pdf", "csv", "excel"]).optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        await db.updateScheduledReport(id, rest);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: id,
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteScheduledReport: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteScheduledReport(input.id);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+
+    // Export History
+    getAllExportHistory: protectedProcedure
+      .input(z.object({
+        exportType: z.string().optional(),
+        format: z.string().optional(),
+        status: z.string().optional(),
+        createdBy: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllExportHistory(input || {});
+      }),
+    
+    getExportHistoryById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getExportHistoryById(input.id);
+      }),
+    
+    createExportHistory: protectedProcedure
+      .input(z.object({
+        filename: z.string(),
+        exportType: z.string(),
+        format: z.enum(["csv", "excel", "pdf"]),
+        filters: z.string().optional(),
+        recordCount: z.number().optional(),
+        fileSize: z.number().optional(),
+        status: z.enum(["pending", "completed", "failed"]).optional(),
+        downloadUrl: z.string().optional(),
+        errorMessage: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createExportHistory({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_export",
+          entityType: "export",
+          details: `Created export: ${input.filename}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    updateExportHistory: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "completed", "failed"]).optional(),
+        downloadUrl: z.string().optional(),
+        errorMessage: z.string().optional(),
+        recordCount: z.number().optional(),
+        fileSize: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...rest } = input;
+        await db.updateExportHistory(id, rest);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

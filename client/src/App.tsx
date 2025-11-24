@@ -35,6 +35,9 @@ import APIManagement from "./pages/api-management";
 import FAQManagement from "./pages/faq-management";
 import SupportTickets from "./pages/support-tickets";
 import HelpDocumentation from "./pages/help-documentation";
+import ReportBuilder from "./pages/report-builder";
+import ScheduledReports from "./pages/scheduled-reports";
+import DataExport from "./pages/data-export";
 
 function Router() {
   return (
@@ -69,6 +72,9 @@ function Router() {
       <Route path="/faq-management" component={() => <DashboardLayout><FAQManagement /></DashboardLayout>} />
       <Route path="/support-tickets" component={() => <DashboardLayout><SupportTickets /></DashboardLayout>} />
       <Route path="/help-documentation" component={() => <DashboardLayout><HelpDocumentation /></DashboardLayout>} />
+      <Route path="/report-builder" component={() => <DashboardLayout><ReportBuilder /></DashboardLayout>} />
+      <Route path="/scheduled-reports" component={() => <DashboardLayout><ScheduledReports /></DashboardLayout>} />
+      <Route path="/data-export" component={() => <DashboardLayout><DataExport /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

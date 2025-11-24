@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1451,5 +1451,213 @@ export async function voteHelpDocHelpful(id: number, helpful: boolean) {
   } else {
     return await db.update(helpDocs).set({ notHelpful: sql`${helpDocs.notHelpful} + 1` }).where(eq(helpDocs.id, id));
   }
+}
+
+
+// ============================================================================
+// Reports Management
+// ============================================================================
+
+export async function getAllReports(filters?: {
+  reportType?: string;
+  isPublic?: boolean;
+  createdBy?: number;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters?.reportType) {
+    conditions.push(eq(reports.reportType, filters.reportType));
+  }
+
+  if (filters?.isPublic !== undefined) {
+    conditions.push(eq(reports.isPublic, filters.isPublic));
+  }
+
+  if (filters?.createdBy) {
+    conditions.push(eq(reports.createdBy, filters.createdBy));
+  }
+
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(reports.name, `%${filters.search}%`),
+        like(reports.description, `%${filters.search}%`)
+      )
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(reports)
+    .where(whereClause)
+    .orderBy(desc(reports.createdAt));
+}
+
+export async function getReportById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(reports).where(eq(reports.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createReport(data: InsertReport) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(reports).values(data);
+}
+
+export async function updateReport(id: number, data: Partial<InsertReport>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(reports).set(data).where(eq(reports.id, id));
+}
+
+export async function deleteReport(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(reports).where(eq(reports.id, id));
+}
+
+// ============================================================================
+// Scheduled Reports Management
+// ============================================================================
+
+export async function getAllScheduledReports(filters?: {
+  reportId?: number;
+  frequency?: string;
+  isActive?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters?.reportId) {
+    conditions.push(eq(scheduledReports.reportId, filters.reportId));
+  }
+
+  if (filters?.frequency) {
+    conditions.push(eq(scheduledReports.frequency, filters.frequency as any));
+  }
+
+  if (filters?.isActive !== undefined) {
+    conditions.push(eq(scheduledReports.isActive, filters.isActive));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(scheduledReports)
+    .where(whereClause)
+    .orderBy(desc(scheduledReports.createdAt));
+}
+
+export async function getScheduledReportById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(scheduledReports).where(eq(scheduledReports.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createScheduledReport(data: InsertScheduledReport) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(scheduledReports).values(data);
+}
+
+export async function updateScheduledReport(id: number, data: Partial<InsertScheduledReport>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(scheduledReports).set(data).where(eq(scheduledReports.id, id));
+}
+
+export async function deleteScheduledReport(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(scheduledReports).where(eq(scheduledReports.id, id));
+}
+
+// ============================================================================
+// Export History Management
+// ============================================================================
+
+export async function getAllExportHistory(filters?: {
+  exportType?: string;
+  format?: string;
+  status?: string;
+  createdBy?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters?.exportType) {
+    conditions.push(eq(exportHistory.exportType, filters.exportType));
+  }
+
+  if (filters?.format) {
+    conditions.push(eq(exportHistory.format, filters.format as any));
+  }
+
+  if (filters?.status) {
+    conditions.push(eq(exportHistory.status, filters.status as any));
+  }
+
+  if (filters?.createdBy) {
+    conditions.push(eq(exportHistory.createdBy, filters.createdBy));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(exportHistory)
+    .where(whereClause)
+    .orderBy(desc(exportHistory.createdAt));
+}
+
+export async function getExportHistoryById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(exportHistory).where(eq(exportHistory.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createExportHistory(data: InsertExportHistory) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(exportHistory).values(data);
+}
+
+export async function updateExportHistory(id: number, data: Partial<InsertExportHistory>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.update(exportHistory).set(data).where(eq(exportHistory.id, id));
+}
+
+export async function deleteExportHistory(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.delete(exportHistory).where(eq(exportHistory.id, id));
 }
 

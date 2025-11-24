@@ -510,3 +510,74 @@ export const helpDocs = mysqlTable("helpDocs", {
 export type HelpDoc = typeof helpDocs.$inferSelect;
 export type InsertHelpDoc = typeof helpDocs.$inferInsert;
 
+
+/**
+ * Reports table for custom report definitions
+ */
+export const reports = mysqlTable("reports", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  reportType: varchar("reportType", { length: 100 }).notNull(), // orders, users, revenue, riders, etc.
+  filters: text("filters"), // JSON string of filter configuration
+  columns: text("columns"), // JSON array of selected columns
+  groupBy: varchar("groupBy", { length: 100 }), // Grouping field
+  sortBy: varchar("sortBy", { length: 100 }), // Sorting field
+  sortOrder: mysqlEnum("sortOrder", ["asc", "desc"]).default("desc"),
+  chartType: varchar("chartType", { length: 50 }), // bar, line, pie, table
+  isPublic: boolean("isPublic").default(false).notNull(), // Share with other admins
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = typeof reports.$inferInsert;
+
+/**
+ * Scheduled Reports table for automated report generation
+ */
+export const scheduledReports = mysqlTable("scheduledReports", {
+  id: int("id").autoincrement().primaryKey(),
+  reportId: int("reportId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  frequency: mysqlEnum("frequency", ["daily", "weekly", "monthly"]).notNull(),
+  dayOfWeek: int("dayOfWeek"), // 0-6 for weekly reports
+  dayOfMonth: int("dayOfMonth"), // 1-31 for monthly reports
+  time: varchar("time", { length: 10 }).notNull(), // HH:MM format
+  recipients: text("recipients").notNull(), // Comma-separated email addresses
+  format: mysqlEnum("format", ["pdf", "csv", "excel"]).default("pdf").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  lastRunAt: timestamp("lastRunAt"),
+  nextRunAt: timestamp("nextRunAt"),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScheduledReport = typeof scheduledReports.$inferSelect;
+export type InsertScheduledReport = typeof scheduledReports.$inferInsert;
+
+/**
+ * Export History table for tracking data exports
+ */
+export const exportHistory = mysqlTable("exportHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  exportType: varchar("exportType", { length: 100 }).notNull(), // orders, users, products, etc.
+  format: mysqlEnum("format", ["csv", "excel", "pdf"]).notNull(),
+  filters: text("filters"), // JSON string of applied filters
+  recordCount: int("recordCount").default(0).notNull(),
+  fileSize: int("fileSize"), // File size in bytes
+  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),
+  downloadUrl: text("downloadUrl"),
+  errorMessage: text("errorMessage"),
+  expiresAt: timestamp("expiresAt"), // Download link expiration
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type ExportHistory = typeof exportHistory.$inferSelect;
+export type InsertExportHistory = typeof exportHistory.$inferInsert;
+

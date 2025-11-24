@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -55,6 +55,9 @@ const menuItems = [
   { icon: HelpCircle, label: "FAQ Management", path: "/faq-management" },
   { icon: Ticket, label: "Support Tickets", path: "/support-tickets" },
   { icon: BookOpen, label: "Help Documentation", path: "/help-documentation" },
+  { icon: FileText, label: "Report Builder", path: "/report-builder" },
+  { icon: Calendar, label: "Scheduled Reports", path: "/scheduled-reports" },
+  { icon: Download, label: "Data Export", path: "/data-export" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
