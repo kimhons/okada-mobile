@@ -14,6 +14,29 @@ export default function TransactionAnalytics() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  const exportPDF = trpc.financial.exportPeriodComparisonPDF.useMutation({
+    onSuccess: (data) => {
+      // Convert HTML to PDF and download
+      const blob = new Blob([data.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transaction-comparison-${data.periodType}-${Date.now()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Comparison report exported successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to export report");
+    },
+  });
+
+  const handleExportPDF = () => {
+    exportPDF.mutate({ periodType });
+  };
+
   // Fetch period comparison data
   const { data: comparisonData, isLoading: comparisonLoading } = trpc.financial.getTransactionPeriodComparison.useQuery({
     periodType,
@@ -124,6 +147,14 @@ export default function TransactionAnalytics() {
             Analyze transaction performance and trends
           </p>
         </div>
+        <Button
+          onClick={handleExportPDF}
+          disabled={exportPDF.isPending || comparisonLoading}
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          {exportPDF.isPending ? "Exporting..." : "Export Report"}
+        </Button>
       </div>
 
       {/* Period Comparison Selector */}

@@ -367,8 +367,8 @@ export default function PromotionalCampaigns() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCampaigns.map((campaign) => (
-                  <TableRow key={campaign.id}>
+                {filteredCampaigns.map((campaign, index) => (
+                  <TableRow key={`campaign-${campaign.id}-${index}`}>
                     <TableCell className="font-medium">
                       {campaign.name}
                     </TableCell>
