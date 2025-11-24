@@ -1533,7 +1533,7 @@ export async function deleteReport(id: number) {
 // ============================================================================
 
 export async function getAllScheduledReports(filters?: {
-  reportId?: number;
+  reportType?: string;
   frequency?: string;
   isActive?: boolean;
 }) {
@@ -1542,8 +1542,8 @@ export async function getAllScheduledReports(filters?: {
 
   const conditions = [];
 
-  if (filters?.reportId) {
-    conditions.push(eq(scheduledReports.reportId, filters.reportId));
+  if (filters?.reportType) {
+    conditions.push(eq(scheduledReports.reportType, filters.reportType));
   }
 
   if (filters?.frequency) {

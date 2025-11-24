@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE scheduledReports \n  DROP COLUMN IF EXISTS reportId,\n  DROP COLUMN IF EXISTS format,\n  ADD COLUMN IF NOT EXISTS description TEXT,\n  ADD COLUMN IF NOT EXISTS reportType VARCHAR(50) DEFAULT 'transaction_analytics' NOT NULL,\n  ADD COLUMN IF NOT EXISTS periodType ENUM('week', 'month', 'quarter', 'year') DEFAULT 'month' NOT NULL,\n  ADD COLUMN IF NOT EXISTS customMessage TEXT,\n  ADD COLUMN IF NOT EXISTS lastRunStatus VARCHAR(50)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute ALTER TABLE scheduledReports \n  DROP COLUMN IF EXISTS reportId,\n  DROP COLUMN IF EXISTS format,\n  ADD COLUMN IF NOT EXISTS description TEXT,\n  ADD COLUMN IF NOT EXISTS reportType VARCHAR(50) DEFAULT 'transaction_analytics' NOT NULL,\n  ADD COLUMN IF NOT EXISTS periodType ENUM('week', 'month', 'quarter', 'year') DEFAULT 'month' NOT NULL,\n  ADD COLUMN IF NOT EXISTS customMessage TEXT,\n  ADD COLUMN IF NOT EXISTS lastRunStatus VARCHAR(50)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2965
+}

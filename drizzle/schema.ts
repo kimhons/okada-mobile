@@ -539,17 +539,20 @@ export type InsertReport = typeof reports.$inferInsert;
  */
 export const scheduledReports = mysqlTable("scheduledReports", {
   id: int("id").autoincrement().primaryKey(),
-  reportId: int("reportId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  reportType: varchar("reportType", { length: 50 }).default("transaction_analytics").notNull(), // transaction_analytics, revenue, etc.
+  periodType: mysqlEnum("periodType", ["week", "month", "quarter", "year"]).default("month").notNull(),
   frequency: mysqlEnum("frequency", ["daily", "weekly", "monthly"]).notNull(),
-  dayOfWeek: int("dayOfWeek"), // 0-6 for weekly reports
+  dayOfWeek: int("dayOfWeek"), // 0-6 for weekly reports (0=Sunday)
   dayOfMonth: int("dayOfMonth"), // 1-31 for monthly reports
-  time: varchar("time", { length: 10 }).notNull(), // HH:MM format
+  time: varchar("time", { length: 10 }).notNull(), // HH:MM format (24-hour)
   recipients: text("recipients").notNull(), // Comma-separated email addresses
-  format: mysqlEnum("format", ["pdf", "csv", "excel"]).default("pdf").notNull(),
+  customMessage: text("customMessage"), // Optional message to include in email
   isActive: boolean("isActive").default(true).notNull(),
   lastRunAt: timestamp("lastRunAt"),
   nextRunAt: timestamp("nextRunAt"),
+  lastRunStatus: varchar("lastRunStatus", { length: 50 }), // success, failed, skipped
   createdBy: int("createdBy").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

@@ -3064,6 +3064,214 @@ export const appRouter = router({
         };
       }),
   }),
+
+  // Scheduled Reports Management
+  scheduledReports: router({
+    // List all scheduled reports
+    list: protectedProcedure
+      .input(z.object({
+        reportType: z.string().optional(),
+        frequency: z.enum(["daily", "weekly", "monthly"]).optional(),
+        isActive: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllScheduledReports(input || {});
+      }),
+
+    // Get single scheduled report by ID
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getScheduledReportById(input.id);
+      }),
+
+    // Create new scheduled report
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1, "Name is required"),
+        description: z.string().optional(),
+        reportType: z.string().default("transaction_analytics"),
+        periodType: z.enum(["week", "month", "quarter", "year"]),
+        frequency: z.enum(["daily", "weekly", "monthly"]),
+        dayOfWeek: z.number().min(0).max(6).optional(), // 0=Sunday
+        dayOfMonth: z.number().min(1).max(31).optional(),
+        time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Time must be in HH:MM format"),
+        recipients: z.string().min(1, "At least one recipient is required"),
+        customMessage: z.string().optional(),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Validate recipients
+        const recipientEmails = input.recipients
+          .split(',')
+          .map(email => email.trim())
+          .filter(email => email.length > 0);
+
+        if (recipientEmails.length === 0) {
+          throw new Error("At least one valid recipient email is required");
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const invalidEmails = recipientEmails.filter(email => !emailRegex.test(email));
+        if (invalidEmails.length > 0) {
+          throw new Error(`Invalid email format: ${invalidEmails.join(', ')}`);
+        }
+
+        // Validate frequency-specific fields
+        if (input.frequency === "weekly" && input.dayOfWeek === undefined) {
+          throw new Error("Day of week is required for weekly reports");
+        }
+        if (input.frequency === "monthly" && input.dayOfMonth === undefined) {
+          throw new Error("Day of month is required for monthly reports");
+        }
+
+        // Calculate next run time
+        const calculateNextRun = () => {
+          const now = new Date();
+          const [hours, minutes] = input.time.split(':').map(Number);
+          const next = new Date(now);
+          next.setHours(hours, minutes, 0, 0);
+
+          if (input.frequency === "daily") {
+            if (next <= now) next.setDate(next.getDate() + 1);
+          } else if (input.frequency === "weekly") {
+            const targetDay = input.dayOfWeek!;
+            const currentDay = next.getDay();
+            let daysToAdd = targetDay - currentDay;
+            if (daysToAdd <= 0 || (daysToAdd === 0 && next <= now)) {
+              daysToAdd += 7;
+            }
+            next.setDate(next.getDate() + daysToAdd);
+          } else if (input.frequency === "monthly") {
+            next.setDate(input.dayOfMonth!);
+            if (next <= now) {
+              next.setMonth(next.getMonth() + 1);
+            }
+          }
+
+          return next;
+        };
+
+        const nextRunAt = calculateNextRun();
+
+        await db.createScheduledReport({
+          name: input.name,
+          description: input.description || null,
+          reportType: input.reportType,
+          periodType: input.periodType,
+          frequency: input.frequency,
+          dayOfWeek: input.dayOfWeek ?? null,
+          dayOfMonth: input.dayOfMonth ?? null,
+          time: input.time,
+          recipients: input.recipients,
+          customMessage: input.customMessage || null,
+          isActive: input.isActive,
+          nextRunAt,
+          createdBy: ctx.user.id,
+        });
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_scheduled_report",
+          entityType: "scheduled_report",
+          details: `Created scheduled report: ${input.name} (${input.frequency})`,
+        });
+
+        return { success: true };
+      }),
+
+    // Update existing scheduled report
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        periodType: z.enum(["week", "month", "quarter", "year"]).optional(),
+        frequency: z.enum(["daily", "weekly", "monthly"]).optional(),
+        dayOfWeek: z.number().min(0).max(6).optional(),
+        dayOfMonth: z.number().min(1).max(31).optional(),
+        time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+        recipients: z.string().optional(),
+        customMessage: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...updateData } = input;
+
+        // Validate recipients if provided
+        if (updateData.recipients) {
+          const recipientEmails = updateData.recipients
+            .split(',')
+            .map(email => email.trim())
+            .filter(email => email.length > 0);
+
+          if (recipientEmails.length === 0) {
+            throw new Error("At least one valid recipient email is required");
+          }
+
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          const invalidEmails = recipientEmails.filter(email => !emailRegex.test(email));
+          if (invalidEmails.length > 0) {
+            throw new Error(`Invalid email format: ${invalidEmails.join(', ')}`);
+          }
+        }
+
+        await db.updateScheduledReport(id, updateData as any);
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: id.toString(),
+          details: `Updated scheduled report ID ${id}`,
+        });
+
+        return { success: true };
+      }),
+
+    // Toggle active status
+    toggleActive: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        isActive: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateScheduledReport(input.id, { isActive: input.isActive });
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: input.isActive ? "activate_scheduled_report" : "deactivate_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: input.id.toString(),
+          details: `${input.isActive ? 'Activated' : 'Deactivated'} scheduled report ID ${input.id}`,
+        });
+
+        return { success: true };
+      }),
+
+    // Delete scheduled report
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const report = await db.getScheduledReportById(input.id);
+        
+        await db.deleteScheduledReport(input.id);
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: input.id.toString(),
+          details: `Deleted scheduled report: ${report?.name || 'Unknown'}`,
+        });
+
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -407,3 +407,22 @@
 - [x] Log email report activity for audit trail
 - [x] Test email report functionality with various scenarios (25/25 tests passed)
 
+
+
+
+## Scheduled Report Subscriptions
+- [x] Create database schema for scheduled report subscriptions table
+- [x] Add fields: name, description, frequency (daily/weekly/monthly), recipients, period_type, is_active, schedule_config
+- [x] Implement backend CRUD procedures for subscriptions (create, list, update, delete, toggle active)
+- [x] Build Scheduled Reports management page in sidebar under Financial Overview
+- [x] Create subscription list view with active/inactive status indicators
+- [x] Add create/edit subscription dialog with form fields
+- [x] Implement frequency selector (Daily, Weekly, Monthly)
+- [x] Add schedule configuration (day of week for weekly, day of month for monthly, time of day)
+- [x] Support saved recipient lists (comma-separated emails)
+- [x] Add active/inactive toggle switch for subscriptions
+- [ ] Implement background job/cron to check and send scheduled reports (requires external cron setup)
+- [x] Log scheduled report sends in activity log
+- [x] Add "Last Sent" and "Next Send" timestamps to subscription records
+- [x] Test all CRUD operations and scheduled sending (27/27 tests passed)
+
