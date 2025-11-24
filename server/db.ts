@@ -1,6 +1,6 @@
-import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
+import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2179,4 +2179,265 @@ export async function createLoyaltyTransaction(data: InsertLoyaltyTransaction) {
   
   return result[0];
 }
+
+
+// ============================================================================
+// Financial Management - Payouts
+// ============================================================================
+
+export async function getAllPayouts(filters?: { status?: string; recipientType?: string; search?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(payouts.status, filters.status as any));
+  }
+  if (filters?.recipientType) {
+    conditions.push(eq(payouts.recipientType, filters.recipientType as any));
+  }
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(payouts.paymentMethod, `%${filters.search}%`),
+        sql`CAST(${payouts.recipientId} AS CHAR) LIKE ${`%${filters.search}%`}`
+      )
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(payouts)
+    .where(whereClause)
+    .orderBy(desc(payouts.createdAt));
+}
+
+export async function getPayoutById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(payouts)
+    .where(eq(payouts.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function createPayout(data: InsertPayout) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(payouts).values(data);
+  
+  // Return the created payout
+  const result = await db
+    .select()
+    .from(payouts)
+    .where(eq(payouts.recipientId, data.recipientId))
+    .orderBy(desc(payouts.createdAt))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updatePayout(id: number, data: Partial<InsertPayout>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(payouts)
+    .set(data)
+    .where(eq(payouts.id, id));
+  
+  // Return the updated payout
+  const result = await db
+    .select()
+    .from(payouts)
+    .where(eq(payouts.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function deletePayout(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .delete(payouts)
+    .where(eq(payouts.id, id));
+}
+
+// ============================================================================
+// Financial Management - Transactions
+// ============================================================================
+
+export async function getAllTransactions(filters?: { 
+  type?: string; 
+  status?: string; 
+  search?: string;
+  startDate?: Date;
+  endDate?: Date;
+  minAmount?: number;
+  maxAmount?: number;
+  sortBy?: "date" | "amount" | "type" | "status";
+  sortDirection?: "asc" | "desc";
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+  if (filters?.type) {
+    conditions.push(eq(transactions.type, filters.type as any));
+  }
+  if (filters?.status) {
+    conditions.push(eq(transactions.status, filters.status as any));
+  }
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(transactions.transactionId, `%${filters.search}%`),
+        like(transactions.description, `%${filters.search}%`)
+      )
+    );
+  }
+  if (filters?.startDate) {
+    conditions.push(gte(transactions.createdAt, filters.startDate));
+  }
+  if (filters?.endDate) {
+    conditions.push(lte(transactions.createdAt, filters.endDate));
+  }
+  if (filters?.minAmount !== undefined) {
+    conditions.push(gte(transactions.amount, filters.minAmount));
+  }
+  if (filters?.maxAmount !== undefined) {
+    conditions.push(lte(transactions.amount, filters.maxAmount));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Determine sort column and direction
+  const sortColumn = filters?.sortBy || "date";
+  const sortDir = filters?.sortDirection || "desc";
+  
+  let orderByClause;
+  switch (sortColumn) {
+    case "amount":
+      orderByClause = sortDir === "asc" ? asc(transactions.amount) : desc(transactions.amount);
+      break;
+    case "type":
+      orderByClause = sortDir === "asc" ? asc(transactions.type) : desc(transactions.type);
+      break;
+    case "status":
+      orderByClause = sortDir === "asc" ? asc(transactions.status) : desc(transactions.status);
+      break;
+    case "date":
+    default:
+      orderByClause = sortDir === "asc" ? asc(transactions.createdAt) : desc(transactions.createdAt);
+      break;
+  }
+
+  return await db
+    .select()
+    .from(transactions)
+    .where(whereClause)
+    .orderBy(orderByClause);
+}
+
+export async function getTransactionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function createTransaction(data: InsertTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(transactions).values(data);
+  
+  // Return the created transaction
+  const result = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.transactionId, data.transactionId))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updateTransaction(id: number, data: Partial<InsertTransaction>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(transactions)
+    .set(data)
+    .where(eq(transactions.id, id));
+  
+  // Return the updated transaction
+  const result = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+// ============================================================================
+// Financial Management - Revenue Analytics
+// ============================================================================
+
+export async function getAllRevenueAnalytics(filters?: { period?: string; startDate?: Date; endDate?: Date }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+  if (filters?.period) {
+    conditions.push(eq(revenueAnalytics.period, filters.period as any));
+  }
+  if (filters?.startDate) {
+    conditions.push(sql`${revenueAnalytics.date} >= ${filters.startDate}`);
+  }
+  if (filters?.endDate) {
+    conditions.push(sql`${revenueAnalytics.date} <= ${filters.endDate}`);
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(revenueAnalytics)
+    .where(whereClause)
+    .orderBy(desc(revenueAnalytics.date));
+}
+
+export async function createRevenueAnalytics(data: InsertRevenueAnalytics) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(revenueAnalytics).values(data);
+  
+  // Return the created analytics
+  const result = await db
+    .select()
+    .from(revenueAnalytics)
+    .orderBy(desc(revenueAnalytics.createdAt))
+    .limit(1);
+  
+  return result[0];
+}
+
 

@@ -1875,6 +1875,196 @@ export const appRouter = router({
         return transaction;
       }),
   }),
+
+  financial: router({
+    // Payouts Management
+    getAllPayouts: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        recipientType: z.string().optional(),
+        search: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getAllPayouts(input);
+      }),
+    
+    getPayoutById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPayoutById(input.id);
+      }),
+    
+    createPayout: protectedProcedure
+      .input(z.object({
+        recipientId: z.number(),
+        recipientType: z.enum(["rider", "seller"]),
+        amount: z.number(),
+        currency: z.string().optional(),
+        paymentMethod: z.string(),
+        accountDetails: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const payout = await db.createPayout(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_payout",
+          entityType: "payout",
+          details: `Created payout for ${input.recipientType} ID: ${input.recipientId} - Amount: ${input.amount}`,
+        });
+        
+        return payout;
+      }),
+    
+    updatePayout: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "approved", "rejected", "processing", "completed", "failed"]).optional(),
+        notes: z.string().optional(),
+        approvedBy: z.number().optional(),
+        approvedAt: z.date().optional(),
+        processedAt: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        const updated = await db.updatePayout(id, rest);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_payout",
+          entityType: "payout",
+          details: `Updated payout ID: ${id}`,
+        });
+        
+        return updated;
+      }),
+    
+    deletePayout: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deletePayout(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_payout",
+          entityType: "payout",
+          details: `Deleted payout ID: ${input.id}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Transactions Management
+    getAllTransactions: protectedProcedure
+      .input(z.object({
+        type: z.string().optional(),
+        status: z.string().optional(),
+        search: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        minAmount: z.number().optional(),
+        maxAmount: z.number().optional(),
+        sortBy: z.enum(["date", "amount", "type", "status"]).optional(),
+        sortDirection: z.enum(["asc", "desc"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getAllTransactions(input);
+      }),
+    
+    getTransactionById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getTransactionById(input.id);
+      }),
+    
+    createTransaction: protectedProcedure
+      .input(z.object({
+        transactionId: z.string(),
+        type: z.enum(["order_payment", "payout", "refund", "commission", "fee", "adjustment"]),
+        amount: z.number(),
+        currency: z.string().optional(),
+        status: z.enum(["pending", "completed", "failed", "cancelled"]),
+        userId: z.number().optional(),
+        orderId: z.number().optional(),
+        payoutId: z.number().optional(),
+        description: z.string(),
+        metadata: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const transaction = await db.createTransaction(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_transaction",
+          entityType: "transaction",
+          details: `Created transaction: ${input.transactionId}`,
+        });
+        
+        return transaction;
+      }),
+    
+    updateTransaction: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "completed", "failed", "cancelled"]).optional(),
+        metadata: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        const updated = await db.updateTransaction(id, rest);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_transaction",
+          entityType: "transaction",
+          details: `Updated transaction ID: ${id}`,
+        });
+        
+        return updated;
+      }),
+    
+    // Revenue Analytics
+    getAllRevenueAnalytics: protectedProcedure
+      .input(z.object({
+        period: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getAllRevenueAnalytics(input);
+      }),
+    
+    createRevenueAnalytics: protectedProcedure
+      .input(z.object({
+        date: z.date(),
+        period: z.enum(["daily", "weekly", "monthly"]),
+        totalRevenue: z.number().optional(),
+        orderCount: z.number().optional(),
+        averageOrderValue: z.number().optional(),
+        commissionEarned: z.number().optional(),
+        payoutsProcessed: z.number().optional(),
+        netRevenue: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const analytics = await db.createRevenueAnalytics(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_revenue_analytics",
+          entityType: "revenue_analytics",
+          details: `Created revenue analytics for ${input.period} period`,
+        });
+        
+        return analytics;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

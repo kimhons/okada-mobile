@@ -43,6 +43,8 @@ import EmailTemplates from "./pages/email-templates";
 import NotificationPreferences from "./pages/notification-preferences";
 import CouponManagement from "./pages/coupon-management";
 import LoyaltyProgram from "./pages/loyalty-program";
+import TransactionHistory from "./pages/TransactionHistory";
+
 
 function Router() {
   return (
@@ -85,6 +87,8 @@ function Router() {
       <Route path="/notification-preferences" component={() => <DashboardLayout><NotificationPreferences /></DashboardLayout>} />
       <Route path="/coupon-management" component={() => <DashboardLayout><CouponManagement /></DashboardLayout>} />
       <Route path="/loyalty-program" component={() => <DashboardLayout><LoyaltyProgram /></DashboardLayout>} />
+      <Route path="/transaction-history" component={() => <DashboardLayout><TransactionHistory /></DashboardLayout>} />
+
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

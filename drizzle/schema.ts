@@ -746,3 +746,70 @@ export const loyaltyTransactions = mysqlTable("loyaltyTransactions", {
 export type LoyaltyTransaction = typeof loyaltyTransactions.$inferSelect;
 export type InsertLoyaltyTransaction = typeof loyaltyTransactions.$inferInsert;
 
+
+/**
+ * Payouts table for managing payments to riders and sellers
+ */
+export const payouts = mysqlTable("payouts", {
+  id: int("id").autoincrement().primaryKey(),
+  recipientId: int("recipientId").notNull(), // User ID of rider or seller
+  recipientType: mysqlEnum("recipientType", ["rider", "seller"]).notNull(),
+  amount: int("amount").notNull(), // Amount in cents
+  currency: varchar("currency", { length: 3 }).default("XAF").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "processing", "completed", "failed"]).default("pending").notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 50 }).notNull(), // e.g., "mobile_money", "bank_transfer"
+  accountDetails: text("accountDetails"), // JSON string with payment details
+  notes: text("notes"),
+  approvedBy: int("approvedBy"),
+  approvedAt: timestamp("approvedAt"),
+  processedAt: timestamp("processedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Payout = typeof payouts.$inferSelect;
+export type InsertPayout = typeof payouts.$inferInsert;
+
+/**
+ * Transactions table for comprehensive financial tracking
+ */
+export const transactions = mysqlTable("transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  transactionId: varchar("transactionId", { length: 100 }).notNull().unique(), // Unique transaction reference
+  type: mysqlEnum("type", ["order_payment", "payout", "refund", "commission", "fee", "adjustment"]).notNull(),
+  amount: int("amount").notNull(), // Amount in cents
+  currency: varchar("currency", { length: 3 }).default("XAF").notNull(),
+  status: mysqlEnum("status", ["pending", "completed", "failed", "cancelled"]).notNull(),
+  userId: int("userId"), // User involved in transaction
+  orderId: int("orderId"), // Related order if applicable
+  payoutId: int("payoutId"), // Related payout if applicable
+  description: text("description").notNull(),
+  metadata: text("metadata"), // JSON string with additional data
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = typeof transactions.$inferInsert;
+
+/**
+ * Revenue Analytics table for tracking daily/monthly revenue metrics
+ */
+export const revenueAnalytics = mysqlTable("revenueAnalytics", {
+  id: int("id").autoincrement().primaryKey(),
+  date: timestamp("date").notNull(),
+  period: mysqlEnum("period", ["daily", "weekly", "monthly"]).notNull(),
+  totalRevenue: int("totalRevenue").default(0).notNull(), // Total revenue in cents
+  orderCount: int("orderCount").default(0).notNull(),
+  averageOrderValue: int("averageOrderValue").default(0).notNull(), // In cents
+  commissionEarned: int("commissionEarned").default(0).notNull(), // Platform commission in cents
+  payoutsProcessed: int("payoutsProcessed").default(0).notNull(), // Total payouts in cents
+  netRevenue: int("netRevenue").default(0).notNull(), // Revenue minus payouts in cents
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RevenueAnalytics = typeof revenueAnalytics.$inferSelect;
+export type InsertRevenueAnalytics = typeof revenueAnalytics.$inferInsert;
+
+
