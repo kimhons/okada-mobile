@@ -13,8 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
-import { Receipt, DollarSign, TrendingUp, CheckCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, X, Download, FileSpreadsheet } from "lucide-react";
+import { Receipt, DollarSign, TrendingUp, CheckCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, X, Download, FileSpreadsheet, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export default function TransactionHistory() {
@@ -27,6 +29,8 @@ export default function TransactionHistory() {
   const [maxAmount, setMaxAmount] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "amount" | "type" | "status">("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const exportCSV = trpc.financial.exportTransactionsCSV.useMutation({
     onSuccess: (data) => {
@@ -422,6 +426,7 @@ export default function TransactionHistory() {
                   >
                     Date {getSortIcon("date")}
                   </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -441,6 +446,19 @@ export default function TransactionHistory() {
                     <TableCell>
                       {new Date(transaction.createdAt).toLocaleDateString()}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTransaction(transaction);
+                          setIsDetailModalOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Details
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -448,6 +466,149 @@ export default function TransactionHistory() {
           )}
         </CardContent>
       </Card>
+
+      {/* Transaction Detail Modal */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogDescription>
+              Complete information about transaction {selectedTransaction?.transactionId}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedTransaction && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Transaction ID</Label>
+                    <p className="font-mono text-sm mt-1">{selectedTransaction.transactionId}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Type</Label>
+                    <div className="mt-1">{getTypeBadge(selectedTransaction.type)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Amount</Label>
+                    <p className="font-semibold text-lg mt-1">{formatCurrency(selectedTransaction.amount)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Status</Label>
+                    <div className="mt-1">{getStatusBadge(selectedTransaction.status)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Created At</Label>
+                    <p className="mt-1">{new Date(selectedTransaction.createdAt).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Updated At</Label>
+                    <p className="mt-1">{new Date(selectedTransaction.updatedAt).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Related Entities */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Related Entities</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">User ID</Label>
+                    <p className="font-mono text-sm mt-1">{selectedTransaction.userId || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Order ID</Label>
+                    <p className="font-mono text-sm mt-1">{selectedTransaction.orderId || '-'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Payout ID</Label>
+                    <p className="font-mono text-sm mt-1">{selectedTransaction.payoutId || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Description */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Description</h3>
+                <p className="text-sm text-muted-foreground">
+                  {selectedTransaction.description || 'No description provided'}
+                </p>
+              </div>
+
+              {/* Metadata */}
+              {selectedTransaction.metadata && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Metadata</h3>
+                    <div className="bg-muted p-4 rounded-lg">
+                      <pre className="text-xs overflow-x-auto">
+                        {JSON.stringify(selectedTransaction.metadata, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Transaction Timeline */}
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Transaction Timeline</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-2" />
+                    <div className="flex-1">
+                      <p className="font-medium">Transaction Created</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedTransaction.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedTransaction.updatedAt !== selectedTransaction.createdAt && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2" />
+                      <div className="flex-1">
+                        <p className="font-medium">Last Updated</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(selectedTransaction.updatedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedTransaction.status === 'completed' && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2" />
+                      <div className="flex-1">
+                        <p className="font-medium">Transaction Completed</p>
+                        <p className="text-sm text-muted-foreground">
+                          Successfully processed
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedTransaction.status === 'failed' && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-red-500 mt-2" />
+                      <div className="flex-1">
+                        <p className="font-medium">Transaction Failed</p>
+                        <p className="text-sm text-muted-foreground">
+                          Processing failed
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
