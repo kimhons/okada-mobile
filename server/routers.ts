@@ -2766,6 +2766,303 @@ export const appRouter = router({
         
         return { html: pdfHtml, periodType: input.periodType };
       }),
+
+    // Email Period Comparison Report to Stakeholders
+    emailPeriodComparisonReport: protectedProcedure
+      .input(z.object({
+        periodType: z.enum(["week", "month", "quarter", "year"]),
+        recipients: z.string().min(1, "At least one recipient email is required"),
+        message: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Parse recipients (comma-separated emails)
+        const recipientEmails = input.recipients
+          .split(',')
+          .map(email => email.trim())
+          .filter(email => email.length > 0);
+
+        if (recipientEmails.length === 0) {
+          throw new Error("At least one valid recipient email is required");
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const invalidEmails = recipientEmails.filter(email => !emailRegex.test(email));
+        if (invalidEmails.length > 0) {
+          throw new Error(`Invalid email format: ${invalidEmails.join(', ')}`);
+        }
+
+        // Get comparison data (reuse logic from exportPeriodComparisonPDF)
+        const comparisonData = await (async () => {
+          const { periodType } = input;
+          let currentStart: Date, currentEnd: Date, previousStart: Date, previousEnd: Date;
+          
+          const now = new Date();
+          switch (periodType) {
+            case "week":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setDate(currentStart.getDate() - 7);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setDate(previousStart.getDate() - 7);
+              break;
+            case "month":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setMonth(currentStart.getMonth() - 1);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setMonth(previousStart.getMonth() - 1);
+              break;
+            case "quarter":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setMonth(currentStart.getMonth() - 3);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setMonth(previousStart.getMonth() - 3);
+              break;
+            case "year":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setFullYear(currentStart.getFullYear() - 1);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setFullYear(previousStart.getFullYear() - 1);
+              break;
+            default:
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setMonth(currentStart.getMonth() - 1);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setMonth(previousStart.getMonth() - 1);
+          }
+          
+          const currentTransactions = await db.getAllTransactions({ startDate: currentStart, endDate: currentEnd });
+          const previousTransactions = await db.getAllTransactions({ startDate: previousStart, endDate: previousEnd });
+          
+          const currentMetrics = {
+            totalTransactions: currentTransactions.length,
+            completedTransactions: currentTransactions.filter(t => t.status === "completed").length,
+            successRate: currentTransactions.length > 0 ? (currentTransactions.filter(t => t.status === "completed").length / currentTransactions.length) * 100 : 0,
+            totalRevenue: currentTransactions.filter(t => t.status === "completed").reduce((sum, t) => sum + t.amount, 0),
+            averageAmount: currentTransactions.length > 0 ? currentTransactions.reduce((sum, t) => sum + t.amount, 0) / currentTransactions.length : 0,
+          };
+          
+          const previousMetrics = {
+            totalTransactions: previousTransactions.length,
+            completedTransactions: previousTransactions.filter(t => t.status === "completed").length,
+            successRate: previousTransactions.length > 0 ? (previousTransactions.filter(t => t.status === "completed").length / previousTransactions.length) * 100 : 0,
+            totalRevenue: previousTransactions.filter(t => t.status === "completed").reduce((sum, t) => sum + t.amount, 0),
+            averageAmount: previousTransactions.length > 0 ? previousTransactions.reduce((sum, t) => sum + t.amount, 0) / previousTransactions.length : 0,
+          };
+          
+          const calculateChange = (current: number, previous: number) => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return ((current - previous) / previous) * 100;
+          };
+          
+          return {
+            periodType,
+            currentPeriod: { startDate: currentStart, endDate: currentEnd, metrics: currentMetrics },
+            previousPeriod: { startDate: previousStart, endDate: previousEnd, metrics: previousMetrics },
+            changes: {
+              totalTransactions: calculateChange(currentMetrics.totalTransactions, previousMetrics.totalTransactions),
+              successRate: currentMetrics.successRate - previousMetrics.successRate,
+              totalRevenue: calculateChange(currentMetrics.totalRevenue, previousMetrics.totalRevenue),
+              averageAmount: calculateChange(currentMetrics.averageAmount, previousMetrics.averageAmount),
+            },
+          };
+        })();
+
+        const getPeriodLabel = (type: string) => {
+          const labels = { week: "Week over Week", month: "Month over Month", quarter: "Quarter over Quarter", year: "Year over Year" };
+          return labels[type as keyof typeof labels] || "Period Comparison";
+        };
+        
+        const formatChange = (change: number) => {
+          if (change > 0) return `+${change.toFixed(1)}%`;
+          if (change < 0) return `${change.toFixed(1)}%`;
+          return "0%";
+        };
+        
+        const getChangeColor = (change: number) => {
+          if (change > 0) return "#10b981";
+          if (change < 0) return "#ef4444";
+          return "#6b7280";
+        };
+
+        // Generate email HTML with embedded report
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px; background-color: #f9fafb; }
+    .email-container { background-color: white; border-radius: 8px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header { text-align: center; border-bottom: 3px solid #2D8659; padding-bottom: 20px; margin-bottom: 30px; }
+    .logo { font-size: 28px; font-weight: bold; color: #2D8659; }
+    .greeting { font-size: 16px; color: #333; margin-bottom: 20px; line-height: 1.6; }
+    .user-message { background-color: #f3f4f6; border-left: 4px solid #2D8659; padding: 15px; margin: 20px 0; font-style: italic; color: #555; }
+    .report-title { font-size: 22px; font-weight: bold; margin: 20px 0 10px; }
+    .report-subtitle { font-size: 14px; color: #666; margin-bottom: 30px; }
+    .period-label { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 20px; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px; }
+    .metric-card { border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; }
+    .metric-title { font-size: 14px; color: #666; margin-bottom: 10px; }
+    .metric-value { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 10px; }
+    .metric-comparison { font-size: 12px; color: #666; }
+    .metric-change { font-size: 14px; font-weight: 600; margin-top: 5px; }
+    .section-title { font-size: 18px; font-weight: bold; margin: 30px 0 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+    .comparison-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+    .comparison-table th { background-color: #f3f4f6; padding: 12px; text-align: left; font-weight: 600; border: 1px solid #e5e7eb; }
+    .comparison-table td { padding: 12px; border: 1px solid #e5e7eb; }
+    .footer { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 2px solid #e5e7eb; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="logo">OKADA Admin</div>
+      <div style="margin-top: 10px; font-size: 14px; color: #666;">Transaction Analytics Report</div>
+    </div>
+    
+    <div class="greeting">
+      Hello,<br><br>
+      ${ctx.user.name || 'An admin'} has shared a transaction analytics comparison report with you from OKADA Admin Dashboard.
+    </div>
+    
+    ${input.message ? `<div class="user-message">${input.message}</div>` : ''}
+    
+    <div class="report-title">Period Comparison Report</div>
+    <div class="report-subtitle">Generated on ${new Date().toLocaleString()}</div>
+    <div class="period-label">${getPeriodLabel(comparisonData.periodType)}</div>
+    
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-title">Total Transactions</div>
+        <div class="metric-value">${comparisonData.currentPeriod.metrics.totalTransactions.toLocaleString()}</div>
+        <div class="metric-comparison">vs ${comparisonData.previousPeriod.metrics.totalTransactions.toLocaleString()} previous</div>
+        <div class="metric-change" style="color: ${getChangeColor(comparisonData.changes.totalTransactions)};">
+          ${formatChange(comparisonData.changes.totalTransactions)}
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-title">Success Rate</div>
+        <div class="metric-value">${comparisonData.currentPeriod.metrics.successRate.toFixed(1)}%</div>
+        <div class="metric-comparison">vs ${comparisonData.previousPeriod.metrics.successRate.toFixed(1)}% previous</div>
+        <div class="metric-change" style="color: ${getChangeColor(comparisonData.changes.successRate)};">
+          ${formatChange(comparisonData.changes.successRate)}
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-title">Total Revenue</div>
+        <div class="metric-value">${(comparisonData.currentPeriod.metrics.totalRevenue / 100).toLocaleString()} FCFA</div>
+        <div class="metric-comparison">vs ${(comparisonData.previousPeriod.metrics.totalRevenue / 100).toLocaleString()} FCFA previous</div>
+        <div class="metric-change" style="color: ${getChangeColor(comparisonData.changes.totalRevenue)};">
+          ${formatChange(comparisonData.changes.totalRevenue)}
+        </div>
+      </div>
+      
+      <div class="metric-card">
+        <div class="metric-title">Average Amount</div>
+        <div class="metric-value">${(comparisonData.currentPeriod.metrics.averageAmount / 100).toLocaleString()} FCFA</div>
+        <div class="metric-comparison">vs ${(comparisonData.previousPeriod.metrics.averageAmount / 100).toLocaleString()} FCFA previous</div>
+        <div class="metric-change" style="color: ${getChangeColor(comparisonData.changes.averageAmount)};">
+          ${formatChange(comparisonData.changes.averageAmount)}
+        </div>
+      </div>
+    </div>
+    
+    <div class="section-title">Detailed Comparison</div>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Current Period</th>
+          <th>Previous Period</th>
+          <th>Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Period Range</td>
+          <td>${new Date(comparisonData.currentPeriod.startDate).toLocaleDateString()} - ${new Date(comparisonData.currentPeriod.endDate).toLocaleDateString()}</td>
+          <td>${new Date(comparisonData.previousPeriod.startDate).toLocaleDateString()} - ${new Date(comparisonData.previousPeriod.endDate).toLocaleDateString()}</td>
+          <td>-</td>
+        </tr>
+        <tr>
+          <td>Total Transactions</td>
+          <td>${comparisonData.currentPeriod.metrics.totalTransactions.toLocaleString()}</td>
+          <td>${comparisonData.previousPeriod.metrics.totalTransactions.toLocaleString()}</td>
+          <td style="color: ${getChangeColor(comparisonData.changes.totalTransactions)};">${formatChange(comparisonData.changes.totalTransactions)}</td>
+        </tr>
+        <tr>
+          <td>Completed Transactions</td>
+          <td>${comparisonData.currentPeriod.metrics.completedTransactions.toLocaleString()}</td>
+          <td>${comparisonData.previousPeriod.metrics.completedTransactions.toLocaleString()}</td>
+          <td>-</td>
+        </tr>
+        <tr>
+          <td>Success Rate</td>
+          <td>${comparisonData.currentPeriod.metrics.successRate.toFixed(1)}%</td>
+          <td>${comparisonData.previousPeriod.metrics.successRate.toFixed(1)}%</td>
+          <td style="color: ${getChangeColor(comparisonData.changes.successRate)};">${formatChange(comparisonData.changes.successRate)}</td>
+        </tr>
+        <tr>
+          <td>Total Revenue (FCFA)</td>
+          <td>${(comparisonData.currentPeriod.metrics.totalRevenue / 100).toLocaleString()}</td>
+          <td>${(comparisonData.previousPeriod.metrics.totalRevenue / 100).toLocaleString()}</td>
+          <td style="color: ${getChangeColor(comparisonData.changes.totalRevenue)};">${formatChange(comparisonData.changes.totalRevenue)}</td>
+        </tr>
+        <tr>
+          <td>Average Transaction Amount (FCFA)</td>
+          <td>${(comparisonData.currentPeriod.metrics.averageAmount / 100).toLocaleString()}</td>
+          <td>${(comparisonData.previousPeriod.metrics.averageAmount / 100).toLocaleString()}</td>
+          <td style="color: ${getChangeColor(comparisonData.changes.averageAmount)};">${formatChange(comparisonData.changes.averageAmount)}</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="footer">
+      This is an official report from OKADA Admin<br>
+      For support, please contact support@okada-admin.com<br>
+      <br>
+      Report ID: EMAIL-${Date.now()}<br>
+      Sent by: ${ctx.user.name || 'Admin'} (${ctx.user.email || 'N/A'})
+    </div>
+  </div>
+</body>
+</html>
+        `;
+
+        // Send notification to owner about the email being sent
+        const recipientList = recipientEmails.join(', ');
+        await notifyOwner({
+          title: "Transaction Report Emailed",
+          content: `${ctx.user.name || 'An admin'} sent a ${getPeriodLabel(input.periodType)} transaction comparison report to: ${recipientList}`,
+        });
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "email_period_comparison",
+          entityType: "analytics",
+          details: `Emailed ${getPeriodLabel(input.periodType)} comparison report to ${recipientEmails.length} recipient(s): ${recipientList}`,
+        });
+
+        return {
+          success: true,
+          recipientCount: recipientEmails.length,
+          recipients: recipientList,
+          html: emailHtml,
+        };
+      }),
   }),
 });
 

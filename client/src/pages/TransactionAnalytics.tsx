@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, TrendingDown, DollarSign, CheckCircle, XCircle, Download, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, CheckCircle, XCircle, Download, ArrowUpRight, ArrowDownRight, Minus, Mail } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
@@ -13,6 +16,9 @@ export default function TransactionAnalytics() {
   const [dateRange, setDateRange] = useState("7");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
 
   const exportPDF = trpc.financial.exportPeriodComparisonPDF.useMutation({
     onSuccess: (data) => {
@@ -35,6 +41,30 @@ export default function TransactionAnalytics() {
 
   const handleExportPDF = () => {
     exportPDF.mutate({ periodType });
+  };
+
+  const emailReport = trpc.financial.emailPeriodComparisonReport.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Report emailed successfully to ${data.recipientCount} recipient(s)`);
+      setShowEmailDialog(false);
+      setEmailRecipients("");
+      setEmailMessage("");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to email report");
+    },
+  });
+
+  const handleEmailReport = () => {
+    if (!emailRecipients.trim()) {
+      toast.error("Please enter at least one recipient email");
+      return;
+    }
+    emailReport.mutate({
+      periodType,
+      recipients: emailRecipients,
+      message: emailMessage || undefined,
+    });
   };
 
   // Fetch period comparison data
@@ -147,14 +177,77 @@ export default function TransactionAnalytics() {
             Analyze transaction performance and trends
           </p>
         </div>
-        <Button
-          onClick={handleExportPDF}
-          disabled={exportPDF.isPending || comparisonLoading}
-          className="gap-2"
-        >
-          <Download className="h-4 w-4" />
-          {exportPDF.isPending ? "Exporting..." : "Export Report"}
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={comparisonLoading}
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Email Report
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Email Comparison Report</DialogTitle>
+                <DialogDescription>
+                  Send the {periodType} over {periodType} comparison report to stakeholders via email
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipients">Recipient Email(s) *</Label>
+                  <Input
+                    id="recipients"
+                    placeholder="email@example.com, another@example.com"
+                    value={emailRecipients}
+                    onChange={(e) => setEmailRecipients(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Separate multiple emails with commas
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message (Optional)</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Add a personal message to include in the email..."
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEmailDialog(false)}
+                  disabled={emailReport.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleEmailReport}
+                  disabled={emailReport.isPending}
+                  className="gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  {emailReport.isPending ? "Sending..." : "Send Email"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button
+            onClick={handleExportPDF}
+            disabled={exportPDF.isPending || comparisonLoading}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {exportPDF.isPending ? "Exporting..." : "Export Report"}
+          </Button>
+        </div>
       </div>
 
       {/* Period Comparison Selector */}
