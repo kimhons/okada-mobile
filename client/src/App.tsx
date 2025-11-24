@@ -44,6 +44,7 @@ import NotificationPreferences from "./pages/notification-preferences";
 import CouponManagement from "./pages/coupon-management";
 import LoyaltyProgram from "./pages/loyalty-program";
 import TransactionHistory from "./pages/TransactionHistory";
+import TransactionAnalytics from "./pages/TransactionAnalytics";
 
 
 function Router() {
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/coupon-management" component={() => <DashboardLayout><CouponManagement /></DashboardLayout>} />
       <Route path="/loyalty-program" component={() => <DashboardLayout><LoyaltyProgram /></DashboardLayout>} />
       <Route path="/transaction-history" component={() => <DashboardLayout><TransactionHistory /></DashboardLayout>} />
+      <Route path="/transaction-analytics" component={() => <DashboardLayout><TransactionAnalytics /></DashboardLayout>} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

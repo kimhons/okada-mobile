@@ -31,6 +31,9 @@ export default function TransactionHistory() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkAction, setBulkAction] = useState<string>("");
+  const [isBulkActionDialogOpen, setIsBulkActionDialogOpen] = useState(false);
 
   const exportCSV = trpc.financial.exportTransactionsCSV.useMutation({
     onSuccess: (data) => {
@@ -100,6 +103,100 @@ export default function TransactionHistory() {
       minAmount: minAmount ? parseFloat(minAmount) * 100 : undefined,
       maxAmount: maxAmount ? parseFloat(maxAmount) * 100 : undefined,
     });
+  };
+
+  const bulkUpdateStatus = trpc.financial.bulkUpdateTransactionStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Updated ${data.count} transactions`);
+      setSelectedIds([]);
+      setIsBulkActionDialogOpen(false);
+      refetch();
+    },
+    onError: () => {
+      toast.error("Failed to update transactions");
+    },
+  });
+
+  const bulkRefund = trpc.financial.bulkRefundTransactions.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Created ${data.count} refund transactions`);
+      setSelectedIds([]);
+      setIsBulkActionDialogOpen(false);
+      refetch();
+    },
+    onError: () => {
+      toast.error("Failed to create refunds");
+    },
+  });
+
+  const bulkReconcile = trpc.financial.bulkReconcileTransactions.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Reconciled ${data.count} transactions`);
+      setSelectedIds([]);
+      setIsBulkActionDialogOpen(false);
+      refetch();
+    },
+    onError: () => {
+      toast.error("Failed to reconcile transactions");
+    },
+  });
+
+  const handleBulkAction = () => {
+    if (selectedIds.length === 0) {
+      toast.error("Please select at least one transaction");
+      return;
+    }
+    setIsBulkActionDialogOpen(true);
+  };
+
+  const executeBulkAction = () => {
+    if (bulkAction === "update_status") {
+      bulkUpdateStatus.mutate({ ids: selectedIds, status: "completed" });
+    } else if (bulkAction === "refund") {
+      bulkRefund.mutate({ ids: selectedIds });
+    } else if (bulkAction === "reconcile") {
+      bulkReconcile.mutate({ ids: selectedIds });
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === transactions.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(transactions.map(t => t.id));
+    }
+  };
+
+  const toggleSelectTransaction = (id: number) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(sid => sid !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const generateReceipt = trpc.financial.generateTransactionReceipt.useMutation({
+    onSuccess: (data) => {
+      // Create a blob from HTML and open in new window for printing/saving as PDF
+      const blob = new Blob([data.html], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const newWindow = window.open(url, '_blank');
+      if (newWindow) {
+        newWindow.onload = () => {
+          newWindow.print();
+        };
+      }
+      toast.success("Receipt generated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to generate receipt");
+    },
+  });
+
+  const handleDownloadReceipt = () => {
+    if (selectedTransaction) {
+      generateReceipt.mutate({ transactionId: selectedTransaction.id });
+    }
   };
 
   const { data: transactions = [], isLoading, refetch } = trpc.financial.getAllTransactions.useQuery({
@@ -255,6 +352,15 @@ export default function TransactionHistory() {
               <CardDescription>Filter and sort transactions</CardDescription>
             </div>
             <div className="flex gap-2">
+              {selectedIds.length > 0 && (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={handleBulkAction}
+                >
+                  Bulk Actions ({selectedIds.length})
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -400,6 +506,14 @@ export default function TransactionHistory() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === transactions.length && transactions.length > 0}
+                      onChange={toggleSelectAll}
+                      className="cursor-pointer"
+                    />
+                  </TableHead>
                   <TableHead>Transaction ID</TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50"
@@ -432,6 +546,14 @@ export default function TransactionHistory() {
               <TableBody>
                 {transactions.map((transaction) => (
                   <TableRow key={transaction.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(transaction.id)}
+                        onChange={() => toggleSelectTransaction(transaction.id)}
+                        className="cursor-pointer"
+                      />
+                    </TableCell>
                     <TableCell className="font-mono text-sm">
                       {transaction.transactionId}
                     </TableCell>
@@ -471,10 +593,23 @@ export default function TransactionHistory() {
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Transaction Details</DialogTitle>
-            <DialogDescription>
-              Complete information about transaction {selectedTransaction?.transactionId}
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>Transaction Details</DialogTitle>
+                <DialogDescription>
+                  Complete information about transaction {selectedTransaction?.transactionId}
+                </DialogDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadReceipt}
+                disabled={generateReceipt.isPending}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {generateReceipt.isPending ? "Generating..." : "Download Receipt"}
+              </Button>
+            </div>
           </DialogHeader>
 
           {selectedTransaction && (
@@ -607,6 +742,44 @@ export default function TransactionHistory() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Action Dialog */}
+      <Dialog open={isBulkActionDialogOpen} onOpenChange={setIsBulkActionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Action</DialogTitle>
+            <DialogDescription>
+              Select an action to perform on {selectedIds.length} selected transaction(s)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Action</Label>
+              <Select value={bulkAction} onValueChange={setBulkAction}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="update_status">Mark as Completed</SelectItem>
+                  <SelectItem value="refund">Create Refunds</SelectItem>
+                  <SelectItem value="reconcile">Reconcile Transactions</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsBulkActionDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={executeBulkAction}
+                disabled={!bulkAction || bulkUpdateStatus.isPending || bulkRefund.isPending || bulkReconcile.isPending}
+              >
+                {bulkUpdateStatus.isPending || bulkRefund.isPending || bulkReconcile.isPending ? "Processing..." : "Execute"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

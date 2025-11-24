@@ -2111,6 +2111,218 @@ export const appRouter = router({
         
         return updated;
       }),
+
+    // Bulk Transaction Operations
+    bulkUpdateTransactionStatus: protectedProcedure
+      .input(z.object({
+        ids: z.array(z.number()),
+        status: z.enum(["pending", "completed", "failed", "cancelled"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const results = [];
+        for (const id of input.ids) {
+          const updated = await db.updateTransaction(id, { status: input.status });
+          results.push(updated);
+        }
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "bulk_update_transaction_status",
+          entityType: "transaction",
+          details: `Bulk updated ${input.ids.length} transactions to status: ${input.status}`,
+        });
+        
+        return { success: true, count: results.length };
+      }),
+
+    bulkRefundTransactions: protectedProcedure
+      .input(z.object({
+        ids: z.array(z.number()),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const results = [];
+        for (const id of input.ids) {
+          // Get original transaction
+          const original = await db.getTransactionById(id);
+          if (!original || original.type !== 'order_payment') continue;
+          
+          // Create refund transaction
+          const refund = await db.createTransaction({
+            transactionId: `REF-${original.transactionId}-${Date.now()}`,
+            type: 'refund',
+            amount: original.amount,
+            status: 'pending',
+            userId: original.userId,
+            orderId: original.orderId,
+            description: `Refund for transaction ${original.transactionId}`,
+            metadata: JSON.stringify({ originalTransactionId: original.id }),
+          });
+          results.push(refund);
+        }
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "bulk_refund_transactions",
+          entityType: "transaction",
+          details: `Bulk created ${results.length} refund transactions`,
+        });
+        
+        return { success: true, count: results.length };
+      }),
+
+    bulkReconcileTransactions: protectedProcedure
+      .input(z.object({
+        ids: z.array(z.number()),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const results = [];
+        for (const id of input.ids) {
+          const updated = await db.updateTransaction(id, { 
+            status: 'completed',
+            metadata: JSON.stringify({ reconciledAt: new Date().toISOString(), reconciledBy: ctx.user.id })
+          });
+          results.push(updated);
+        }
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "bulk_reconcile_transactions",
+          entityType: "transaction",
+          details: `Bulk reconciled ${input.ids.length} transactions`,
+        });
+        
+        return { success: true, count: results.length };
+      }),
+
+    // Transaction Receipt Generation
+    generateTransactionReceipt: protectedProcedure
+      .input(z.object({
+        transactionId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const transaction = await db.getTransactionById(input.transactionId);
+        if (!transaction) {
+          throw new Error("Transaction not found");
+        }
+
+        // Import QRCode dynamically
+        const QRCode = (await import('qrcode')).default;
+        
+        // Generate QR code with transaction verification URL
+        const verificationUrl = `https://okada-admin.manus.space/verify/${transaction.transactionId}`;
+        const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl);
+        
+        // Generate receipt HTML
+        const receiptHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+    .logo { font-size: 24px; font-weight: bold; color: #333; }
+    .company-info { font-size: 12px; color: #666; margin-top: 10px; }
+    .receipt-title { font-size: 20px; font-weight: bold; margin: 20px 0; }
+    .transaction-info { margin: 20px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+    .label { font-weight: bold; color: #666; }
+    .value { color: #333; }
+    .amount { font-size: 24px; font-weight: bold; color: #2563eb; text-align: center; margin: 30px 0; }
+    .qr-code { text-align: center; margin: 30px 0; }
+    .qr-code img { width: 150px; height: 150px; }
+    .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; font-size: 12px; color: #666; }
+    .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+    .status-completed { background-color: #10b981; color: white; }
+    .status-pending { background-color: #f59e0b; color: white; }
+    .status-failed { background-color: #ef4444; color: white; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">OKADA Admin</div>
+    <div class="company-info">
+      Transaction Receipt<br>
+      Generated on ${new Date().toLocaleString()}
+    </div>
+  </div>
+  
+  <div class="receipt-title">Transaction Receipt</div>
+  
+  <div class="transaction-info">
+    <div class="info-row">
+      <span class="label">Transaction ID:</span>
+      <span class="value">${transaction.transactionId}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Type:</span>
+      <span class="value">${transaction.type.replace('_', ' ').toUpperCase()}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Status:</span>
+      <span class="value">
+        <span class="status status-${transaction.status}">${transaction.status.toUpperCase()}</span>
+      </span>
+    </div>
+    <div class="info-row">
+      <span class="label">Date:</span>
+      <span class="value">${new Date(transaction.createdAt).toLocaleString()}</span>
+    </div>
+    ${transaction.description ? `
+    <div class="info-row">
+      <span class="label">Description:</span>
+      <span class="value">${transaction.description}</span>
+    </div>
+    ` : ''}
+    ${transaction.userId ? `
+    <div class="info-row">
+      <span class="label">User ID:</span>
+      <span class="value">${transaction.userId}</span>
+    </div>
+    ` : ''}
+    ${transaction.orderId ? `
+    <div class="info-row">
+      <span class="label">Order ID:</span>
+      <span class="value">${transaction.orderId}</span>
+    </div>
+    ` : ''}
+  </div>
+  
+  <div class="amount">
+    ${(transaction.amount / 100).toLocaleString()} FCFA
+  </div>
+  
+  <div class="qr-code">
+    <img src="${qrCodeDataUrl}" alt="QR Code" />
+    <div style="margin-top: 10px; font-size: 12px; color: #666;">
+      Scan to verify transaction
+    </div>
+  </div>
+  
+  <div class="footer">
+    This is an official receipt from OKADA Admin<br>
+    For support, please contact support@okada-admin.com<br>
+    <br>
+    Receipt ID: ${transaction.id}-${Date.now()}
+  </div>
+</body>
+</html>
+        `;
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "generate_receipt",
+          entityType: "transaction",
+          entityId: transaction.id,
+          details: `Generated receipt for transaction ${transaction.transactionId}`,
+        });
+        
+        return { html: receiptHtml, transactionId: transaction.transactionId };
+      }),
     
     // Revenue Analytics
     getAllRevenueAnalytics: protectedProcedure

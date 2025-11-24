@@ -67,6 +67,7 @@ const menuItems = [
   { icon: TrendingUp, label: "Revenue Analytics Dashboard", path: "/revenue-analytics-dashboard" },
   { icon: Wallet, label: "Payout Management New", path: "/payout-management-new" },
   { icon: Receipt, label: "Transaction History", path: "/transaction-history" },
+  { icon: BarChart3, label: "Transaction Analytics", path: "/transaction-analytics" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
