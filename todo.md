@@ -442,3 +442,17 @@
 - [x] Test preview generation for all period types (32/32 tests passed)
 - [x] Test preview modal UI and interactions
 
+
+
+
+## Send Now Feature for Preview Modal
+- [x] Add "Send Now" button to preview modal footer
+- [x] Implement confirmation dialog before sending
+- [x] Show recipient count and period type in confirmation
+- [x] Use existing emailPeriodComparisonReport mutation
+- [x] Update last run timestamp after manual send (handled by mutation)
+- [x] Show success/error toast notifications
+- [x] Close preview modal after successful send
+- [x] Log manual send action to activity log (handled by mutation)
+- [x] Test Send Now with all period types (27/27 tests passed)
+

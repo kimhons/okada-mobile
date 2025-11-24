@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Plus, Calendar, Clock, Mail, Trash2, Edit, Play, Pause, Eye } from "lucide-react";
+import { Plus, Calendar, Clock, Mail, Trash2, Edit, Play, Pause, Eye, Send } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ScheduledReports() {
@@ -17,6 +17,7 @@ export default function ScheduledReports() {
   const [editingReport, setEditingReport] = useState<any>(null);
   const [previewData, setPreviewData] = useState<any>(null);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [showSendConfirm, setShowSendConfirm] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -91,6 +92,19 @@ export default function ScheduledReports() {
       },
     }
   );
+
+  const sendNowMutation = trpc.financial.emailPeriodComparisonReport.useMutation({
+    onSuccess: () => {
+      toast.success("Report sent successfully to all recipients");
+      setShowSendConfirm(false);
+      setShowPreviewDialog(false);
+      setPreviewData(null);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to send report");
+    },
+  });
 
   const resetForm = () => {
     setName("");
@@ -531,6 +545,83 @@ export default function ScheduledReports() {
               }}
             >
               Close
+            </Button>
+            {previewData && previewMutation.data && (
+              <Button
+                onClick={() => setShowSendConfirm(true)}
+                className="gap-2"
+              >
+                <Send className="h-4 w-4" />
+                Send Now
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Confirmation Dialog */}
+      <Dialog open={showSendConfirm} onOpenChange={setShowSendConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Report Now?</DialogTitle>
+            <DialogDescription>
+              This will immediately send the report to all configured recipients.
+            </DialogDescription>
+          </DialogHeader>
+          {previewData && previewMutation.data && (
+            <div className="space-y-3 py-4">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <strong>{previewMutation.data.recipients.split(',').length}</strong> recipient(s)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  Period: <strong>{previewMutation.data.periodType}</strong>
+                </span>
+              </div>
+              <div className="p-3 bg-muted rounded-lg text-sm">
+                Recipients: {previewMutation.data.recipients}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSendConfirm(false)}
+              disabled={sendNowMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (previewData && previewMutation.data) {
+                  const report = scheduledReports.find(r => r.id === previewData.id);
+                  if (report) {
+                    sendNowMutation.mutate({
+                      periodType: report.periodType,
+                      recipients: report.recipients,
+                      customMessage: report.customMessage || undefined,
+                    });
+                  }
+                }
+              }}
+              disabled={sendNowMutation.isPending}
+              className="gap-2"
+            >
+              {sendNowMutation.isPending ? (
+                <>
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Send Now
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
