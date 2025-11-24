@@ -4,13 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, DollarSign, CheckCircle, XCircle, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, CheckCircle, XCircle, Download, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 import { toast } from "sonner";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function TransactionAnalytics() {
+  const [periodType, setPeriodType] = useState<"week" | "month" | "quarter" | "year">("month");
   const [dateRange, setDateRange] = useState("7");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  // Fetch period comparison data
+  const { data: comparisonData, isLoading: comparisonLoading } = trpc.financial.getTransactionPeriodComparison.useQuery({
+    periodType,
+  });
 
   const { data: transactions = [], isLoading } = trpc.financial.getAllTransactions.useQuery({
     startDate: startDate ? new Date(startDate) : undefined,
@@ -52,135 +59,193 @@ export default function TransactionAnalytics() {
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Revenue by type
-  const revenueByType = transactions.reduce((acc, t) => {
-    if (t.status === "completed") {
-      acc[t.type] = (acc[t.type] || 0) + t.amount;
-    }
+  // Prepare data for type distribution chart
+  const typeData = Object.entries(transactionsByType).map(([type, count]) => ({
+    name: type.replace('_', ' ').toUpperCase(),
+    value: count,
+  }));
+
+  // Prepare revenue by type data
+  const revenueByType = completedTransactions.reduce((acc, t) => {
+    acc[t.type] = (acc[t.type] || 0) + t.amount;
     return acc;
   }, {} as Record<string, number>);
 
-  const formatCurrency = (amount: number) => {
-    return `${(amount / 100).toLocaleString()} FCFA`;
+  const revenueData = Object.entries(revenueByType).map(([type, amount]) => ({
+    name: type.replace('_', ' ').toUpperCase(),
+    revenue: amount / 100, // Convert to FCFA
+  }));
+
+  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+  // Helper function to render change indicator
+  const renderChangeIndicator = (change: number) => {
+    if (change > 0) {
+      return (
+        <span className="flex items-center text-green-600 text-sm font-medium">
+          <ArrowUpRight className="h-4 w-4 mr-1" />
+          +{change.toFixed(1)}%
+        </span>
+      );
+    } else if (change < 0) {
+      return (
+        <span className="flex items-center text-red-600 text-sm font-medium">
+          <ArrowDownRight className="h-4 w-4 mr-1" />
+          {change.toFixed(1)}%
+        </span>
+      );
+    } else {
+      return (
+        <span className="flex items-center text-gray-600 text-sm font-medium">
+          <Minus className="h-4 w-4 mr-1" />
+          0%
+        </span>
+      );
+    }
   };
 
-  const getTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      order_payment: "#3b82f6",
-      payout: "#10b981",
-      refund: "#ef4444",
-      commission: "#8b5cf6",
-      fee: "#f59e0b",
-      adjustment: "#6b7280",
+  // Helper function to format period label
+  const getPeriodLabel = (type: string) => {
+    const labels = {
+      week: "This Week vs Last Week",
+      month: "This Month vs Last Month",
+      quarter: "This Quarter vs Last Quarter",
+      year: "This Year vs Last Year",
     };
-    return colors[type] || "#6b7280";
-  };
-
-  const exportAnalytics = () => {
-    const csvContent = [
-      ['Metric', 'Value'],
-      ['Total Transactions', totalTransactions],
-      ['Completed Transactions', completedTransactions.length],
-      ['Failed Transactions', failedTransactions.length],
-      ['Success Rate', `${successRate}%`],
-      ['Total Revenue', formatCurrency(totalRevenue)],
-      ['Average Transaction Value', formatCurrency(averageTransactionValue)],
-      ['', ''],
-      ['Transaction Type', 'Count'],
-      ...Object.entries(transactionsByType).map(([type, count]) => [type, count]),
-      ['', ''],
-      ['Date', 'Count', 'Amount', 'Completed'],
-      ...trendData.map(d => [d.date, d.count, formatCurrency(d.amount), d.completed]),
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `transaction_analytics_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    toast.success("Analytics exported successfully");
+    return labels[type as keyof typeof labels] || "Period Comparison";
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Transaction Analytics</h1>
-          <p className="text-muted-foreground">Visualize transaction trends and performance metrics</p>
+          <p className="text-muted-foreground mt-1">
+            Analyze transaction performance and trends
+          </p>
         </div>
-        <Button onClick={exportAnalytics} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export Analytics
-        </Button>
       </div>
 
-      {/* Date Range Selector */}
-      <Card>
+      {/* Period Comparison Selector */}
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Date Range</CardTitle>
-          <CardDescription>Select a time period for analytics</CardDescription>
+          <CardTitle>Period Comparison</CardTitle>
+          <CardDescription>
+            Compare transaction performance across different time periods
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Quick Select</Label>
-              <Select value={dateRange} onValueChange={(value) => {
-                setDateRange(value);
-                const end = new Date();
-                const start = new Date();
-                start.setDate(end.getDate() - parseInt(value));
-                setStartDate(start.toISOString().split('T')[0]);
-                setEndDate(end.toISOString().split('T')[0]);
-              }}>
-                <SelectTrigger>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Label htmlFor="period-type">Compare Period</Label>
+              <Select value={periodType} onValueChange={(value: any) => setPeriodType(value)}>
+                <SelectTrigger id="period-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                  <SelectItem value="365">Last year</SelectItem>
+                  <SelectItem value="week">Week over Week</SelectItem>
+                  <SelectItem value="month">Month over Month</SelectItem>
+                  <SelectItem value="quarter">Quarter over Quarter</SelectItem>
+                  <SelectItem value="year">Year over Year</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>End Date</Label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
+            <div className="flex-1 pt-6">
+              <p className="text-sm text-muted-foreground">
+                {comparisonData && getPeriodLabel(comparisonData.periodType)}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Comparison Stats Cards */}
+      {comparisonData && !comparisonLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {comparisonData.currentPeriod.metrics.totalTransactions.toLocaleString()}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-muted-foreground">
+                  vs {comparisonData.previousPeriod.metrics.totalTransactions.toLocaleString()} previous
+                </p>
+                {renderChangeIndicator(comparisonData.changes.totalTransactions)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {comparisonData.currentPeriod.metrics.successRate.toFixed(1)}%
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-muted-foreground">
+                  vs {comparisonData.previousPeriod.metrics.successRate.toFixed(1)}% previous
+                </p>
+                {renderChangeIndicator(comparisonData.changes.successRate)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {(comparisonData.currentPeriod.metrics.totalRevenue / 100).toLocaleString()} FCFA
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-muted-foreground">
+                  vs {(comparisonData.previousPeriod.metrics.totalRevenue / 100).toLocaleString()} FCFA
+                </p>
+                {renderChangeIndicator(comparisonData.changes.totalRevenue)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average Amount</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {(comparisonData.currentPeriod.metrics.averageAmount / 100).toLocaleString()} FCFA
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-muted-foreground">
+                  vs {(comparisonData.previousPeriod.metrics.averageAmount / 100).toLocaleString()} FCFA
+                </p>
+                {renderChangeIndicator(comparisonData.changes.averageAmount)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Original Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalTransactions}</div>
-            <p className="text-xs text-muted-foreground">
-              All transactions in period
-            </p>
+            <div className="text-2xl font-bold">{totalTransactions.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">All time transactions</p>
           </CardContent>
         </Card>
 
@@ -203,10 +268,10 @@ export default function TransactionAnalytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground">
-              From completed transactions
-            </p>
+            <div className="text-2xl font-bold">
+              {(totalRevenue / 100).toLocaleString()} FCFA
+            </div>
+            <p className="text-xs text-muted-foreground">From completed transactions</p>
           </CardContent>
         </Card>
 
@@ -218,124 +283,82 @@ export default function TransactionAnalytics() {
           <CardContent>
             <div className="text-2xl font-bold">{failedTransactions.length}</div>
             <p className="text-xs text-muted-foreground">
-              {totalTransactions > 0 ? ((failedTransactions.length / totalTransactions) * 100).toFixed(1) : 0}% failure rate
+              {totalTransactions > 0 
+                ? ((failedTransactions.length / totalTransactions) * 100).toFixed(1)
+                : "0"}% failure rate
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Transaction Trends Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transaction Trends</CardTitle>
-          <CardDescription>Daily transaction volume and completion rate</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-muted-foreground">Loading chart data...</p>
-            </div>
-          ) : trendData.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-muted-foreground">No data available for selected period</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="h-64 flex items-end gap-2">
-                {trendData.map((data, index) => {
-                  const maxCount = Math.max(...trendData.map(d => d.count));
-                  const height = (data.count / maxCount) * 100;
-                  const completionRate = data.count > 0 ? (data.completed / data.count) * 100 : 0;
-                  
-                  return (
-                    <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                      <div className="w-full bg-blue-100 rounded-t relative group">
-                        <div 
-                          className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
-                          style={{ height: `${height}%`, minHeight: '4px' }}
-                        />
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-black text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-                          {data.date}<br/>
-                          Count: {data.count}<br/>
-                          Amount: {formatCurrency(data.amount)}<br/>
-                          Success: {completionRate.toFixed(0)}%
-                        </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground transform -rotate-45 origin-top-left">
-                        {new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Transaction Type Breakdown */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader>
-            <CardTitle>Transaction Type Distribution</CardTitle>
-            <CardDescription>Count by transaction type</CardDescription>
+            <CardTitle>Transaction Trends</CardTitle>
+            <CardDescription>Daily transaction volume and completion rate</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {Object.entries(transactionsByType).map(([type, count]) => {
-                const percentage = (count / totalTransactions) * 100;
-                return (
-                  <div key={type} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{type.replace('_', ' ').toUpperCase()}</span>
-                      <span className="text-muted-foreground">{count} ({percentage.toFixed(1)}%)</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full transition-all"
-                        style={{ 
-                          width: `${percentage}%`,
-                          backgroundColor: getTypeColor(type)
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="count" stroke="#3b82f6" name="Total" />
+                <Line type="monotone" dataKey="completed" stroke="#10b981" name="Completed" />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Revenue by Type</CardTitle>
-            <CardDescription>Total revenue breakdown</CardDescription>
+            <CardTitle>Transaction Type Distribution</CardTitle>
+            <CardDescription>Breakdown by transaction type</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {Object.entries(revenueByType)
-                .sort(([, a], [, b]) => b - a)
-                .map(([type, amount]) => {
-                  const percentage = totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0;
-                  return (
-                    <div key={type} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{type.replace('_', ' ').toUpperCase()}</span>
-                        <span className="text-muted-foreground">{formatCurrency(amount)} ({percentage.toFixed(1)}%)</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full transition-all"
-                          style={{ 
-                            width: `${percentage}%`,
-                            backgroundColor: getTypeColor(type)
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={typeData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry) => `${entry.name}: ${entry.value}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {typeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue by Transaction Type</CardTitle>
+            <CardDescription>Total revenue breakdown by type (FCFA)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#10b981" name="Revenue (FCFA)" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>

@@ -2334,6 +2334,160 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getAllRevenueAnalytics(input);
       }),
+
+    // Transaction Period Comparison
+    getTransactionPeriodComparison: protectedProcedure
+      .input(z.object({
+        periodType: z.enum(["week", "month", "quarter", "year", "custom"]),
+        currentStartDate: z.date().optional(),
+        currentEndDate: z.date().optional(),
+        previousStartDate: z.date().optional(),
+        previousEndDate: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { periodType, currentStartDate, currentEndDate, previousStartDate, previousEndDate } = input;
+        
+        // Calculate date ranges based on period type if not custom
+        let currentStart: Date, currentEnd: Date, previousStart: Date, previousEnd: Date;
+        
+        if (periodType === "custom" && currentStartDate && currentEndDate && previousStartDate && previousEndDate) {
+          currentStart = currentStartDate;
+          currentEnd = currentEndDate;
+          previousStart = previousStartDate;
+          previousEnd = previousEndDate;
+        } else {
+          const now = new Date();
+          
+          switch (periodType) {
+            case "week":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setDate(currentStart.getDate() - 7);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setDate(previousStart.getDate() - 7);
+              break;
+            case "month":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setMonth(currentStart.getMonth() - 1);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setMonth(previousStart.getMonth() - 1);
+              break;
+            case "quarter":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setMonth(currentStart.getMonth() - 3);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setMonth(previousStart.getMonth() - 3);
+              break;
+            case "year":
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setFullYear(currentStart.getFullYear() - 1);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setFullYear(previousStart.getFullYear() - 1);
+              break;
+            default:
+              currentEnd = now;
+              currentStart = new Date(now);
+              currentStart.setMonth(currentStart.getMonth() - 1);
+              previousEnd = new Date(currentStart);
+              previousStart = new Date(previousEnd);
+              previousStart.setMonth(previousStart.getMonth() - 1);
+          }
+        }
+        
+        // Get transactions for current period
+        const currentTransactions = await db.getAllTransactions({
+          startDate: currentStart,
+          endDate: currentEnd,
+        });
+        
+        // Get transactions for previous period
+        const previousTransactions = await db.getAllTransactions({
+          startDate: previousStart,
+          endDate: previousEnd,
+        });
+        
+        // Calculate metrics for current period
+        const currentMetrics = {
+          totalTransactions: currentTransactions.length,
+          completedTransactions: currentTransactions.filter(t => t.status === "completed").length,
+          successRate: currentTransactions.length > 0 
+            ? (currentTransactions.filter(t => t.status === "completed").length / currentTransactions.length) * 100 
+            : 0,
+          totalRevenue: currentTransactions
+            .filter(t => t.status === "completed")
+            .reduce((sum, t) => sum + t.amount, 0),
+          averageAmount: currentTransactions.length > 0
+            ? currentTransactions.reduce((sum, t) => sum + t.amount, 0) / currentTransactions.length
+            : 0,
+          byType: currentTransactions.reduce((acc, t) => {
+            acc[t.type] = (acc[t.type] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>),
+          byStatus: currentTransactions.reduce((acc, t) => {
+            acc[t.status] = (acc[t.status] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>),
+        };
+        
+        // Calculate metrics for previous period
+        const previousMetrics = {
+          totalTransactions: previousTransactions.length,
+          completedTransactions: previousTransactions.filter(t => t.status === "completed").length,
+          successRate: previousTransactions.length > 0
+            ? (previousTransactions.filter(t => t.status === "completed").length / previousTransactions.length) * 100
+            : 0,
+          totalRevenue: previousTransactions
+            .filter(t => t.status === "completed")
+            .reduce((sum, t) => sum + t.amount, 0),
+          averageAmount: previousTransactions.length > 0
+            ? previousTransactions.reduce((sum, t) => sum + t.amount, 0) / previousTransactions.length
+            : 0,
+          byType: previousTransactions.reduce((acc, t) => {
+            acc[t.type] = (acc[t.type] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>),
+          byStatus: previousTransactions.reduce((acc, t) => {
+            acc[t.status] = (acc[t.status] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>),
+        };
+        
+        // Calculate percentage changes
+        const calculateChange = (current: number, previous: number) => {
+          if (previous === 0) return current > 0 ? 100 : 0;
+          return ((current - previous) / previous) * 100;
+        };
+        
+        const changes = {
+          totalTransactions: calculateChange(currentMetrics.totalTransactions, previousMetrics.totalTransactions),
+          completedTransactions: calculateChange(currentMetrics.completedTransactions, previousMetrics.completedTransactions),
+          successRate: currentMetrics.successRate - previousMetrics.successRate,
+          totalRevenue: calculateChange(currentMetrics.totalRevenue, previousMetrics.totalRevenue),
+          averageAmount: calculateChange(currentMetrics.averageAmount, previousMetrics.averageAmount),
+        };
+        
+        return {
+          periodType,
+          currentPeriod: {
+            startDate: currentStart,
+            endDate: currentEnd,
+            metrics: currentMetrics,
+          },
+          previousPeriod: {
+            startDate: previousStart,
+            endDate: previousEnd,
+            metrics: previousMetrics,
+          },
+          changes,
+        };
+      }),
     
     createRevenueAnalytics: protectedProcedure
       .input(z.object({
