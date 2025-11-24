@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -43,6 +43,9 @@ const menuItems = [
   { icon: Smartphone, label: "Mobile Money Analytics", path: "/mobile-money-analytics" },
   { icon: MapPin, label: "Delivery Zones", path: "/delivery-zones" },
   { icon: MessageSquare, label: "Customer Support", path: "/support" },
+  { icon: Bell, label: "Notifications Center", path: "/notifications-center" },
+  { icon: Activity, label: "Activity Log", path: "/activity-log" },
+  { icon: Tag, label: "Campaigns", path: "/campaigns" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: TrendingUp, label: "Quality Analytics", path: "/quality-analytics" },
 ];

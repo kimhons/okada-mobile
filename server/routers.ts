@@ -567,6 +567,179 @@ export const appRouter = router({
         return await db.deleteDeliveryZone(input.id);
       }),
   }),
+
+  notifications: router({
+    list: protectedProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+        type: z.string().optional(),
+        isRead: z.boolean().optional(),
+        limit: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getNotifications(input || {});
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        title: z.string(),
+        message: z.string(),
+        type: z.enum(["order", "delivery", "payment", "system"]),
+      }))
+      .mutation(async ({ input }) => {
+        await db.createNotification(input);
+        return { success: true };
+      }),
+    
+    markAsRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.markNotificationAsRead(input.id);
+        return { success: true };
+      }),
+    
+    sendBulk: protectedProcedure
+      .input(z.object({
+        userIds: z.array(z.number()),
+        title: z.string(),
+        message: z.string(),
+        type: z.enum(["order", "delivery", "payment", "system"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { userIds, title, message, type } = input;
+        
+        // Create notifications for each user
+        for (const userId of userIds) {
+          await db.createNotification({ userId, title, message, type });
+        }
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "send_bulk_notification",
+          entityType: "notification",
+          details: JSON.stringify({ userCount: userIds.length, title }),
+        });
+        
+        return { success: true, count: userIds.length };
+      }),
+  }),
+
+  activityLog: router({
+    list: protectedProcedure
+      .input(z.object({
+        adminId: z.number().optional(),
+        action: z.string().optional(),
+        entityType: z.string().optional(),
+        limit: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getActivityLogs(input || {});
+      }),
+  }),
+
+  campaigns: router({
+    list: protectedProcedure.query(async () => {
+      return await db.getAllCampaigns();
+    }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const campaign = await db.getCampaignById(input.id);
+        const usage = await db.getCampaignUsage(input.id);
+        return { campaign, usage };
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        discountCode: z.string(),
+        discountType: z.enum(["percentage", "fixed"]),
+        discountValue: z.number(),
+        minOrderAmount: z.number().optional(),
+        maxDiscountAmount: z.number().optional(),
+        usageLimit: z.number().optional(),
+        targetAudience: z.enum(["all", "new_users", "existing_users", "specific_users"]),
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createCampaign({
+          ...input,
+          startDate: new Date(input.startDate),
+          endDate: new Date(input.endDate),
+          createdBy: ctx.user.id,
+        });
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_campaign",
+          entityType: "campaign",
+          details: JSON.stringify({ name: input.name, discountCode: input.discountCode }),
+        });
+        
+        return { success: true };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        discountValue: z.number().optional(),
+        minOrderAmount: z.number().optional(),
+        maxDiscountAmount: z.number().optional(),
+        usageLimit: z.number().optional(),
+        targetAudience: z.enum(["all", "new_users", "existing_users", "specific_users"]).optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, startDate, endDate, ...rest } = input;
+        const updateData: any = { ...rest };
+        
+        if (startDate) updateData.startDate = new Date(startDate);
+        if (endDate) updateData.endDate = new Date(endDate);
+        
+        await db.updateCampaign(id, updateData);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_campaign",
+          entityType: "campaign",
+          entityId: id,
+          details: JSON.stringify(updateData),
+        });
+        
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteCampaign(input.id);
+        
+        // Log activity
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_campaign",
+          entityType: "campaign",
+          entityId: input.id,
+        });
+        
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;;

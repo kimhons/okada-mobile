@@ -36,6 +36,13 @@
       "when": 1763941420085,
       "tag": "0004_stormy_sinister_six",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1763942500900,
+      "tag": "0005_cuddly_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

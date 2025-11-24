@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -966,5 +966,203 @@ export async function deleteDeliveryZone(id: number) {
     console.error("Error deleting delivery zone:", error);
     return { success: false };
   }
+}
+
+
+
+
+// ============================================================================
+// Notifications Management
+// ============================================================================
+
+export async function createNotification(data: InsertNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(notifications).values(data);
+}
+
+export async function getNotifications(filters?: {
+  userId?: number;
+  type?: string;
+  isRead?: boolean;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(notifications);
+  
+  if (filters?.userId) {
+    query = query.where(eq(notifications.userId, filters.userId)) as any;
+  }
+  if (filters?.type) {
+    query = query.where(eq(notifications.type, filters.type as any)) as any;
+  }
+  if (filters?.isRead !== undefined) {
+    query = query.where(eq(notifications.isRead, filters.isRead)) as any;
+  }
+  
+  query = query.orderBy(desc(notifications.createdAt)) as any;
+  
+  if (filters?.limit) {
+    query = query.limit(filters.limit) as any;
+  }
+  
+  return query;
+}
+
+export async function markNotificationAsRead(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
+}
+
+// ============================================================================
+// Activity Log
+// ============================================================================
+
+export async function logActivity(data: InsertActivityLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(activityLog).values(data);
+}
+
+export async function createActivityLog(data: InsertActivityLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(activityLog).values(data);
+  const insertId = Number(result[0].insertId);
+  
+  // Return the created activity log
+  const created = await db.select().from(activityLog).where(eq(activityLog.id, insertId)).limit(1);
+  return created[0];
+}
+
+export async function getActivityLogs(filters?: {
+  adminId?: number;
+  action?: string;
+  entityType?: string;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(activityLog);
+  
+  if (filters?.adminId) {
+    query = query.where(eq(activityLog.adminId, filters.adminId)) as any;
+  }
+  if (filters?.action) {
+    query = query.where(eq(activityLog.action, filters.action)) as any;
+  }
+  if (filters?.entityType) {
+    query = query.where(eq(activityLog.entityType, filters.entityType)) as any;
+  }
+  
+  query = query.orderBy(desc(activityLog.createdAt)) as any;
+  
+  if (filters?.limit) {
+    query = query.limit(filters.limit) as any;
+  }
+  
+  return query;
+}
+
+// ============================================================================
+// Promotional Campaigns
+// ============================================================================
+
+export async function createCampaign(data: InsertCampaign) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(campaigns).values(data);
+  return result;
+}
+
+export async function getAllCampaigns() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
+}
+
+export async function getCampaignById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateCampaign(id: number, data: Partial<InsertCampaign>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(campaigns).set(data).where(eq(campaigns.id, id));
+}
+
+export async function deleteCampaign(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(campaigns).where(eq(campaigns.id, id));
+}
+
+export async function getCampaignUsage(campaignId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(campaignUsage).where(eq(campaignUsage.campaignId, campaignId));
+}
+
+export async function getCampaignByCode(code: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(campaigns).where(eq(campaigns.discountCode, code)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getActiveCampaigns() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(campaigns).where(eq(campaigns.isActive, true)).orderBy(desc(campaigns.createdAt));
+}
+
+export async function getUserCampaignUsage(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(campaignUsage).where(eq(campaignUsage.userId, userId));
+}
+
+export async function hasUserUsedCampaign(userId: number, campaignId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.select().from(campaignUsage)
+    .where(and(eq(campaignUsage.userId, userId), eq(campaignUsage.campaignId, campaignId)))
+    .limit(1);
+  return result.length > 0;
+}
+
+export async function recordCampaignUsage(data: InsertCampaignUsage) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(campaignUsage).values(data);
+  
+  // Increment usage count
+  await db.update(campaigns)
+    .set({ usageCount: sql`${campaigns.usageCount} + 1` })
+    .where(eq(campaigns.id, data.campaignId));
 }
 

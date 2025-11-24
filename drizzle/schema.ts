@@ -362,3 +362,66 @@ export type InsertPaymentGatewayConfig = typeof paymentGatewayConfig.$inferInser
 export type PaymentGatewaySyncLog = typeof paymentGatewaySyncLog.$inferSelect;
 export type InsertPaymentGatewaySyncLog = typeof paymentGatewaySyncLog.$inferInsert;
 
+
+
+
+/**
+ * Activity Log table for tracking admin actions
+ */
+export const activityLog = mysqlTable("activity_log", {
+  id: int("id").autoincrement().primaryKey(),
+  adminId: int("adminId").notNull(),
+  adminName: varchar("adminName", { length: 255 }).notNull(),
+  action: varchar("action", { length: 255 }).notNull(),
+  entityType: varchar("entityType", { length: 100 }),
+  entityId: int("entityId"),
+  details: text("details"),
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ActivityLog = typeof activityLog.$inferSelect;
+export type InsertActivityLog = typeof activityLog.$inferInsert;
+
+/**
+ * Promotional Campaigns table for marketing campaigns
+ */
+export const campaigns = mysqlTable("campaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  discountCode: varchar("discountCode", { length: 50 }).notNull().unique(),
+  discountType: mysqlEnum("discountType", ["percentage", "fixed"]).notNull(),
+  discountValue: int("discountValue").notNull(), // Percentage (0-100) or cents for fixed
+  minOrderAmount: int("minOrderAmount").default(0), // In cents
+  maxDiscountAmount: int("maxDiscountAmount"), // In cents, null for unlimited
+  usageLimit: int("usageLimit"), // Null for unlimited
+  usageCount: int("usageCount").default(0).notNull(),
+  targetAudience: mysqlEnum("targetAudience", ["all", "new_users", "existing_users", "specific_users"]).default("all").notNull(),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = typeof campaigns.$inferInsert;
+
+/**
+ * Campaign Usage table for tracking campaign redemptions
+ */
+export const campaignUsage = mysqlTable("campaign_usage", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  userId: int("userId").notNull(),
+  orderId: int("orderId").notNull(),
+  discountAmount: int("discountAmount").notNull(), // In cents
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CampaignUsage = typeof campaignUsage.$inferSelect;
+export type InsertCampaignUsage = typeof campaignUsage.$inferInsert;
+

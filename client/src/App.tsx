@@ -24,6 +24,10 @@ import MobileMoneyAnalytics from "./pages/MobileMoneyAnalytics";
 import DeliveryZones from "./pages/DeliveryZones";
 import CustomerSupport from "./pages/CustomerSupport";
 import SupportTicketDetail from "./pages/SupportTicketDetail";
+import NotificationsCenter from "./pages/NotificationsCenter";
+import NotificationHistory from "./pages/NotificationHistory";
+import ActivityLog from "./pages/ActivityLog";
+import PromotionalCampaigns from "./pages/PromotionalCampaigns";
 
 function Router() {
   return (
@@ -47,6 +51,10 @@ function Router() {
       <Route path="/delivery-zones" component={() => <DashboardLayout><DeliveryZones /></DashboardLayout>} />
       <Route path="/support" component={() => <DashboardLayout><CustomerSupport /></DashboardLayout>} />
       <Route path="/support/:id" component={() => <DashboardLayout><SupportTicketDetail /></DashboardLayout>} />
+      <Route path="/notifications-center" component={() => <DashboardLayout><NotificationsCenter /></DashboardLayout>} />
+      <Route path="/notification-history" component={() => <DashboardLayout><NotificationHistory /></DashboardLayout>} />
+      <Route path="/activity-log" component={() => <DashboardLayout><ActivityLog /></DashboardLayout>} />
+      <Route path="/campaigns" component={() => <DashboardLayout><PromotionalCampaigns /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
