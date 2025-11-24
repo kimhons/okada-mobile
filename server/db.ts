@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1857,5 +1857,326 @@ export async function deletePushNotification(id: number) {
   return await db
     .delete(pushNotificationsLog)
     .where(eq(pushNotificationsLog.id, id));
+}
+
+
+// ============================================================================
+// Coupon Management
+// ============================================================================
+
+export async function getAllCoupons(filters?: {
+  isActive?: boolean;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters?.isActive !== undefined) {
+    conditions.push(eq(coupons.isActive, filters.isActive));
+  }
+
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(coupons.code, `%${filters.search}%`),
+        like(coupons.description, `%${filters.search}%`)
+      )
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(coupons)
+    .where(whereClause)
+    .orderBy(desc(coupons.createdAt));
+}
+
+export async function getCouponById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(coupons)
+    .where(eq(coupons.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function getCouponByCode(code: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(coupons)
+    .where(eq(coupons.code, code))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function createCoupon(data: InsertCoupon) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(coupons).values(data);
+  
+  // Return the created coupon
+  const result = await db
+    .select()
+    .from(coupons)
+    .where(eq(coupons.code, data.code))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updateCoupon(id: number, data: Partial<InsertCoupon>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(coupons)
+    .set(data)
+    .where(eq(coupons.id, id));
+  
+  // Return the updated coupon
+  const result = await db
+    .select()
+    .from(coupons)
+    .where(eq(coupons.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function deleteCoupon(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .delete(coupons)
+    .where(eq(coupons.id, id));
+}
+
+export async function getCouponUsage(couponId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(couponUsage)
+    .where(eq(couponUsage.couponId, couponId))
+    .orderBy(desc(couponUsage.usedAt));
+}
+
+export async function createCouponUsage(data: InsertCouponUsage) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db.insert(couponUsage).values(data);
+}
+
+// ============================================================================
+// Promotional Campaigns
+// ============================================================================
+
+export async function getAllPromotionalCampaigns(filters?: {
+  status?: string;
+  type?: string;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters?.status) {
+    conditions.push(eq(promotionalCampaigns.status, filters.status as any));
+  }
+
+  if (filters?.type) {
+    conditions.push(eq(promotionalCampaigns.type, filters.type as any));
+  }
+
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(promotionalCampaigns.name, `%${filters.search}%`),
+        like(promotionalCampaigns.description, `%${filters.search}%`)
+      )
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(promotionalCampaigns)
+    .where(whereClause)
+    .orderBy(desc(promotionalCampaigns.createdAt));
+}
+
+export async function getPromotionalCampaignById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(promotionalCampaigns)
+    .where(eq(promotionalCampaigns.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function createPromotionalCampaign(data: InsertPromotionalCampaign) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(promotionalCampaigns).values(data);
+  
+  // Return the created campaign
+  const result = await db
+    .select()
+    .from(promotionalCampaigns)
+    .where(eq(promotionalCampaigns.name, data.name))
+    .orderBy(desc(promotionalCampaigns.createdAt))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updatePromotionalCampaign(id: number, data: Partial<InsertPromotionalCampaign>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(promotionalCampaigns)
+    .set(data)
+    .where(eq(promotionalCampaigns.id, id));
+  
+  // Return the updated campaign
+  const result = await db
+    .select()
+    .from(promotionalCampaigns)
+    .where(eq(promotionalCampaigns.id, id))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function deletePromotionalCampaign(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .delete(promotionalCampaigns)
+    .where(eq(promotionalCampaigns.id, id));
+}
+
+// ============================================================================
+// Loyalty Program
+// ============================================================================
+
+export async function getAllLoyaltyPrograms() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(loyaltyProgram)
+    .orderBy(desc(loyaltyProgram.points));
+}
+
+export async function getLoyaltyProgramByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(loyaltyProgram)
+    .where(eq(loyaltyProgram.userId, userId))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function createLoyaltyProgram(data: InsertLoyaltyProgram) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(loyaltyProgram).values(data);
+  
+  // Return the created program
+  const result = await db
+    .select()
+    .from(loyaltyProgram)
+    .where(eq(loyaltyProgram.userId, data.userId))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updateLoyaltyProgram(userId: number, data: Partial<InsertLoyaltyProgram>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(loyaltyProgram)
+    .set(data)
+    .where(eq(loyaltyProgram.userId, userId));
+  
+  // Return the updated program
+  const result = await db
+    .select()
+    .from(loyaltyProgram)
+    .where(eq(loyaltyProgram.userId, userId))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function deleteLoyaltyProgram(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return await db
+    .delete(loyaltyProgram)
+    .where(eq(loyaltyProgram.userId, userId));
+}
+
+export async function getLoyaltyTransactions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(loyaltyTransactions)
+    .where(eq(loyaltyTransactions.userId, userId))
+    .orderBy(desc(loyaltyTransactions.createdAt));
+}
+
+export async function createLoyaltyTransaction(data: InsertLoyaltyTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(loyaltyTransactions).values(data);
+  
+  // Return the created transaction
+  const result = await db
+    .select()
+    .from(loyaltyTransactions)
+    .where(eq(loyaltyTransactions.userId, data.userId))
+    .orderBy(desc(loyaltyTransactions.createdAt))
+    .limit(1);
+  
+  return result[0];
 }
 

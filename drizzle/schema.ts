@@ -645,3 +645,104 @@ export const pushNotificationsLog = mysqlTable("pushNotificationsLog", {
 export type PushNotificationLog = typeof pushNotificationsLog.$inferSelect;
 export type InsertPushNotificationLog = typeof pushNotificationsLog.$inferInsert;
 
+
+/**
+ * Coupons table for discount codes and promotions
+ */
+export const coupons = mysqlTable("coupons", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  description: text("description"),
+  discountType: mysqlEnum("discountType", ["percentage", "fixed"]).notNull(),
+  discountValue: int("discountValue").notNull(), // Percentage (1-100) or fixed amount in cents
+  minOrderAmount: int("minOrderAmount").default(0).notNull(), // Minimum order amount in cents
+  maxDiscountAmount: int("maxDiscountAmount"), // Maximum discount cap in cents (for percentage)
+  usageLimit: int("usageLimit"), // Total usage limit (null = unlimited)
+  usageCount: int("usageCount").default(0).notNull(), // Current usage count
+  perUserLimit: int("perUserLimit").default(1).notNull(), // Usage limit per user
+  validFrom: timestamp("validFrom").notNull(),
+  validUntil: timestamp("validUntil").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = typeof coupons.$inferInsert;
+
+/**
+ * Coupon Usage table for tracking coupon redemptions
+ */
+export const couponUsage = mysqlTable("couponUsage", {
+  id: int("id").autoincrement().primaryKey(),
+  couponId: int("couponId").notNull(),
+  userId: int("userId").notNull(),
+  orderId: int("orderId"),
+  discountAmount: int("discountAmount").notNull(), // Actual discount applied in cents
+  usedAt: timestamp("usedAt").defaultNow().notNull(),
+});
+
+export type CouponUsage = typeof couponUsage.$inferSelect;
+export type InsertCouponUsage = typeof couponUsage.$inferInsert;
+
+/**
+ * Promotional Campaigns table for marketing campaigns
+ */
+export const promotionalCampaigns = mysqlTable("promotionalCampaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  type: mysqlEnum("type", ["discount", "free_delivery", "cashback", "bundle"]).notNull(),
+  targetAudience: mysqlEnum("targetAudience", ["all", "new_users", "active_users", "inactive_users", "specific"]).notNull(),
+  targetUserIds: text("targetUserIds"), // Comma-separated user IDs for specific targeting
+  budget: int("budget"), // Campaign budget in cents
+  spent: int("spent").default(0).notNull(), // Amount spent so far in cents
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  status: mysqlEnum("status", ["draft", "scheduled", "active", "paused", "completed", "cancelled"]).default("draft").notNull(),
+  impressions: int("impressions").default(0).notNull(), // Number of times shown
+  clicks: int("clicks").default(0).notNull(), // Number of clicks
+  conversions: int("conversions").default(0).notNull(), // Number of successful conversions
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PromotionalCampaign = typeof promotionalCampaigns.$inferSelect;
+export type InsertPromotionalCampaign = typeof promotionalCampaigns.$inferInsert;
+
+/**
+ * Loyalty Program table for user points and rewards
+ */
+export const loyaltyProgram = mysqlTable("loyaltyProgram", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  points: int("points").default(0).notNull(),
+  tier: mysqlEnum("tier", ["bronze", "silver", "gold", "platinum"]).default("bronze").notNull(),
+  lifetimePoints: int("lifetimePoints").default(0).notNull(), // Total points earned all time
+  lifetimeSpent: int("lifetimeSpent").default(0).notNull(), // Total amount spent in cents
+  lastActivityAt: timestamp("lastActivityAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LoyaltyProgram = typeof loyaltyProgram.$inferSelect;
+export type InsertLoyaltyProgram = typeof loyaltyProgram.$inferInsert;
+
+/**
+ * Loyalty Transactions table for tracking points earned/redeemed
+ */
+export const loyaltyTransactions = mysqlTable("loyaltyTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["earned", "redeemed", "expired", "adjusted"]).notNull(),
+  points: int("points").notNull(), // Positive for earned, negative for redeemed/expired
+  description: text("description").notNull(),
+  orderId: int("orderId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LoyaltyTransaction = typeof loyaltyTransactions.$inferSelect;
+export type InsertLoyaltyTransaction = typeof loyaltyTransactions.$inferInsert;
+

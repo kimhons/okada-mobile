@@ -27,7 +27,7 @@ import SupportTicketDetail from "./pages/SupportTicketDetail";
 import NotificationsCenter from "./pages/NotificationsCenter";
 import NotificationHistory from "./pages/NotificationHistory";
 import ActivityLog from "./pages/ActivityLog";
-import PromotionalCampaigns from "./pages/PromotionalCampaigns";
+import PromotionalCampaigns from "./pages/promotional-campaigns";
 import AdminUsers from "./pages/admin-users";
 import AuditTrail from "./pages/audit-trail";
 import BackupRestore from "./pages/backup-restore";
@@ -41,6 +41,8 @@ import DataExport from "./pages/data-export";
 import PushNotifications from "./pages/push-notifications";
 import EmailTemplates from "./pages/email-templates";
 import NotificationPreferences from "./pages/notification-preferences";
+import CouponManagement from "./pages/coupon-management";
+import LoyaltyProgram from "./pages/loyalty-program";
 
 function Router() {
   return (
@@ -81,6 +83,8 @@ function Router() {
       <Route path="/push-notifications" component={() => <DashboardLayout><PushNotifications /></DashboardLayout>} />
       <Route path="/email-templates" component={() => <DashboardLayout><EmailTemplates /></DashboardLayout>} />
       <Route path="/notification-preferences" component={() => <DashboardLayout><NotificationPreferences /></DashboardLayout>} />
+      <Route path="/coupon-management" component={() => <DashboardLayout><CouponManagement /></DashboardLayout>} />
+      <Route path="/loyalty-program" component={() => <DashboardLayout><LoyaltyProgram /></DashboardLayout>} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

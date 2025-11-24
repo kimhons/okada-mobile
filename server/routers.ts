@@ -1587,6 +1587,294 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  marketing: router({
+    // Coupon Management
+    getAllCoupons: protectedProcedure
+      .input(z.object({
+        isActive: z.boolean().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllCoupons(input || {});
+      }),
+    
+    getCouponById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCouponById(input.id);
+      }),
+    
+    createCoupon: protectedProcedure
+      .input(z.object({
+        code: z.string(),
+        description: z.string().optional(),
+        discountType: z.enum(["percentage", "fixed"]),
+        discountValue: z.number(),
+        minOrderAmount: z.number().optional(),
+        maxDiscountAmount: z.number().optional(),
+        usageLimit: z.number().optional(),
+        perUserLimit: z.number().optional(),
+        validFrom: z.date(),
+        validUntil: z.date(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const coupon = await db.createCoupon({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_coupon",
+          entityType: "coupon",
+          details: `Created coupon: ${input.code}`,
+        });
+        
+        return coupon;
+      }),
+    
+    updateCoupon: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        code: z.string().optional(),
+        description: z.string().optional(),
+        discountType: z.enum(["percentage", "fixed"]).optional(),
+        discountValue: z.number().optional(),
+        minOrderAmount: z.number().optional(),
+        maxDiscountAmount: z.number().optional(),
+        usageLimit: z.number().optional(),
+        perUserLimit: z.number().optional(),
+        validFrom: z.date().optional(),
+        validUntil: z.date().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        const updated = await db.updateCoupon(id, rest);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_coupon",
+          entityType: "coupon",
+          details: `Updated coupon ID: ${id}`,
+        });
+        
+        return updated;
+      }),
+    
+    deleteCoupon: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteCoupon(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_coupon",
+          entityType: "coupon",
+          details: `Deleted coupon ID: ${input.id}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    getCouponUsage: protectedProcedure
+      .input(z.object({ couponId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCouponUsage(input.couponId);
+      }),
+    
+    // Promotional Campaigns
+    getAllPromotionalCampaigns: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        type: z.string().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllPromotionalCampaigns(input || {});
+      }),
+    
+    getPromotionalCampaignById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPromotionalCampaignById(input.id);
+      }),
+    
+    createPromotionalCampaign: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        type: z.enum(["discount", "free_delivery", "cashback", "bundle"]),
+        targetAudience: z.enum(["all", "new_users", "active_users", "inactive_users", "specific"]),
+        targetUserIds: z.string().optional(),
+        budget: z.number().optional(),
+        startDate: z.date(),
+        endDate: z.date(),
+        status: z.enum(["draft", "scheduled", "active", "paused", "completed", "cancelled"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const campaign = await db.createPromotionalCampaign({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_promotional_campaign",
+          entityType: "promotional_campaign",
+          details: `Created promotional campaign: ${input.name}`,
+        });
+        
+        return campaign;
+      }),
+    
+    updatePromotionalCampaign: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        type: z.enum(["discount", "free_delivery", "cashback", "bundle"]).optional(),
+        targetAudience: z.enum(["all", "new_users", "active_users", "inactive_users", "specific"]).optional(),
+        targetUserIds: z.string().optional(),
+        budget: z.number().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        status: z.enum(["draft", "scheduled", "active", "paused", "completed", "cancelled"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...rest } = input;
+        const updated = await db.updatePromotionalCampaign(id, rest);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_promotional_campaign",
+          entityType: "promotional_campaign",
+          details: `Updated promotional campaign ID: ${id}`,
+        });
+        
+        return updated;
+      }),
+    
+    deletePromotionalCampaign: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deletePromotionalCampaign(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_promotional_campaign",
+          entityType: "promotional_campaign",
+          details: `Deleted promotional campaign ID: ${input.id}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Loyalty Program
+    getAllLoyaltyPrograms: protectedProcedure
+      .query(async () => {
+        return await db.getAllLoyaltyPrograms();
+      }),
+    
+    getLoyaltyProgramByUserId: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getLoyaltyProgramByUserId(input.userId);
+      }),
+    
+    createLoyaltyProgram: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        points: z.number().optional(),
+        tier: z.enum(["bronze", "silver", "gold", "platinum"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const program = await db.createLoyaltyProgram(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_loyalty_program",
+          entityType: "loyalty_program",
+          details: `Created loyalty program for user ID: ${input.userId}`,
+        });
+        
+        return program;
+      }),
+    
+    updateLoyaltyProgram: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        points: z.number().optional(),
+        tier: z.enum(["bronze", "silver", "gold", "platinum"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { userId, ...rest } = input;
+        const updated = await db.updateLoyaltyProgram(userId, rest);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_loyalty_program",
+          entityType: "loyalty_program",
+          details: `Updated loyalty program for user ID: ${userId}`,
+        });
+        
+        return updated;
+      }),
+    
+    deleteLoyaltyProgram: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteLoyaltyProgram(input.userId);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_loyalty_program",
+          entityType: "loyalty_program",
+          details: `Deleted loyalty program for user ID: ${input.userId}`,
+        });
+        
+        return { success: true };
+      }),
+    
+    getLoyaltyTransactions: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getLoyaltyTransactions(input.userId);
+      }),
+    
+    createLoyaltyTransaction: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        type: z.enum(["earned", "redeemed", "expired", "adjusted"]),
+        points: z.number(),
+        description: z.string(),
+        orderId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const transaction = await db.createLoyaltyTransaction(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_loyalty_transaction",
+          entityType: "loyalty_transaction",
+          details: `Created loyalty transaction for user ID: ${input.userId} - ${input.type}: ${input.points} points`,
+        });
+        
+        return transaction;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
