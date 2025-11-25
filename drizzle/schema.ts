@@ -895,3 +895,109 @@ export const riderTierHistory = mysqlTable("riderTierHistory", {
 
 export type RiderTierHistory = typeof riderTierHistory.$inferSelect;
 export type InsertRiderTierHistory = typeof riderTierHistory.$inferInsert;
+
+
+/**
+ * Verification Requests table for user/seller/rider verification
+ */
+export const verificationRequests = mysqlTable("verificationRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // Reference to users or riders table
+  userType: mysqlEnum("userType", ["customer", "seller", "rider"]).notNull(),
+  documentType: mysqlEnum("documentType", ["national_id", "drivers_license", "business_license", "tax_certificate", "bank_statement"]).notNull(),
+  documentUrl: varchar("documentUrl", { length: 500 }).notNull(),
+  additionalDocuments: text("additionalDocuments"), // JSON array of additional document URLs
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "more_info_needed"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy"), // Admin user ID
+  reviewedAt: timestamp("reviewedAt"),
+  rejectionReason: text("rejectionReason"),
+  notes: text("notes"),
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VerificationRequest = typeof verificationRequests.$inferSelect;
+export type InsertVerificationRequest = typeof verificationRequests.$inferInsert;
+
+/**
+ * Platform Statistics table for system health monitoring
+ */
+export const platformStatistics = mysqlTable("platformStatistics", {
+  id: int("id").autoincrement().primaryKey(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  activeUsers: int("activeUsers").default(0).notNull(), // Users online in last 5 minutes
+  concurrentOrders: int("concurrentOrders").default(0).notNull(), // Orders in progress
+  availableRiders: int("availableRiders").default(0).notNull(), // Riders available for assignment
+  busyRiders: int("busyRiders").default(0).notNull(), // Riders currently on delivery
+  offlineRiders: int("offlineRiders").default(0).notNull(), // Riders offline
+  avgResponseTime: int("avgResponseTime").default(0).notNull(), // API response time in ms
+  errorRate: int("errorRate").default(0).notNull(), // Error rate as percentage (e.g., 5 for 0.05%)
+  systemUptime: int("systemUptime").default(0).notNull(), // Uptime percentage (e.g., 9999 for 99.99%)
+  apiCallVolume: int("apiCallVolume").default(0).notNull(), // API calls in last minute
+  databaseConnections: int("databaseConnections").default(0).notNull(), // Active DB connections
+  memoryUsage: int("memoryUsage").default(0).notNull(), // Memory usage percentage
+  cpuUsage: int("cpuUsage").default(0).notNull(), // CPU usage percentage
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PlatformStatistic = typeof platformStatistics.$inferSelect;
+export type InsertPlatformStatistic = typeof platformStatistics.$inferInsert;
+
+/**
+ * Disputes table for conflict resolution
+ */
+export const disputes = mysqlTable("disputes", {
+  id: int("id").autoincrement().primaryKey(),
+  disputeNumber: varchar("disputeNumber", { length: 50 }).notNull().unique(),
+  orderId: int("orderId").notNull(),
+  customerId: int("customerId").notNull(),
+  riderId: int("riderId"),
+  sellerId: int("sellerId"),
+  disputeType: mysqlEnum("disputeType", [
+    "delivery_issue",
+    "product_quality",
+    "missing_items",
+    "wrong_order",
+    "payment_issue",
+    "rider_behavior",
+    "seller_issue",
+    "other"
+  ]).notNull(),
+  status: mysqlEnum("status", ["open", "investigating", "resolved", "escalated", "closed"]).default("open").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  resolutionType: mysqlEnum("resolutionType", ["refund", "replacement", "compensation", "dismissed", "other"]),
+  resolutionAmount: int("resolutionAmount"), // Amount in cents if refund/compensation
+  resolutionNotes: text("resolutionNotes"),
+  assignedTo: int("assignedTo"), // Admin user ID
+  resolvedBy: int("resolvedBy"), // Admin user ID
+  resolvedAt: timestamp("resolvedAt"),
+  escalatedAt: timestamp("escalatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Dispute = typeof disputes.$inferSelect;
+export type InsertDispute = typeof disputes.$inferInsert;
+
+/**
+ * Dispute Messages table for communication history
+ */
+export const disputeMessages = mysqlTable("disputeMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  disputeId: int("disputeId").notNull(),
+  senderId: int("senderId").notNull(),
+  senderType: mysqlEnum("senderType", ["customer", "admin", "rider", "seller"]).notNull(),
+  message: text("message").notNull(),
+  attachments: text("attachments"), // JSON array of attachment URLs
+  isInternal: int("isInternal").default(0).notNull(), // Boolean: internal admin notes
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DisputeMessage = typeof disputeMessages.$inferSelect;
+export type InsertDisputeMessage = typeof disputeMessages.$inferInsert;
+
+
+// Removed duplicates - these tables are already defined earlier in the schema

@@ -47,6 +47,9 @@ import TransactionHistory from "./pages/TransactionHistory";
 import TransactionAnalytics from "./pages/TransactionAnalytics";
 import OrderTrackingMap from "./pages/OrderTrackingMap";
 import InventoryAlerts from "./pages/InventoryAlerts";
+import UserVerification from "./pages/UserVerification";
+import PlatformStatistics from "./pages/PlatformStatistics";
+import DisputeResolution from "./pages/DisputeResolution";
 
 
 function Router() {
@@ -94,6 +97,9 @@ function Router() {
       <Route path="/transaction-analytics" component={() => <DashboardLayout><TransactionAnalytics /></DashboardLayout>} />
       <Route path="/order-tracking" component={() => <DashboardLayout><OrderTrackingMap /></DashboardLayout>} />
       <Route path="/inventory-alerts" component={() => <DashboardLayout><InventoryAlerts /></DashboardLayout>} />
+      <Route path="/user-verification" component={() => <DashboardLayout><UserVerification /></DashboardLayout>} />
+      <Route path="/platform-statistics" component={() => <DashboardLayout><PlatformStatistics /></DashboardLayout>} />
+      <Route path="/dispute-resolution" component={() => <DashboardLayout><DisputeResolution /></DashboardLayout>} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

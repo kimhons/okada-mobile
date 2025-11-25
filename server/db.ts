@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2685,15 +2685,7 @@ export async function createInventoryThreshold(data: InsertInventoryThreshold) {
   return result[0];
 }
 
-export async function updateInventoryThreshold(productId: number, data: Partial<InsertInventoryThreshold>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db
-    .update(inventoryThresholds)
-    .set(data)
-    .where(eq(inventoryThresholds.productId, productId));
-}
+// Removed duplicate - using the more comprehensive version below
 
 export async function deleteInventoryThreshold(productId: number) {
   const db = await getDb();
@@ -3814,4 +3806,583 @@ export async function getRevenueByPaymentMethod() {
     .groupBy(orders.paymentMethod);
 
   return paymentMethods;
+}
+
+
+// ============================================================================
+// INVENTORY ALERTS FUNCTIONS
+// ============================================================================
+
+/**
+ * Get inventory alerts with filtering
+ */
+export async function getInventoryAlerts(filters?: {
+  severity?: "critical" | "warning" | "info";
+  status?: "active" | "resolved" | "dismissed";
+  alertType?: "low_stock" | "out_of_stock" | "overstocked";
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      id: inventoryAlerts.id,
+      productId: inventoryAlerts.productId,
+      productName: products.name,
+      alertType: inventoryAlerts.alertType,
+      threshold: inventoryAlerts.threshold,
+      currentStock: inventoryAlerts.currentStock,
+      severity: inventoryAlerts.severity,
+      status: inventoryAlerts.status,
+      resolvedAt: inventoryAlerts.resolvedAt,
+      resolvedBy: inventoryAlerts.resolvedBy,
+      notes: inventoryAlerts.notes,
+      createdAt: inventoryAlerts.createdAt,
+      updatedAt: inventoryAlerts.updatedAt,
+    })
+    .from(inventoryAlerts)
+    .leftJoin(products, eq(inventoryAlerts.productId, products.id))
+    .$dynamic();
+
+  const conditions = [];
+  if (filters?.severity) {
+    conditions.push(eq(inventoryAlerts.severity, filters.severity));
+  }
+  if (filters?.status) {
+    conditions.push(eq(inventoryAlerts.status, filters.status));
+  }
+  if (filters?.alertType) {
+    conditions.push(eq(inventoryAlerts.alertType, filters.alertType));
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions));
+  }
+
+  const alerts = await query.orderBy(desc(inventoryAlerts.createdAt));
+  return alerts;
+}
+
+// Removed duplicate - using the original version above
+
+// Removed duplicate - using the original version above
+
+/**
+ * Update alert threshold for a product
+ */
+export async function updateInventoryThreshold(productId: number, thresholds: {
+  lowStockThreshold: number;
+  criticalStockThreshold: number;
+  overstockThreshold?: number;
+  autoReorder?: boolean;
+  reorderQuantity?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Check if threshold exists
+  const existing = await db
+    .select()
+    .from(inventoryThresholds)
+    .where(eq(inventoryThresholds.productId, productId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db
+      .update(inventoryThresholds)
+      .set({
+        ...thresholds,
+        autoReorder: thresholds.autoReorder ? 1 : 0,
+      })
+      .where(eq(inventoryThresholds.productId, productId));
+  } else {
+    await db.insert(inventoryThresholds).values({
+      productId,
+      ...thresholds,
+      autoReorder: thresholds.autoReorder ? 1 : 0,
+    });
+  }
+
+  return true;
+}
+
+/**
+ * Get inventory threshold for a product
+ */
+export async function getInventoryThreshold(productId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [threshold] = await db
+    .select()
+    .from(inventoryThresholds)
+    .where(eq(inventoryThresholds.productId, productId))
+    .limit(1);
+
+  return threshold || null;
+}
+
+// ============================================================================
+// USER VERIFICATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Get verification requests with filtering
+ */
+export async function getVerificationRequests(filters?: {
+  userType?: "customer" | "seller" | "rider";
+  status?: "pending" | "approved" | "rejected" | "more_info_needed";
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      id: verificationRequests.id,
+      userId: verificationRequests.userId,
+      userType: verificationRequests.userType,
+      userName: users.name,
+      userEmail: users.email,
+      documentType: verificationRequests.documentType,
+      documentUrl: verificationRequests.documentUrl,
+      additionalDocuments: verificationRequests.additionalDocuments,
+      status: verificationRequests.status,
+      reviewedBy: verificationRequests.reviewedBy,
+      reviewedAt: verificationRequests.reviewedAt,
+      rejectionReason: verificationRequests.rejectionReason,
+      notes: verificationRequests.notes,
+      submittedAt: verificationRequests.submittedAt,
+      createdAt: verificationRequests.createdAt,
+      updatedAt: verificationRequests.updatedAt,
+    })
+    .from(verificationRequests)
+    .leftJoin(users, eq(verificationRequests.userId, users.id))
+    .$dynamic();
+
+  const conditions = [];
+  if (filters?.userType) {
+    conditions.push(eq(verificationRequests.userType, filters.userType));
+  }
+  if (filters?.status) {
+    conditions.push(eq(verificationRequests.status, filters.status));
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions));
+  }
+
+  const requests = await query.orderBy(desc(verificationRequests.submittedAt));
+  return requests;
+}
+
+/**
+ * Approve verification request
+ */
+export async function approveVerification(requestId: number, reviewedBy: number, notes?: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(verificationRequests)
+    .set({
+      status: "approved",
+      reviewedBy,
+      reviewedAt: new Date(),
+      notes,
+    })
+    .where(eq(verificationRequests.id, requestId));
+
+  return true;
+}
+
+/**
+ * Reject verification request
+ */
+export async function rejectVerification(requestId: number, reviewedBy: number, rejectionReason: string, notes?: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(verificationRequests)
+    .set({
+      status: "rejected",
+      reviewedBy,
+      reviewedAt: new Date(),
+      rejectionReason,
+      notes,
+    })
+    .where(eq(verificationRequests.id, requestId));
+
+  return true;
+}
+
+/**
+ * Request more information for verification
+ */
+export async function requestMoreInfo(requestId: number, reviewedBy: number, notes: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(verificationRequests)
+    .set({
+      status: "more_info_needed",
+      reviewedBy,
+      reviewedAt: new Date(),
+      notes,
+    })
+    .where(eq(verificationRequests.id, requestId));
+
+  return true;
+}
+
+// ============================================================================
+// PLATFORM STATISTICS FUNCTIONS
+// ============================================================================
+
+/**
+ * Get current platform statistics
+ */
+export async function getPlatformStatistics() {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get active users (online in last 5 minutes)
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const [activeUsersResult] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(users)
+    .where(gte(users.lastSignedIn, fiveMinutesAgo));
+
+  // Get concurrent orders (in progress)
+  const [concurrentOrdersResult] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(orders)
+    .where(
+      or(
+        eq(orders.status, "confirmed"),
+        eq(orders.status, "rider_assigned"),
+        eq(orders.status, "in_transit"),
+        eq(orders.status, "quality_verification")
+      )
+    );
+
+  // Get rider availability
+  const [availableRidersResult] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(riders)
+    .where(eq(riders.status, "approved"));
+
+  const [busyRidersResult] = await db
+    .select({ count: sql<number>`COUNT(DISTINCT ${orders.riderId})` })
+    .from(orders)
+    .where(
+      and(
+        or(
+          eq(orders.status, "rider_assigned"),
+          eq(orders.status, "in_transit"),
+          eq(orders.status, "quality_verification")
+        ),
+        sql`${orders.riderId} IS NOT NULL`
+      )
+    );
+
+  // Get latest platform statistics record
+  const [latestStats] = await db
+    .select()
+    .from(platformStatistics)
+    .orderBy(desc(platformStatistics.timestamp))
+    .limit(1);
+
+  return {
+    activeUsers: activeUsersResult.count,
+    concurrentOrders: concurrentOrdersResult.count,
+    availableRiders: availableRidersResult.count,
+    busyRiders: busyRidersResult.count,
+    offlineRiders: availableRidersResult.count - busyRidersResult.count,
+    avgResponseTime: latestStats?.avgResponseTime || 0,
+    errorRate: latestStats?.errorRate || 0,
+    systemUptime: latestStats?.systemUptime || 9999, // 99.99%
+    apiCallVolume: latestStats?.apiCallVolume || 0,
+    databaseConnections: latestStats?.databaseConnections || 0,
+    memoryUsage: latestStats?.memoryUsage || 0,
+    cpuUsage: latestStats?.cpuUsage || 0,
+    timestamp: new Date(),
+  };
+}
+
+/**
+ * Record platform statistics snapshot
+ */
+export async function recordPlatformStatistics(stats: {
+  activeUsers: number;
+  concurrentOrders: number;
+  availableRiders: number;
+  busyRiders: number;
+  offlineRiders: number;
+  avgResponseTime: number;
+  errorRate: number;
+  systemUptime: number;
+  apiCallVolume: number;
+  databaseConnections: number;
+  memoryUsage: number;
+  cpuUsage: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(platformStatistics).values(stats);
+  return result.insertId;
+}
+
+/**
+ * Get historical platform statistics
+ */
+export async function getHistoricalStatistics(hours: number = 24) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const startTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+
+  const stats = await db
+    .select()
+    .from(platformStatistics)
+    .where(gte(platformStatistics.timestamp, startTime))
+    .orderBy(platformStatistics.timestamp);
+
+  return stats;
+}
+
+// ============================================================================
+// DISPUTE RESOLUTION FUNCTIONS
+// ============================================================================
+
+/**
+ * Get disputes with filtering
+ */
+export async function getDisputes(filters?: {
+  status?: "open" | "investigating" | "resolved" | "escalated" | "closed";
+  priority?: "low" | "medium" | "high" | "urgent";
+  disputeType?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      id: disputes.id,
+      disputeNumber: disputes.disputeNumber,
+      orderId: disputes.orderId,
+      orderNumber: orders.orderNumber,
+      customerId: disputes.customerId,
+      customerName: users.name,
+      riderId: disputes.riderId,
+      sellerId: disputes.sellerId,
+      disputeType: disputes.disputeType,
+      status: disputes.status,
+      priority: disputes.priority,
+      subject: disputes.subject,
+      description: disputes.description,
+      resolutionType: disputes.resolutionType,
+      resolutionAmount: disputes.resolutionAmount,
+      resolutionNotes: disputes.resolutionNotes,
+      assignedTo: disputes.assignedTo,
+      resolvedBy: disputes.resolvedBy,
+      resolvedAt: disputes.resolvedAt,
+      escalatedAt: disputes.escalatedAt,
+      createdAt: disputes.createdAt,
+      updatedAt: disputes.updatedAt,
+    })
+    .from(disputes)
+    .leftJoin(orders, eq(disputes.orderId, orders.id))
+    .leftJoin(users, eq(disputes.customerId, users.id))
+    .$dynamic();
+
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(disputes.status, filters.status));
+  }
+  if (filters?.priority) {
+    conditions.push(eq(disputes.priority, filters.priority));
+  }
+  if (filters?.disputeType) {
+    conditions.push(eq(disputes.disputeType, filters.disputeType as any));
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions));
+  }
+
+  const disputeList = await query.orderBy(desc(disputes.createdAt));
+  return disputeList;
+}
+
+/**
+ * Get dispute details with messages
+ */
+export async function getDisputeDetails(disputeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [dispute] = await db
+    .select({
+      id: disputes.id,
+      disputeNumber: disputes.disputeNumber,
+      orderId: disputes.orderId,
+      orderNumber: orders.orderNumber,
+      customerId: disputes.customerId,
+      customerName: users.name,
+      customerEmail: users.email,
+      riderId: disputes.riderId,
+      sellerId: disputes.sellerId,
+      disputeType: disputes.disputeType,
+      status: disputes.status,
+      priority: disputes.priority,
+      subject: disputes.subject,
+      description: disputes.description,
+      resolutionType: disputes.resolutionType,
+      resolutionAmount: disputes.resolutionAmount,
+      resolutionNotes: disputes.resolutionNotes,
+      assignedTo: disputes.assignedTo,
+      resolvedBy: disputes.resolvedBy,
+      resolvedAt: disputes.resolvedAt,
+      escalatedAt: disputes.escalatedAt,
+      createdAt: disputes.createdAt,
+      updatedAt: disputes.updatedAt,
+    })
+    .from(disputes)
+    .leftJoin(orders, eq(disputes.orderId, orders.id))
+    .leftJoin(users, eq(disputes.customerId, users.id))
+    .where(eq(disputes.id, disputeId))
+    .limit(1);
+
+  if (!dispute) return null;
+
+  // Get messages
+  const messages = await db
+    .select()
+    .from(disputeMessages)
+    .where(eq(disputeMessages.disputeId, disputeId))
+    .orderBy(disputeMessages.createdAt);
+
+  return {
+    ...dispute,
+    messages,
+  };
+}
+
+/**
+ * Create dispute
+ */
+export async function createDispute(dispute: {
+  orderId: number;
+  customerId: number;
+  riderId?: number;
+  sellerId?: number;
+  disputeType: string;
+  priority?: "low" | "medium" | "high" | "urgent";
+  subject: string;
+  description: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Generate dispute number
+  const disputeNumber = `DSP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+  const [result] = await db.insert(disputes).values({
+    ...dispute,
+    disputeNumber,
+    disputeType: dispute.disputeType as any,
+    priority: dispute.priority || "medium",
+  });
+
+  return result.insertId;
+}
+
+/**
+ * Add message to dispute
+ */
+export async function addDisputeMessage(message: {
+  disputeId: number;
+  senderId: number;
+  senderType: "customer" | "admin" | "rider" | "seller";
+  message: string;
+  attachments?: string;
+  isInternal?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(disputeMessages).values({
+    ...message,
+    isInternal: message.isInternal ? 1 : 0,
+  });
+
+  return result.insertId;
+}
+
+/**
+ * Resolve dispute
+ */
+export async function resolveDispute(
+  disputeId: number,
+  resolvedBy: number,
+  resolution: {
+    resolutionType: "refund" | "replacement" | "compensation" | "dismissed" | "other";
+    resolutionAmount?: number;
+    resolutionNotes: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(disputes)
+    .set({
+      status: "resolved",
+      resolvedBy,
+      resolvedAt: new Date(),
+      ...resolution,
+    })
+    .where(eq(disputes.id, disputeId));
+
+  return true;
+}
+
+/**
+ * Escalate dispute
+ */
+export async function escalateDispute(disputeId: number, assignedTo: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(disputes)
+    .set({
+      status: "escalated",
+      escalatedAt: new Date(),
+      assignedTo,
+    })
+    .where(eq(disputes.id, disputeId));
+
+  return true;
+}
+
+/**
+ * Update dispute status
+ */
+export async function updateDisputeStatus(
+  disputeId: number,
+  status: "open" | "investigating" | "resolved" | "escalated" | "closed"
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(disputes)
+    .set({ status })
+    .where(eq(disputes.id, disputeId));
+
+  return true;
 }

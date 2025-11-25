@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle, CheckCircle, Server, Scale } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -71,6 +71,9 @@ const menuItems = [
   { icon: BarChart3, label: "Transaction Analytics", path: "/transaction-analytics" },
   { icon: Navigation, label: "Order Tracking Map", path: "/order-tracking" },
   { icon: AlertTriangle, label: "Inventory Alerts", path: "/inventory-alerts" },
+  { icon: CheckCircle, label: "User Verification", path: "/user-verification" },
+  { icon: Server, label: "Platform Statistics", path: "/platform-statistics" },
+  { icon: Scale, label: "Dispute Resolution", path: "/dispute-resolution" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

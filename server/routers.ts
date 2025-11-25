@@ -3900,6 +3900,306 @@ export const appRouter = router({
         return await db.getRevenueByPaymentMethod();
       }),
   }),
+
+  // Inventory Alerts Router
+  inventoryAlerts: router({
+    getAlerts: protectedProcedure
+      .input(z.object({
+        severity: z.enum(['critical', 'warning', 'info']).optional(),
+        status: z.enum(['active', 'resolved', 'dismissed']).optional(),
+        alertType: z.enum(['low_stock', 'out_of_stock', 'overstocked']).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getInventoryAlerts(input);
+      }),
+
+    resolveAlert: protectedProcedure
+      .input(z.object({
+        alertId: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.resolveInventoryAlert(input.alertId, ctx.user.id, input.notes);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "resolve_inventory_alert",
+          entityType: "inventory_alert",
+          entityId: input.alertId,
+          details: `Resolved inventory alert`,
+        });
+
+        return result;
+      }),
+
+    updateThreshold: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        lowStockThreshold: z.number(),
+        criticalStockThreshold: z.number(),
+        overstockThreshold: z.number().optional(),
+        autoReorder: z.boolean().optional(),
+        reorderQuantity: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateInventoryThreshold(input.productId, input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_inventory_threshold",
+          entityType: "product",
+          entityId: input.productId,
+          details: `Updated inventory thresholds`,
+        });
+
+        return result;
+      }),
+
+    getThreshold: protectedProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getInventoryThreshold(input.productId);
+      }),
+  }),
+
+  // User Verification Router
+  userVerification: router({
+    getRequests: protectedProcedure
+      .input(z.object({
+        userType: z.enum(['customer', 'seller', 'rider']).optional(),
+        status: z.enum(['pending', 'approved', 'rejected', 'more_info_needed']).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getVerificationRequests(input);
+      }),
+
+    approve: protectedProcedure
+      .input(z.object({
+        requestId: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.approveVerification(input.requestId, ctx.user.id, input.notes);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "approve_verification",
+          entityType: "verification_request",
+          entityId: input.requestId,
+          details: `Approved verification request`,
+        });
+
+        return result;
+      }),
+
+    reject: protectedProcedure
+      .input(z.object({
+        requestId: z.number(),
+        rejectionReason: z.string(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.rejectVerification(input.requestId, ctx.user.id, input.rejectionReason, input.notes);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "reject_verification",
+          entityType: "verification_request",
+          entityId: input.requestId,
+          details: `Rejected verification request: ${input.rejectionReason}`,
+        });
+
+        return result;
+      }),
+
+    requestMoreInfo: protectedProcedure
+      .input(z.object({
+        requestId: z.number(),
+        notes: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.requestMoreInfo(input.requestId, ctx.user.id, input.notes);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "request_more_info",
+          entityType: "verification_request",
+          entityId: input.requestId,
+          details: `Requested more information`,
+        });
+
+        return result;
+      }),
+  }),
+
+  // Platform Statistics Router
+  platformStats: router({
+    getCurrent: protectedProcedure
+      .query(async () => {
+        return await db.getPlatformStatistics();
+      }),
+
+    getHistorical: protectedProcedure
+      .input(z.object({
+        hours: z.number().default(24),
+      }))
+      .query(async ({ input }) => {
+        return await db.getHistoricalStatistics(input.hours);
+      }),
+
+    record: protectedProcedure
+      .input(z.object({
+        activeUsers: z.number(),
+        concurrentOrders: z.number(),
+        availableRiders: z.number(),
+        busyRiders: z.number(),
+        offlineRiders: z.number(),
+        avgResponseTime: z.number(),
+        errorRate: z.number(),
+        systemUptime: z.number(),
+        apiCallVolume: z.number(),
+        databaseConnections: z.number(),
+        memoryUsage: z.number(),
+        cpuUsage: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.recordPlatformStatistics(input);
+      }),
+  }),
+
+  // Dispute Resolution Router
+  disputes: router({
+    getList: protectedProcedure
+      .input(z.object({
+        status: z.enum(['open', 'investigating', 'resolved', 'escalated', 'closed']).optional(),
+        priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+        disputeType: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getDisputes(input);
+      }),
+
+    getDetails: protectedProcedure
+      .input(z.object({ disputeId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getDisputeDetails(input.disputeId);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        customerId: z.number(),
+        riderId: z.number().optional(),
+        sellerId: z.number().optional(),
+        disputeType: z.string(),
+        priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+        subject: z.string(),
+        description: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const disputeId = await db.createDispute(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_dispute",
+          entityType: "dispute",
+          entityId: disputeId || 0,
+          details: `Created dispute: ${input.subject}`,
+        });
+
+        return disputeId;
+      }),
+
+    addMessage: protectedProcedure
+      .input(z.object({
+        disputeId: z.number(),
+        message: z.string(),
+        attachments: z.string().optional(),
+        isInternal: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.addDisputeMessage({
+          disputeId: input.disputeId,
+          senderId: ctx.user.id,
+          senderType: "admin",
+          message: input.message,
+          attachments: input.attachments,
+          isInternal: input.isInternal,
+        });
+      }),
+
+    resolve: protectedProcedure
+      .input(z.object({
+        disputeId: z.number(),
+        resolutionType: z.enum(['refund', 'replacement', 'compensation', 'dismissed', 'other']),
+        resolutionAmount: z.number().optional(),
+        resolutionNotes: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.resolveDispute(input.disputeId, ctx.user.id, {
+          resolutionType: input.resolutionType,
+          resolutionAmount: input.resolutionAmount,
+          resolutionNotes: input.resolutionNotes,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "resolve_dispute",
+          entityType: "dispute",
+          entityId: input.disputeId,
+          details: `Resolved dispute with ${input.resolutionType}`,
+        });
+
+        return result;
+      }),
+
+    escalate: protectedProcedure
+      .input(z.object({
+        disputeId: z.number(),
+        assignedTo: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.escalateDispute(input.disputeId, input.assignedTo);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "escalate_dispute",
+          entityType: "dispute",
+          entityId: input.disputeId,
+          details: `Escalated dispute`,
+        });
+
+        return result;
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({
+        disputeId: z.number(),
+        status: z.enum(['open', 'investigating', 'resolved', 'escalated', 'closed']),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateDisputeStatus(input.disputeId, input.status);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_dispute_status",
+          entityType: "dispute",
+          entityId: input.disputeId,
+          details: `Updated dispute status to ${input.status}`,
+        });
+
+        return result;
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 
