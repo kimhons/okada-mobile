@@ -5440,6 +5440,60 @@ export const appRouter = router({
         return await db.getSyncStatus(input.riderId, input.deviceId);
       }),
   }),
+
+  // Report Templates
+  reportTemplates: router({
+    getAll: publicProcedure.query(() => {
+      const { getAllTemplates } = require("./reportTemplates");
+      return getAllTemplates();
+    }),
+    
+    getByCategory: publicProcedure
+      .input(z.object({ category: z.enum(["sales", "operations", "finance", "quality", "platform"]) }))
+      .query(({ input }) => {
+        const { getTemplatesByCategory } = require("./reportTemplates");
+        return getTemplatesByCategory(input.category);
+      }),
+    
+    getById: publicProcedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        const { getTemplateById } = require("./reportTemplates");
+        return getTemplateById(input.id);
+      }),
+    
+    useTemplate: protectedProcedure
+      .input(z.object({
+        templateId: z.string(),
+        customName: z.string().optional(),
+        customFilters: z.record(z.any()).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { getTemplateById } = require("./reportTemplates");
+        const template = getTemplateById(input.templateId);
+        
+        if (!template) {
+          throw new Error("Template not found");
+        }
+        
+        // Create a custom report from the template
+        const reportData = {
+          name: input.customName || template.name,
+          description: template.description,
+          reportType: template.reportType,
+          filters: JSON.stringify(input.customFilters || template.filters),
+          metrics: JSON.stringify(template.metrics),
+          groupBy: template.groupBy,
+          sortBy: template.sortBy,
+          sortOrder: template.sortOrder,
+          createdBy: ctx.user.id,
+          isPublic: 0,
+        };
+        
+        return await db.createCustomReport(reportData);
+      }),
+  }),
 });
-export type AppRouter = typeof appRouter;;
+
+export type AppRouter = typeof appRouter;
 
