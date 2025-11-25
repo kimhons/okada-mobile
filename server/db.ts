@@ -3513,3 +3513,305 @@ export async function getRiderTierHistory(riderId: number) {
 
   return history;
 }
+
+// ============================================================================
+// FINANCIAL OVERVIEW DASHBOARD
+// ============================================================================
+
+/**
+ * Get comprehensive financial overview
+ */
+export async function getFinancialDashboard(period: 'day' | 'week' | 'month' | 'year' = 'month') {
+  const db = await getDb();
+  if (!db) return null;
+
+  const now = new Date();
+  let startDate: Date;
+  let previousStartDate: Date;
+  let previousEndDate: Date;
+
+  switch (period) {
+    case 'day':
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      previousStartDate = new Date(startDate);
+      previousStartDate.setDate(previousStartDate.getDate() - 1);
+      previousEndDate = new Date(startDate);
+      break;
+    case 'week':
+      const dayOfWeek = now.getDay();
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - dayOfWeek);
+      startDate.setHours(0, 0, 0, 0);
+      previousStartDate = new Date(startDate);
+      previousStartDate.setDate(previousStartDate.getDate() - 7);
+      previousEndDate = new Date(startDate);
+      break;
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      break;
+    case 'year':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      previousStartDate = new Date(now.getFullYear() - 1, 0, 1);
+      previousEndDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+      break;
+  }
+
+  // Current period revenue
+  const [currentRevenue] = await db
+    .select({ total: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.paymentStatus, 'paid'),
+        gte(orders.createdAt, startDate)
+      )
+    );
+
+  // Previous period revenue
+  const [previousRevenue] = await db
+    .select({ total: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.paymentStatus, 'paid'),
+        gte(orders.createdAt, previousStartDate),
+        lte(orders.createdAt, previousEndDate)
+      )
+    );
+
+  // Current period commissions
+  const [currentCommissions] = await db
+    .select({ total: sql<number>`CAST(COALESCE(SUM(${riderEarnings.amount}), 0) AS SIGNED)` })
+    .from(riderEarnings)
+    .where(gte(riderEarnings.createdAt, startDate));
+
+  // Previous period commissions
+  const [previousCommissions] = await db
+    .select({ total: sql<number>`CAST(COALESCE(SUM(${riderEarnings.amount}), 0) AS SIGNED)` })
+    .from(riderEarnings)
+    .where(
+      and(
+        gte(riderEarnings.createdAt, previousStartDate),
+        lte(riderEarnings.createdAt, previousEndDate)
+      )
+    );
+
+  // Current period payouts
+  const [currentPayouts] = await db
+    .select({ total: sql<number>`CAST(COALESCE(SUM(${payouts.amount}), 0) AS SIGNED)` })
+    .from(payouts)
+    .where(gte(payouts.createdAt, startDate));
+
+  // Previous period payouts
+  const [previousPayouts] = await db
+    .select({ total: sql<number>`CAST(COALESCE(SUM(${payouts.amount}), 0) AS SIGNED)` })
+    .from(payouts)
+    .where(
+      and(
+        gte(payouts.createdAt, previousStartDate),
+        lte(payouts.createdAt, previousEndDate)
+      )
+    );
+
+  // Order count
+  const [currentOrders] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.paymentStatus, 'paid'),
+        gte(orders.createdAt, startDate)
+      )
+    );
+
+  const [previousOrders] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.paymentStatus, 'paid'),
+        gte(orders.createdAt, previousStartDate),
+        lte(orders.createdAt, previousEndDate)
+      )
+    );
+
+  // Calculate growth percentages
+  const revenueGrowth = previousRevenue.total > 0
+    ? ((currentRevenue.total - previousRevenue.total) / previousRevenue.total) * 100
+    : 0;
+
+  const commissionsGrowth = previousCommissions.total > 0
+    ? ((currentCommissions.total - previousCommissions.total) / previousCommissions.total) * 100
+    : 0;
+
+  const payoutsGrowth = previousPayouts.total > 0
+    ? ((currentPayouts.total - previousPayouts.total) / previousPayouts.total) * 100
+    : 0;
+
+  const ordersGrowth = previousOrders.count > 0
+    ? ((currentOrders.count - previousOrders.count) / previousOrders.count) * 100
+    : 0;
+
+  return {
+    current: {
+      revenue: currentRevenue.total,
+      commissions: currentCommissions.total,
+      payouts: currentPayouts.total,
+      orders: currentOrders.count,
+    },
+    previous: {
+      revenue: previousRevenue.total,
+      commissions: previousCommissions.total,
+      payouts: previousPayouts.total,
+      orders: previousOrders.count,
+    },
+    growth: {
+      revenue: revenueGrowth,
+      commissions: commissionsGrowth,
+      payouts: payoutsGrowth,
+      orders: ordersGrowth,
+    },
+    period,
+  };
+}
+
+/**
+ * Get revenue trends over time
+ */
+export async function getRevenueTrends(days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const trends = await db
+    .select({
+      date: sql<string>`DATE(${orders.createdAt})`.as('date'),
+      revenue: sql<number>`CAST(COALESCE(SUM(${orders.total}), 0) AS SIGNED)`,
+      orderCount: sql<number>`COUNT(*)`,
+    })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.paymentStatus, 'paid'),
+        gte(orders.createdAt, startDate)
+      )
+    )
+    .groupBy(sql`DATE(${orders.createdAt})`)
+    .orderBy(sql`DATE(${orders.createdAt})`);
+
+  return trends;
+}
+
+/**
+ * Get commission summary breakdown
+ */
+export async function getCommissionSummary() {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Total commissions by type
+  const [platformCommission] = await db
+    .select({ total: sql<number>`CAST(COALESCE(SUM(${orders.total} * 0.10), 0) AS SIGNED)` })
+    .from(orders)
+    .where(eq(orders.paymentStatus, 'paid'));
+
+  const [riderCommissions] = await db
+    .select({ total: sql<number>`CAST(COALESCE(SUM(${riderEarnings.amount}), 0) AS SIGNED)` })
+    .from(riderEarnings);
+
+  const [deliveryFees] = await db
+    .select({ total: sql<number>`CAST(COALESCE(SUM(${orders.deliveryFee}), 0) AS SIGNED)` })
+    .from(orders)
+    .where(eq(orders.paymentStatus, 'paid'));
+
+  return {
+    platformCommission: platformCommission.total,
+    riderCommissions: riderCommissions.total,
+    deliveryFees: deliveryFees.total,
+    total: platformCommission.total + riderCommissions.total + deliveryFees.total,
+  };
+}
+
+/**
+ * Get payout statuses summary
+ */
+export async function getPayoutStatuses() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const statusCounts = await db
+    .select({
+      status: payouts.status,
+      count: sql<number>`COUNT(*)`,
+      total: sql<number>`CAST(COALESCE(SUM(${payouts.amount}), 0) AS SIGNED)`,
+    })
+    .from(payouts)
+    .groupBy(payouts.status);
+
+  const summary = {
+    pending: { count: 0, total: 0 },
+    completed: { count: 0, total: 0 },
+    failed: { count: 0, total: 0 },
+  };
+
+  statusCounts.forEach((item) => {
+    if (item.status in summary) {
+      summary[item.status as keyof typeof summary] = {
+        count: item.count,
+        total: item.total,
+      };
+    }
+  });
+
+  return summary;
+}
+
+/**
+ * Get top revenue categories
+ */
+export async function getTopRevenueCategories(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const topCategories = await db
+    .select({
+      categoryId: products.categoryId,
+      categoryName: categories.name,
+      revenue: sql<number>`COALESCE(SUM(${orderItems.quantity} * ${orderItems.price}), 0)`,
+      orderCount: sql<number>`COUNT(DISTINCT ${orders.id})`,
+    })
+    .from(orderItems)
+    .leftJoin(orders, eq(orderItems.orderId, orders.id))
+    .leftJoin(products, eq(orderItems.productId, products.id))
+    .leftJoin(categories, eq(products.categoryId, categories.id))
+    .where(eq(orders.paymentStatus, 'paid'))
+    .groupBy(products.categoryId, categories.name)
+    .orderBy(desc(sql`SUM(${orderItems.quantity} * ${orderItems.price})`))
+    .limit(limit);
+
+  return topCategories;
+}
+
+/**
+ * Get revenue by payment method
+ */
+export async function getRevenueByPaymentMethod() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const paymentMethods = await db
+    .select({
+      paymentMethod: orders.paymentMethod,
+      revenue: sql<number>`COALESCE(SUM(${orders.total}), 0)`,
+      orderCount: sql<number>`COUNT(*)`,
+    })
+    .from(orders)
+    .where(eq(orders.paymentStatus, 'paid'))
+    .groupBy(orders.paymentMethod);
+
+  return paymentMethods;
+}

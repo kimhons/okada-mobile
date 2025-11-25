@@ -33,7 +33,7 @@ const menuItems = [
   { icon: Camera, label: "Quality Verification", path: "/quality-verification" },
   { icon: Users, label: "Users", path: "/users" },
   { icon: Bike, label: "Riders", path: "/riders" },
-  { icon: Trophy, label: "Rider Leaderboard", path: "/rider-leaderboard" },
+  { icon: Trophy, BarChart3, label: "Rider Leaderboard", path: "/rider-leaderboard" },
   { icon: Store, label: "Sellers", path: "/sellers" },
   { icon: Package, label: "Products", path: "/products" },
   { icon: DollarSign, label: "Financial Overview", path: "/financial" },

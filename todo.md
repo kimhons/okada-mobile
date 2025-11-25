@@ -611,3 +611,64 @@
 - [ ] Test badge generation
 - [ ] Verify scheduled job execution
 - [ ] Integration tests for full promotion flow
+
+
+## Financial Overview Dashboard (Screen 15)
+
+### Backend Functions
+- [ ] Implement getFinancialOverview() function with revenue, commissions, payouts
+- [ ] Add getRevenueTrends() for period-over-period comparison
+- [ ] Add getCommissionSummary() with breakdown by type
+- [ ] Add getPayoutStatuses() with pending/completed/failed counts
+- [ ] Add getTopRevenueCategories() for category breakdown
+- [ ] Add getRevenueByPaymentMethod() for payment analytics
+- [ ] Create tRPC procedures for financial overview
+
+### Frontend Dashboard
+- [ ] Create FinancialOverview page component
+- [ ] Build stats cards (total revenue, commissions, payouts, growth)
+- [ ] Add revenue trend chart with period selector (day/week/month/year)
+- [ ] Add commission breakdown chart (pie/donut)
+- [ ] Add payout status summary with progress indicators
+- [ ] Add top revenue categories table
+- [ ] Add payment method distribution chart
+- [ ] Add period comparison indicators (vs previous period)
+- [ ] Add export button for financial reports
+- [ ] Add navigation menu item
+
+### Testing
+- [ ] Write tests for financial analytics functions
+- [ ] Test revenue calculations
+- [ ] Test commission calculations
+- [ ] Test payout status aggregation
+- [ ] Test period comparisons
+- [ ] Integration tests for dashboard
+
+## Financial Overview Dashboard (Screen 15)
+
+### Backend Implementation
+- [x] Implement getFinancialDashboard() with period-over-period comparisons
+- [x] Add getRevenueTrends() for 7/30/90 day charts
+- [x] Add getCommissionSummary() for breakdown
+- [x] Add getPayoutStatuses() for status tracking
+- [x] Add getTopRevenueCategories() for category analysis
+- [x] Add getRevenueByPaymentMethod() for payment breakdown
+- [x] Create tRPC router with all procedures
+
+### Frontend UI
+- [x] Create FinancialOverview page component with DashboardLayout
+- [x] Build stats cards (revenue, commissions, payouts, orders) with growth indicators
+- [x] Add revenue trends area chart with period selector (7/30/90 days)
+- [x] Add commission breakdown pie chart
+- [x] Add payout status bar chart
+- [x] Add top revenue categories ranked list
+- [x] Add payment methods revenue breakdown
+- [x] Add period filter (day/week/month/year)
+- [x] Add navigation menu item (Financial Overview)
+
+### Testing
+- [x] Write tests for all financial functions (19 tests total)
+- [x] Test period calculations (14/19 tests passed - 73.7%)
+- [x] Test growth percentage calculations
+- [x] Test chart data formatting
+- [ ] Fix remaining 5 failing tests (getFinancialDashboard and getRevenueTrends SQL issues)

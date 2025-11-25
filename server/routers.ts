@@ -3859,6 +3859,47 @@ export const appRouter = router({
         return await db.getRiderTierHistory(input.riderId);
       }),
   }),
+
+  financialOverview: router({
+    getOverview: protectedProcedure
+      .input(z.object({
+        period: z.enum(['day', 'week', 'month', 'year']).default('month'),
+      }))
+      .query(async ({ input }) => {
+        return await db.getFinancialDashboard(input.period);
+      }),
+
+    getRevenueTrends: protectedProcedure
+      .input(z.object({
+        days: z.number().default(30),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRevenueTrends(input.days);
+      }),
+
+    getCommissionSummary: protectedProcedure
+      .query(async () => {
+        return await db.getCommissionSummary();
+      }),
+
+    getPayoutStatuses: protectedProcedure
+      .query(async () => {
+        return await db.getPayoutStatuses();
+      }),
+
+    getTopRevenueCategories: protectedProcedure
+      .input(z.object({
+        limit: z.number().default(10),
+      }))
+      .query(async ({ input }) => {
+        return await db.getTopRevenueCategories(input.limit);
+      }),
+
+    getRevenueByPaymentMethod: protectedProcedure
+      .query(async () => {
+        return await db.getRevenueByPaymentMethod();
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 
