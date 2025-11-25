@@ -543,3 +543,17 @@
 - [x] Renamed supportTickets → faqsAndHelpDocs (82 procedures)
 - [x] Verify all procedures are preserved (629 total procedures retained)
 - [x] Test TypeScript compilation after rename (0 errors in routers.ts)
+
+
+## Implement getRiderLeaderboard Backend Function
+
+- [x] Implement getRiderLeaderboard() in server/db.ts with performance scoring
+- [x] Add support for time periods (today, week, month, all)
+- [x] Add support for categories (overall, earnings, deliveries, rating, speed)
+- [x] Implement tier assignment logic (platinum, gold, silver, bronze, rookie)
+- [x] Implement achievement badge calculation (8 badges)
+- [x] Add get30DayTrend() function for charts
+- [x] Add getRiderPerformanceDetails() for individual stats
+- [x] Create tRPC procedures in leaderboard router
+- [x] Test with existing rider data (23/23 tests passed - 100%)
+- [x] Verify frontend displays leaderboard correctly (RiderLeaderboard page ready)

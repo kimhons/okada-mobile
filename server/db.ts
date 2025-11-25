@@ -2780,3 +2780,441 @@ export async function checkStockLevelsAndCreateAlerts() {
   return newAlerts;
 }
 
+
+// ============================================================================
+// Rider Leaderboard Functions
+// ============================================================================
+import { inArray } from "drizzle-orm";
+
+export async function getRiderLeaderboard(params: {
+  period: 'today' | 'week' | 'month' | 'all';
+  category: 'overall' | 'earnings' | 'deliveries' | 'rating' | 'speed';
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) return { leaderboard: [], total: 0, stats: null };
+
+  const { period, category, limit = 50, offset = 0 } = params;
+
+  // Calculate date range based on period
+  const now = new Date();
+  let startDate: Date | null = null;
+
+  switch (period) {
+    case 'today':
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      break;
+    case 'week':
+      const dayOfWeek = now.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() + mondayOffset);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'all':
+      startDate = null; // No date filter
+      break;
+  }
+
+  // Build the query
+  const riderQuery = db
+    .select({
+      riderId: riders.id,
+      name: riders.name,
+      email: riders.email,
+      phone: riders.phone,
+      rating: riders.rating,
+      acceptanceRate: riders.acceptanceRate,
+      totalDeliveries: riders.totalDeliveries,
+      status: riders.status,
+      createdAt: riders.createdAt,
+    })
+    .from(riders)
+    .where(eq(riders.status, 'approved'));
+
+  const allRiders = await riderQuery;
+
+  // For each rider, calculate metrics based on period
+  const leaderboardData = await Promise.all(
+    allRiders.map(async (rider) => {
+      // Get orders for this rider in the period
+      let ordersQuery = db
+        .select({
+          id: orders.id,
+          status: orders.status,
+          total: orders.total,
+          createdAt: orders.createdAt,
+          actualDeliveryTime: orders.actualDeliveryTime,
+          estimatedDeliveryTime: orders.estimatedDeliveryTime,
+        })
+        .from(orders)
+        .where(eq(orders.riderId, rider.riderId));
+
+      if (startDate) {
+        ordersQuery = ordersQuery.where(gte(orders.createdAt, startDate)) as any;
+      }
+
+      const riderOrders = await ordersQuery;
+      const completedOrders = riderOrders.filter((o) => o.status === 'delivered');
+
+      // Calculate metrics
+      const deliveryCount = completedOrders.length;
+      const totalEarnings = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+      // Calculate on-time deliveries
+      const onTimeOrders = completedOrders.filter((o) => {
+        if (!o.actualDeliveryTime || !o.estimatedDeliveryTime) return false;
+        return new Date(o.actualDeliveryTime) <= new Date(o.estimatedDeliveryTime);
+      });
+      const onTimeRate = deliveryCount > 0 ? (onTimeOrders.length / deliveryCount) * 100 : 0;
+
+      // Get quality photo compliance
+      const photosQuery = db
+        .select({ orderId: qualityPhotos.orderId, status: qualityPhotos.status })
+        .from(qualityPhotos)
+        .where(
+          inArray(
+            qualityPhotos.orderId,
+            completedOrders.map((o) => o.id)
+          )
+        );
+
+      const photos = completedOrders.length > 0 ? await photosQuery : [];
+      const qualityCompliance =
+        completedOrders.length > 0 ? (photos.length / completedOrders.length) * 100 : 0;
+
+      // Calculate average delivery time (in minutes)
+      const deliveryTimes = completedOrders
+        .filter((o) => o.actualDeliveryTime && o.createdAt)
+        .map((o) => {
+          const start = new Date(o.createdAt!).getTime();
+          const end = new Date(o.actualDeliveryTime!).getTime();
+          return (end - start) / (1000 * 60); // Convert to minutes
+        });
+      const avgDeliveryTime =
+        deliveryTimes.length > 0
+          ? deliveryTimes.reduce((sum, t) => sum + t, 0) / deliveryTimes.length
+          : 0;
+
+      // Get earnings from riderEarnings table
+      let earningsQuery = db
+        .select({
+          amount: riderEarnings.amount,
+          bonus: riderEarnings.bonus,
+          tip: riderEarnings.tip,
+        })
+        .from(riderEarnings)
+        .where(eq(riderEarnings.riderId, rider.riderId));
+
+      if (startDate) {
+        earningsQuery = earningsQuery.where(gte(riderEarnings.createdAt, startDate)) as any;
+      }
+
+      const earnings = await earningsQuery;
+      const periodEarnings = earnings.reduce(
+        (sum, e) => sum + (e.amount || 0) + (e.bonus || 0) + (e.tip || 0),
+        0
+      );
+
+      return {
+        rider,
+        deliveryCount,
+        totalEarnings: periodEarnings,
+        rating: rider.rating || 0,
+        onTimeRate,
+        acceptanceRate: rider.acceptanceRate || 0,
+        qualityCompliance,
+        avgDeliveryTime,
+      };
+    })
+  );
+
+  // Calculate normalized scores (0-100) for each metric
+  const maxDeliveries = Math.max(...leaderboardData.map((d) => d.deliveryCount), 1);
+  const maxEarnings = Math.max(...leaderboardData.map((d) => d.totalEarnings), 1);
+
+  const scoredData = leaderboardData.map((data) => {
+    const deliveryScore = (data.deliveryCount / maxDeliveries) * 100;
+    const ratingScore = (data.rating / 5.0) * 100;
+    const onTimeScore = data.onTimeRate;
+    const acceptanceScore = data.acceptanceRate;
+    const qualityScore = data.qualityCompliance;
+
+    // Calculate overall performance score (weighted average)
+    const performanceScore =
+      deliveryScore * 0.25 +
+      ratingScore * 0.25 +
+      onTimeScore * 0.2 +
+      acceptanceScore * 0.15 +
+      qualityScore * 0.15;
+
+    // Assign tier based on performance score
+    let tier: 'platinum' | 'gold' | 'silver' | 'bronze' | 'rookie';
+    if (performanceScore >= 90) tier = 'platinum';
+    else if (performanceScore >= 80) tier = 'gold';
+    else if (performanceScore >= 70) tier = 'silver';
+    else if (performanceScore >= 60) tier = 'bronze';
+    else tier = 'rookie';
+
+    // Calculate achievement badges
+    const badges: string[] = [];
+    if (data.deliveryCount >= 100) badges.push('century_club');
+    if (data.deliveryCount >= 500) badges.push('delivery_master');
+    if (data.rating >= 4.8) badges.push('five_star');
+    if (data.onTimeRate >= 95) badges.push('punctuality_master');
+    if (data.qualityCompliance >= 98) badges.push('quality_champion');
+    
+    // Calculate days on platform for veteran badges
+    const daysOnPlatform = Math.floor(
+      (now.getTime() - new Date(data.rider.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysOnPlatform >= 365) badges.push('one_year_veteran');
+    if (daysOnPlatform >= 730) badges.push('two_year_veteran');
+
+    // Top earner badge (top 10%)
+    const earningsPercentile =
+      (leaderboardData.filter((d) => d.totalEarnings > data.totalEarnings).length /
+        leaderboardData.length) *
+      100;
+    if (earningsPercentile <= 10) badges.push('top_earner');
+
+    return {
+      ...data,
+      performanceScore: Math.round(performanceScore * 100) / 100,
+      tier,
+      badges,
+      earningsPerDelivery: data.deliveryCount > 0 ? data.totalEarnings / data.deliveryCount : 0,
+    };
+  });
+
+  // Sort based on category
+  let sortedData = [...scoredData];
+  switch (category) {
+    case 'overall':
+      sortedData.sort((a, b) => b.performanceScore - a.performanceScore);
+      break;
+    case 'earnings':
+      sortedData.sort((a, b) => b.totalEarnings - a.totalEarnings);
+      break;
+    case 'deliveries':
+      sortedData.sort((a, b) => b.deliveryCount - a.deliveryCount);
+      break;
+    case 'rating':
+      sortedData.sort((a, b) => b.rating - a.rating);
+      break;
+    case 'speed':
+      sortedData.sort((a, b) => b.onTimeRate - a.onTimeRate);
+      break;
+  }
+
+  // Add rank
+  const rankedData = sortedData.map((data, index) => ({
+    rank: index + 1,
+    riderId: data.rider.riderId,
+    name: data.rider.name || 'Unknown',
+    email: data.rider.email,
+    phone: data.rider.phone,
+    status: data.rider.status,
+    performanceScore: data.performanceScore,
+    deliveries: data.deliveryCount,
+    totalEarnings: data.totalEarnings,
+    earningsPerDelivery: Math.round(data.earningsPerDelivery),
+    rating: data.rating,
+    onTimeRate: Math.round(data.onTimeRate * 100) / 100,
+    acceptanceRate: Math.round(data.acceptanceRate * 100) / 100,
+    qualityCompliance: Math.round(data.qualityCompliance * 100) / 100,
+    avgDeliveryTime: Math.round(data.avgDeliveryTime * 100) / 100,
+    tier: data.tier,
+    badges: data.badges,
+  }));
+
+  // Calculate overall stats
+  const stats = {
+    totalRiders: rankedData.length,
+    totalDeliveries: rankedData.reduce((sum, r) => sum + r.deliveries, 0),
+    avgPerformanceScore:
+      rankedData.length > 0
+        ? Math.round(
+            (rankedData.reduce((sum, r) => sum + r.performanceScore, 0) / rankedData.length) * 100
+          ) / 100
+        : 0,
+    totalEarnings: rankedData.reduce((sum, r) => sum + r.totalEarnings, 0),
+  };
+
+  // Apply pagination
+  const paginatedData = rankedData.slice(offset, offset + limit);
+
+  return {
+    leaderboard: paginatedData,
+    total: rankedData.length,
+    stats,
+  };
+}
+
+export async function get30DayTrend(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+
+  // Get all orders for this rider in the last 30 days
+  const riderOrders = await db
+    .select({
+      id: orders.id,
+      status: orders.status,
+      total: orders.total,
+      createdAt: orders.createdAt,
+      actualDeliveryTime: orders.actualDeliveryTime,
+      estimatedDeliveryTime: orders.estimatedDeliveryTime,
+    })
+    .from(orders)
+    .where(and(eq(orders.riderId, riderId), gte(orders.createdAt, thirtyDaysAgo)));
+
+  // Get earnings for the last 30 days
+  const riderEarningsData = await db
+    .select({
+      amount: riderEarnings.amount,
+      bonus: riderEarnings.bonus,
+      tip: riderEarnings.tip,
+      createdAt: riderEarnings.createdAt,
+    })
+    .from(riderEarnings)
+    .where(and(eq(riderEarnings.riderId, riderId), gte(riderEarnings.createdAt, thirtyDaysAgo)));
+
+  // Group by date
+  const dailyData: Record<
+    string,
+    { deliveries: number; earnings: number; onTimeCount: number; totalCount: number }
+  > = {};
+
+  // Initialize all 30 days
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(thirtyDaysAgo);
+    date.setDate(thirtyDaysAgo.getDate() + i);
+    const dateKey = date.toISOString().split('T')[0];
+    dailyData[dateKey] = { deliveries: 0, earnings: 0, onTimeCount: 0, totalCount: 0 };
+  }
+
+  // Aggregate orders
+  riderOrders.forEach((order) => {
+    if (order.status === 'delivered' && order.createdAt) {
+      const dateKey = new Date(order.createdAt).toISOString().split('T')[0];
+      if (dailyData[dateKey]) {
+        dailyData[dateKey].deliveries += 1;
+        dailyData[dateKey].totalCount += 1;
+
+        // Check if on-time
+        if (order.actualDeliveryTime && order.estimatedDeliveryTime) {
+          if (new Date(order.actualDeliveryTime) <= new Date(order.estimatedDeliveryTime)) {
+            dailyData[dateKey].onTimeCount += 1;
+          }
+        }
+      }
+    }
+  });
+
+  // Aggregate earnings
+  riderEarningsData.forEach((earning) => {
+    if (earning.createdAt) {
+      const dateKey = new Date(earning.createdAt).toISOString().split('T')[0];
+      if (dailyData[dateKey]) {
+        dailyData[dateKey].earnings +=
+          (earning.amount || 0) + (earning.bonus || 0) + (earning.tip || 0);
+      }
+    }
+  });
+
+  // Convert to array and calculate on-time rate
+  const trendData = Object.entries(dailyData)
+    .map(([date, data]) => ({
+      date,
+      deliveries: data.deliveries,
+      earnings: data.earnings,
+      onTimeRate: data.totalCount > 0 ? (data.onTimeCount / data.totalCount) * 100 : 0,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return trendData;
+}
+
+export async function getRiderPerformanceDetails(riderId: number, period: 'week' | 'month' | 'all') {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get rider info
+  const rider = await db.select().from(riders).where(eq(riders.id, riderId)).limit(1);
+  if (rider.length === 0) return null;
+
+  // Calculate date range
+  const now = new Date();
+  let startDate: Date | null = null;
+
+  switch (period) {
+    case 'week':
+      const dayOfWeek = now.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() + mondayOffset);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'all':
+      startDate = null;
+      break;
+  }
+
+  // Get orders
+  let ordersQuery = db
+    .select()
+    .from(orders)
+    .where(eq(orders.riderId, riderId));
+
+  if (startDate) {
+    ordersQuery = ordersQuery.where(gte(orders.createdAt, startDate)) as any;
+  }
+
+  const riderOrders = await ordersQuery;
+  const completedOrders = riderOrders.filter((o) => o.status === 'delivered');
+
+  // Get earnings
+  let earningsQuery = db
+    .select()
+    .from(riderEarnings)
+    .where(eq(riderEarnings.riderId, riderId));
+
+  if (startDate) {
+    earningsQuery = earningsQuery.where(gte(riderEarnings.createdAt, startDate)) as any;
+  }
+
+  const earnings = await earningsQuery;
+
+  // Calculate metrics
+  const totalEarnings = earnings.reduce(
+    (sum, e) => sum + (e.amount || 0) + (e.bonus || 0) + (e.tip || 0),
+    0
+  );
+  const baseEarnings = earnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const bonusEarnings = earnings.reduce((sum, e) => sum + (e.bonus || 0), 0);
+  const tipEarnings = earnings.reduce((sum, e) => sum + (e.tip || 0), 0);
+
+  return {
+    rider: rider[0],
+    deliveries: completedOrders.length,
+    totalEarnings,
+    earningsBreakdown: {
+      base: baseEarnings,
+      bonus: bonusEarnings,
+      tips: tipEarnings,
+    },
+    rating: rider[0].rating || 0,
+    acceptanceRate: rider[0].acceptanceRate || 0,
+  };
+}

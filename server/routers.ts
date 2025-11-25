@@ -3773,7 +3773,34 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
-});
 
-export type AppRouter = typeof appRouter;
+  leaderboard: router({
+    getLeaderboard: protectedProcedure
+      .input(z.object({
+        period: z.enum(['today', 'week', 'month', 'all']),
+        category: z.enum(['overall', 'earnings', 'deliveries', 'rating', 'speed']),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderLeaderboard(input);
+      }),
+
+    get30DayTrend: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.get30DayTrend(input.riderId);
+      }),
+
+    getPerformanceDetails: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        period: z.enum(['week', 'month', 'all']),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderPerformanceDetails(input.riderId, input.period);
+      }),
+  }),
+});
+export type AppRouter = typeof appRouter;;
 
