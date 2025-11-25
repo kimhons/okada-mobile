@@ -3811,6 +3811,53 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.compareRiders(input.riderId1, input.riderId2, input.period);
       }),
+
+    checkRiderTierPromotion: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.checkAndUpdateRiderTier(input.riderId);
+        
+        if (result && result.tierChanged) {
+          await db.sendTierPromotionNotification(input.riderId, {
+            previousTier: result.previousTier,
+            newTier: result.newTier,
+            performanceScore: result.performanceScore,
+          });
+
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "tier_promotion",
+            entityType: "rider",
+            entityId: input.riderId,
+            details: `Rider promoted from ${result.previousTier || 'unranked'} to ${result.newTier} tier`,
+          });
+        }
+
+        return result;
+      }),
+
+    checkAllTierPromotions: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const promotedCount = await db.checkAllRiderTierPromotions();
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "check_all_tier_promotions",
+          entityType: "system",
+          entityId: 0,
+          details: `Checked all riders for tier promotions. ${promotedCount} riders promoted.`,
+        });
+
+        return { promotedCount };
+      }),
+
+    getTierHistory: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getRiderTierHistory(input.riderId);
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;;

@@ -581,3 +581,33 @@
 - [x] Enable selecting two riders for comparison (max 2 at a time)
 - [x] Write tests for comparison functionality (8 new tests added)
 - [x] Verify comparison works across different time periods (41/41 tests passed - 100%)
+
+
+## Tier Promotion Notification System
+
+### Database Schema
+- [x] Create riderTierHistory table to track tier changes
+- [x] Add fields: riderId, previousTier, newTier, promotionDate, performanceScore, notificationSent
+- [ ] Create database migration with pnpm db:push (pending interactive prompts)
+
+### Backend Logic
+- [x] Implement checkAndUpdateRiderTier() function to detect tier changes
+- [x] Create sendTierPromotionNotification() function
+- [x] Add tier promotion badge generation logic (emoji badges in messages)
+- [x] Add checkAllRiderTierPromotions() batch function
+- [x] Add getRiderTierHistory() function
+- [ ] Create scheduled job to check tier changes daily (future enhancement)
+- [x] Add tRPC procedures (checkRiderTierPromotion, checkAllTierPromotions, getTierHistory)
+
+### Notification Content
+- [x] Design congratulatory message templates for each tier
+- [x] Create tier promotion badges (🏆 Platinum, 🥇 Gold, 🥈 Silver, 🥉 Bronze, 🔰 Rookie)
+- [x] Add achievement summary in notification
+- [x] Include next tier requirements and progress
+
+### Testing
+- [ ] Write tests for tier change detection
+- [ ] Test notification sending
+- [ ] Test badge generation
+- [ ] Verify scheduled job execution
+- [ ] Integration tests for full promotion flow

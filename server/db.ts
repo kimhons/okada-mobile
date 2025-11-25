@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -3295,4 +3295,221 @@ export async function compareRiders(
   };
 
   return comparison;
+}
+
+// ============================================================================
+// TIER PROMOTION SYSTEM
+// ============================================================================
+
+import { notifyOwner } from './_core/notification';
+
+/**
+ * Check and update rider tier based on current performance
+ * Returns true if tier changed, false otherwise
+ */
+export async function checkAndUpdateRiderTier(riderId: number): Promise<{
+  tierChanged: boolean;
+  previousTier: string | null;
+  newTier: string;
+  performanceScore: number;
+} | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get current leaderboard data for this rider
+  const leaderboard = await getRiderLeaderboard({
+    period: 'all',
+    category: 'overall',
+    limit: 1000,
+    offset: 0,
+  });
+
+  const riderData = leaderboard.leaderboard.find((r) => r.riderId === riderId);
+  if (!riderData) return null;
+
+  // Get rider's current tier from database (if stored) or from history
+  const historyResult = await db
+    .select()
+    .from(riderTierHistory)
+    .where(eq(riderTierHistory.riderId, riderId))
+    .orderBy(desc(riderTierHistory.promotionDate))
+    .limit(1);
+
+  const previousTier = historyResult[0]?.newTier || null;
+  const newTier = riderData.tier;
+
+  // Check if tier changed
+  if (previousTier === newTier) {
+    return {
+      tierChanged: false,
+      previousTier,
+      newTier,
+      performanceScore: riderData.performanceScore,
+    };
+  }
+
+  // Record tier change in history
+  await db.insert(riderTierHistory).values({
+    riderId,
+    previousTier: previousTier as any,
+    newTier: newTier as any,
+    performanceScore: Math.round(riderData.performanceScore),
+    notificationSent: 0,
+  });
+
+  return {
+    tierChanged: true,
+    previousTier,
+    newTier,
+    performanceScore: riderData.performanceScore,
+  };
+}
+
+/**
+ * Send tier promotion notification to rider
+ */
+export async function sendTierPromotionNotification(riderId: number, promotionData: {
+  previousTier: string | null;
+  newTier: string;
+  performanceScore: number;
+}): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Get rider details
+  const riderResult = await db
+    .select()
+    .from(riders)
+    .where(eq(riders.id, riderId))
+    .limit(1);
+
+  if (riderResult.length === 0) return false;
+  const rider = riderResult[0];
+
+  // Generate congratulatory message
+  const tierEmojis: Record<string, string> = {
+    platinum: '🏆',
+    gold: '🥇',
+    silver: '🥈',
+    bronze: '🥉',
+    rookie: '🔰',
+  };
+
+  const tierNames: Record<string, string> = {
+    platinum: 'Platinum',
+    gold: 'Gold',
+    silver: 'Silver',
+    bronze: 'Bronze',
+    rookie: 'Rookie',
+  };
+
+  const nextTierRequirements: Record<string, string> = {
+    gold: 'Reach 90+ performance score to unlock Platinum tier',
+    silver: 'Reach 75+ performance score to unlock Gold tier',
+    bronze: 'Reach 60+ performance score to unlock Silver tier',
+    rookie: 'Reach 45+ performance score to unlock Bronze tier',
+  };
+
+  const emoji = tierEmojis[promotionData.newTier] || '🎉';
+  const tierName = tierNames[promotionData.newTier] || promotionData.newTier;
+  const previousTierName = promotionData.previousTier
+    ? tierNames[promotionData.previousTier]
+    : 'Unranked';
+
+  let title = `${emoji} Congratulations! You've been promoted to ${tierName} Tier!`;
+  let content = `Great news, ${rider.name}!\n\n`;
+
+  if (promotionData.previousTier) {
+    content += `You've advanced from ${previousTierName} to ${tierName} tier with a performance score of ${Math.round(promotionData.performanceScore)}!\n\n`;
+  } else {
+    content += `You've achieved ${tierName} tier with a performance score of ${Math.round(promotionData.performanceScore)}!\n\n`;
+  }
+
+  content += `Your hard work and dedication have paid off. Keep up the excellent service!\n\n`;
+
+  if (promotionData.newTier !== 'platinum') {
+    const nextReq = nextTierRequirements[promotionData.newTier];
+    if (nextReq) {
+      content += `Next Goal: ${nextReq}`;
+    }
+  } else {
+    content += `You're now at the highest tier! Maintain your excellence to stay at the top.`;
+  }
+
+  // Use the existing notifyOwner function as a placeholder
+  // In production, this should send to the rider via push notification or SMS
+  try {
+    await notifyOwner({
+      title,
+      content: `Rider ${rider.name} (ID: ${riderId}) promoted to ${tierName} tier`,
+    });
+
+    // Mark notification as sent in tier history
+    await db
+      .update(riderTierHistory)
+      .set({
+        notificationSent: 1,
+        notificationSentAt: new Date(),
+      })
+      .where(
+        and(
+          eq(riderTierHistory.riderId, riderId),
+          eq(riderTierHistory.newTier, promotionData.newTier as any)
+        )
+      );
+
+    return true;
+  } catch (error) {
+    console.error('Failed to send tier promotion notification:', error);
+    return false;
+  }
+}
+
+/**
+ * Check all riders for tier promotions
+ * Returns count of riders promoted
+ */
+export async function checkAllRiderTierPromotions(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Get all approved riders
+  const allRiders = await db
+    .select({ id: riders.id })
+    .from(riders)
+    .where(eq(riders.status, 'approved'));
+
+  let promotedCount = 0;
+
+  for (const rider of allRiders) {
+    const result = await checkAndUpdateRiderTier(rider.id);
+    
+    if (result && result.tierChanged) {
+      // Send notification
+      await sendTierPromotionNotification(rider.id, {
+        previousTier: result.previousTier,
+        newTier: result.newTier,
+        performanceScore: result.performanceScore,
+      });
+      promotedCount++;
+    }
+  }
+
+  return promotedCount;
+}
+
+/**
+ * Get tier promotion history for a rider
+ */
+export async function getRiderTierHistory(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const history = await db
+    .select()
+    .from(riderTierHistory)
+    .where(eq(riderTierHistory.riderId, riderId))
+    .orderBy(desc(riderTierHistory.promotionDate));
+
+  return history;
 }

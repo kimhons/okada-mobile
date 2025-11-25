@@ -877,3 +877,21 @@ export const inventoryThresholds = mysqlTable("inventoryThresholds", {
 export type InventoryThreshold = typeof inventoryThresholds.$inferSelect;
 export type InsertInventoryThreshold = typeof inventoryThresholds.$inferInsert;
 
+
+/**
+ * Rider Tier History table for tracking tier promotions
+ */
+export const riderTierHistory = mysqlTable("riderTierHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  previousTier: mysqlEnum("previousTier", ["platinum", "gold", "silver", "bronze", "rookie"]),
+  newTier: mysqlEnum("newTier", ["platinum", "gold", "silver", "bronze", "rookie"]).notNull(),
+  performanceScore: int("performanceScore").notNull(), // Score at time of promotion
+  promotionDate: timestamp("promotionDate").defaultNow().notNull(),
+  notificationSent: int("notificationSent").default(0).notNull(), // Boolean: 0 or 1
+  notificationSentAt: timestamp("notificationSentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RiderTierHistory = typeof riderTierHistory.$inferSelect;
+export type InsertRiderTierHistory = typeof riderTierHistory.$inferInsert;
