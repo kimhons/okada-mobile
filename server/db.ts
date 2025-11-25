@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -4385,4 +4385,441 @@ export async function updateDisputeStatus(
     .where(eq(disputes.id, disputeId));
 
   return true;
+}
+
+
+// ============================================================================
+// Rider Performance Leaderboard
+// ============================================================================
+// Note: getRiderLeaderboard is already defined earlier in this file (line ~2781)
+// with more comprehensive parameters. Using that implementation.
+
+/**
+ * Get rider achievements
+ */
+export async function getRiderAchievements(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const achievements = await db
+    .select()
+    .from(riderAchievements)
+    .where(eq(riderAchievements.riderId, riderId))
+    .orderBy(desc(riderAchievements.earnedAt));
+
+  return achievements;
+}
+
+/**
+ * Award achievement to rider
+ */
+export async function awardRiderAchievement(achievement: {
+  riderId: number;
+  achievementType: string;
+  metadata?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(riderAchievements).values(achievement as any);
+  return result.insertId;
+}
+
+// ============================================================================
+// System Settings
+// ============================================================================
+
+/**
+ * Get all system settings
+ */
+export async function getSystemSettings(category?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(systemSettings);
+
+  if (category) {
+    query = query.where(eq(systemSettings.category, category as any));
+  }
+
+  const settings = await query.orderBy(systemSettings.category, systemSettings.settingKey);
+  return settings;
+}
+
+/**
+ * Get single system setting by key
+ */
+export async function getSystemSetting(key: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(systemSettings)
+    .where(eq(systemSettings.settingKey, key))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+/**
+ * Update system setting
+ */
+export async function updateSystemSetting(
+  key: string,
+  value: string,
+  updatedBy: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(systemSettings)
+    .set({
+      settingValue: value,
+      updatedBy,
+      updatedAt: new Date(),
+    })
+    .where(eq(systemSettings.settingKey, key));
+
+  return true;
+}
+
+/**
+ * Create system setting
+ */
+export async function createSystemSetting(setting: {
+  settingKey: string;
+  settingValue: string;
+  settingType: "string" | "number" | "boolean" | "json";
+  category: string;
+  description?: string;
+  isPublic?: boolean;
+  updatedBy?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(systemSettings).values({
+    ...setting,
+    isPublic: setting.isPublic ? 1 : 0,
+  } as any);
+
+  return result.insertId;
+}
+
+// ============================================================================
+// Content Moderation
+// ============================================================================
+
+/**
+ * Get content moderation queue
+ */
+export async function getContentModerationQueue(filters?: {
+  status?: string;
+  contentType?: string;
+  priority?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      id: contentModerationQueue.id,
+      contentType: contentModerationQueue.contentType,
+      contentId: contentModerationQueue.contentId,
+      userId: contentModerationQueue.userId,
+      userName: users.name,
+      userEmail: users.email,
+      contentUrl: contentModerationQueue.contentUrl,
+      contentText: contentModerationQueue.contentText,
+      status: contentModerationQueue.status,
+      priority: contentModerationQueue.priority,
+      flagReason: contentModerationQueue.flagReason,
+      moderatorId: contentModerationQueue.moderatorId,
+      moderatorNotes: contentModerationQueue.moderatorNotes,
+      moderatedAt: contentModerationQueue.moderatedAt,
+      createdAt: contentModerationQueue.createdAt,
+    })
+    .from(contentModerationQueue)
+    .leftJoin(users, eq(users.id, contentModerationQueue.userId));
+
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(contentModerationQueue.status, filters.status as any));
+  }
+  if (filters?.contentType) {
+    conditions.push(eq(contentModerationQueue.contentType, filters.contentType as any));
+  }
+  if (filters?.priority) {
+    conditions.push(eq(contentModerationQueue.priority, filters.priority as any));
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions));
+  }
+
+  const items = await query.orderBy(
+    desc(contentModerationQueue.priority),
+    desc(contentModerationQueue.createdAt)
+  );
+
+  return items;
+}
+
+/**
+ * Moderate content item
+ */
+export async function moderateContent(
+  itemId: number,
+  moderatorId: number,
+  decision: {
+    status: "approved" | "rejected" | "flagged";
+    moderatorNotes?: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(contentModerationQueue)
+    .set({
+      status: decision.status,
+      moderatorId,
+      moderatorNotes: decision.moderatorNotes,
+      moderatedAt: new Date(),
+    })
+    .where(eq(contentModerationQueue.id, itemId));
+
+  return true;
+}
+
+/**
+ * Add content to moderation queue
+ */
+export async function addToModerationQueue(item: {
+  contentType: string;
+  contentId: number;
+  userId: number;
+  contentUrl?: string;
+  contentText?: string;
+  contentMetadata?: string;
+  priority?: string;
+  flagReason?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(contentModerationQueue).values({
+    ...item,
+    priority: (item.priority as any) || "medium",
+  } as any);
+
+  return result.insertId;
+}
+
+// ============================================================================
+// Fraud Detection
+// ============================================================================
+
+/**
+ * Get fraud alerts
+ */
+export async function getFraudAlerts(filters?: {
+  status?: string;
+  severity?: string;
+  alertType?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      id: fraudAlerts.id,
+      alertType: fraudAlerts.alertType,
+      userId: fraudAlerts.userId,
+      userName: users.name,
+      userEmail: users.email,
+      orderId: fraudAlerts.orderId,
+      riskScore: fraudAlerts.riskScore,
+      severity: fraudAlerts.severity,
+      description: fraudAlerts.description,
+      detectionMethod: fraudAlerts.detectionMethod,
+      evidenceData: fraudAlerts.evidenceData,
+      status: fraudAlerts.status,
+      assignedTo: fraudAlerts.assignedTo,
+      investigationNotes: fraudAlerts.investigationNotes,
+      actionTaken: fraudAlerts.actionTaken,
+      resolvedAt: fraudAlerts.resolvedAt,
+      createdAt: fraudAlerts.createdAt,
+    })
+    .from(fraudAlerts)
+    .leftJoin(users, eq(users.id, fraudAlerts.userId));
+
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(fraudAlerts.status, filters.status as any));
+  }
+  if (filters?.severity) {
+    conditions.push(eq(fraudAlerts.severity, filters.severity as any));
+  }
+  if (filters?.alertType) {
+    conditions.push(eq(fraudAlerts.alertType, filters.alertType as any));
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions));
+  }
+
+  const alerts = await query.orderBy(
+    desc(fraudAlerts.severity),
+    desc(fraudAlerts.riskScore),
+    desc(fraudAlerts.createdAt)
+  );
+
+  return alerts;
+}
+
+/**
+ * Create fraud alert
+ */
+export async function createFraudAlert(alert: {
+  alertType: string;
+  userId?: number;
+  orderId?: number;
+  riskScore: number;
+  severity: string;
+  description: string;
+  detectionMethod?: string;
+  evidenceData?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(fraudAlerts).values(alert as any);
+  return result.insertId;
+}
+
+/**
+ * Update fraud alert
+ */
+export async function updateFraudAlert(
+  alertId: number,
+  update: {
+    status?: string;
+    assignedTo?: number;
+    investigationNotes?: string;
+    actionTaken?: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: any = { ...update };
+  if (update.status === "resolved") {
+    updateData.resolvedAt = new Date();
+  }
+
+  await db
+    .update(fraudAlerts)
+    .set(updateData)
+    .where(eq(fraudAlerts.id, alertId));
+
+  return true;
+}
+
+// ============================================================================
+// Live Dashboard
+// ============================================================================
+
+/**
+ * Get recent dashboard events
+ */
+export async function getLiveDashboardEvents(limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const events = await db
+    .select()
+    .from(liveDashboardEvents)
+    .orderBy(desc(liveDashboardEvents.timestamp))
+    .limit(limit);
+
+  return events;
+}
+
+/**
+ * Get active riders with locations
+ */
+export async function getActiveRidersWithLocations() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const activeRiders = await db
+    .select({
+      riderId: riders.id,
+      riderName: riders.name,
+      riderPhone: riders.phone,
+      riderPhoto: riders.photo,
+      latitude: riderLocations.latitude,
+      longitude: riderLocations.longitude,
+      lastUpdate: riderLocations.timestamp,
+      currentOrderId: orders.id,
+      currentOrderStatus: orders.status,
+    })
+    .from(riders)
+    .leftJoin(
+      riderLocations,
+      and(
+        eq(riderLocations.riderId, riders.id),
+        gte(riderLocations.timestamp, sql`DATE_SUB(NOW(), INTERVAL 10 MINUTE)`)
+      )
+    )
+    .leftJoin(
+      orders,
+      and(
+        eq(orders.riderId, riders.id),
+        sql`${orders.status} IN ('assigned', 'picked_up', 'in_transit')`
+      )
+    )
+    .where(eq(riders.status, "active"))
+    .groupBy(riders.id);
+
+  return activeRiders;
+}
+
+/**
+ * Record dashboard event
+ */
+export async function recordDashboardEvent(event: {
+  eventType: string;
+  entityId: number;
+  entityType: string;
+  eventData?: string;
+  latitude?: string;
+  longitude?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(liveDashboardEvents).values(event as any);
+  return result.insertId;
+}
+
+/**
+ * Get live dashboard statistics
+ */
+export async function getLiveDashboardStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [stats] = await db.select({
+    activeOrders: sql<number>`COUNT(DISTINCT CASE WHEN ${orders.status} IN ('assigned', 'picked_up', 'in_transit') THEN ${orders.id} END)`,
+    activeRiders: sql<number>`COUNT(DISTINCT CASE WHEN ${riders.status} = 'active' THEN ${riders.id} END)`,
+    pendingOrders: sql<number>`COUNT(DISTINCT CASE WHEN ${orders.status} = 'pending' THEN ${orders.id} END)`,
+    completedToday: sql<number>`COUNT(DISTINCT CASE WHEN ${orders.status} = 'delivered' THEN ${orders.id} END)`,
+  }).from(orders)
+    .leftJoin(riders, eq(riders.id, orders.riderId));
+
+  return stats || { activeOrders: 0, activeRiders: 0, pendingOrders: 0, completedToday: 0 };
 }

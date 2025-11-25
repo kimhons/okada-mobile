@@ -4200,6 +4200,265 @@ export const appRouter = router({
         return result;
       }),
   }),
+
+  // Rider Performance Leaderboard
+  riderLeaderboard: router({
+    getLeaderboard: protectedProcedure
+      .input(z.object({
+        period: z.enum(['day', 'week', 'month', 'all']).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderLeaderboard(input.period);
+      }),
+
+    getAchievements: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderAchievements(input.riderId);
+      }),
+
+    awardAchievement: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        achievementType: z.string(),
+        metadata: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.awardRiderAchievement(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "award_achievement",
+          entityType: "rider",
+          entityId: input.riderId,
+          details: `Awarded ${input.achievementType} achievement`,
+        });
+
+        return result;
+      }),
+  }),
+
+  // System Settings
+  systemSettings: router({
+    getAll: protectedProcedure
+      .input(z.object({
+        category: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getSystemSettings(input.category);
+      }),
+
+    getSetting: protectedProcedure
+      .input(z.object({
+        key: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getSystemSetting(input.key);
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        key: z.string(),
+        value: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateSystemSetting(input.key, input.value, ctx.user.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_system_setting",
+          entityType: "system_setting",
+          entityId: 0,
+          details: `Updated setting ${input.key}`,
+        });
+
+        return result;
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        settingKey: z.string(),
+        settingValue: z.string(),
+        settingType: z.enum(['string', 'number', 'boolean', 'json']),
+        category: z.string(),
+        description: z.string().optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createSystemSetting({
+          ...input,
+          updatedBy: ctx.user.id,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_system_setting",
+          entityType: "system_setting",
+          entityId: result || 0,
+          details: `Created setting ${input.settingKey}`,
+        });
+
+        return result;
+      }),
+  }),
+
+  // Content Moderation
+  contentModeration: router({
+    getQueue: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        contentType: z.string().optional(),
+        priority: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getContentModerationQueue(input);
+      }),
+
+    moderate: protectedProcedure
+      .input(z.object({
+        itemId: z.number(),
+        status: z.enum(['approved', 'rejected', 'flagged']),
+        moderatorNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.moderateContent(input.itemId, ctx.user.id, {
+          status: input.status,
+          moderatorNotes: input.moderatorNotes,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "moderate_content",
+          entityType: "content",
+          entityId: input.itemId,
+          details: `Moderated content: ${input.status}`,
+        });
+
+        return result;
+      }),
+
+    addToQueue: protectedProcedure
+      .input(z.object({
+        contentType: z.string(),
+        contentId: z.number(),
+        userId: z.number(),
+        contentUrl: z.string().optional(),
+        contentText: z.string().optional(),
+        contentMetadata: z.string().optional(),
+        priority: z.string().optional(),
+        flagReason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.addToModerationQueue(input);
+      }),
+  }),
+
+  // Fraud Detection
+  fraudDetection: router({
+    getAlerts: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        severity: z.string().optional(),
+        alertType: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getFraudAlerts(input);
+      }),
+
+    createAlert: protectedProcedure
+      .input(z.object({
+        alertType: z.string(),
+        userId: z.number().optional(),
+        orderId: z.number().optional(),
+        riskScore: z.number(),
+        severity: z.string(),
+        description: z.string(),
+        detectionMethod: z.string().optional(),
+        evidenceData: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createFraudAlert(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_fraud_alert",
+          entityType: "fraud_alert",
+          entityId: result || 0,
+          details: `Created fraud alert: ${input.alertType}`,
+        });
+
+        return result;
+      }),
+
+    updateAlert: protectedProcedure
+      .input(z.object({
+        alertId: z.number(),
+        status: z.string().optional(),
+        assignedTo: z.number().optional(),
+        investigationNotes: z.string().optional(),
+        actionTaken: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateFraudAlert(input.alertId, {
+          status: input.status,
+          assignedTo: input.assignedTo,
+          investigationNotes: input.investigationNotes,
+          actionTaken: input.actionTaken,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_fraud_alert",
+          entityType: "fraud_alert",
+          entityId: input.alertId,
+          details: `Updated fraud alert status`,
+        });
+
+        return result;
+      }),
+  }),
+
+  // Live Dashboard
+  liveDashboard: router({
+    getEvents: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getLiveDashboardEvents(input.limit);
+      }),
+
+    getActiveRiders: protectedProcedure
+      .query(async () => {
+        return await db.getActiveRidersWithLocations();
+      }),
+
+    getStats: protectedProcedure
+      .query(async () => {
+        return await db.getLiveDashboardStats();
+      }),
+
+    recordEvent: protectedProcedure
+      .input(z.object({
+        eventType: z.string(),
+        entityId: z.number(),
+        entityType: z.string(),
+        eventData: z.string().optional(),
+        latitude: z.string().optional(),
+        longitude: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.recordDashboardEvent(input);
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 

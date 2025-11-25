@@ -50,6 +50,11 @@ import InventoryAlerts from "./pages/InventoryAlerts";
 import UserVerification from "./pages/UserVerification";
 import PlatformStatistics from "./pages/PlatformStatistics";
 import DisputeResolution from "./pages/DisputeResolution";
+import SystemSettings from "./pages/SystemSettings";
+import ContentModeration from "./pages/ContentModeration";
+import FraudDetection from "./pages/FraudDetection";
+import LiveDashboard from "./pages/LiveDashboard";
+import RiderLeaderboard from "./pages/RiderLeaderboard";
 
 
 function Router() {
@@ -99,7 +104,12 @@ function Router() {
       <Route path="/inventory-alerts" component={() => <DashboardLayout><InventoryAlerts /></DashboardLayout>} />
       <Route path="/user-verification" component={() => <DashboardLayout><UserVerification /></DashboardLayout>} />
       <Route path="/platform-statistics" component={() => <DashboardLayout><PlatformStatistics /></DashboardLayout>} />
-      <Route path="/dispute-resolution" component={() => <DashboardLayout><DisputeResolution /></DashboardLayout>} />
+      <Route path="/disputes" component={() => <DashboardLayout><DisputeResolution /></DashboardLayout>} />
+      <Route path="/rider-leaderboard" component={() => <DashboardLayout><RiderLeaderboard /></DashboardLayout>} />
+      <Route path="/system-settings" component={() => <DashboardLayout><SystemSettings /></DashboardLayout>} />
+      <Route path="/content-moderation" component={() => <DashboardLayout><ContentModeration /></DashboardLayout>} />
+      <Route path="/fraud-detection" component={() => <DashboardLayout><FraudDetection /></DashboardLayout>} />
+      <Route path="/live-dashboard" component={() => <DashboardLayout><LiveDashboard /></DashboardLayout>} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle, CheckCircle, Server, Scale } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle, CheckCircle, Server, Scale, Trophy, Sliders, Eye, Map } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,7 +33,7 @@ const menuItems = [
   { icon: Camera, label: "Quality Verification", path: "/quality-verification" },
   { icon: Users, label: "Users", path: "/users" },
   { icon: Bike, label: "Riders", path: "/riders" },
-  { icon: Trophy, BarChart3, label: "Rider Leaderboard", path: "/rider-leaderboard" },
+  { icon: Trophy, label: "Rider Leaderboard", path: "/rider-leaderboard" },
   { icon: Store, label: "Sellers", path: "/sellers" },
   { icon: Package, label: "Products", path: "/products" },
   { icon: DollarSign, label: "Financial Overview", path: "/financial" },
@@ -73,7 +73,11 @@ const menuItems = [
   { icon: AlertTriangle, label: "Inventory Alerts", path: "/inventory-alerts" },
   { icon: CheckCircle, label: "User Verification", path: "/user-verification" },
   { icon: Server, label: "Platform Statistics", path: "/platform-statistics" },
-  { icon: Scale, label: "Dispute Resolution", path: "/dispute-resolution" },
+  { icon: Scale, label: "Dispute Resolution", path: "/disputes" },
+  { icon: Sliders, label: "System Settings", path: "/system-settings" },
+  { icon: Eye, label: "Content Moderation", path: "/content-moderation" },
+  { icon: AlertTriangle, label: "Fraud Detection", path: "/fraud-detection" },
+  { icon: Map, label: "Live Dashboard", path: "/live-dashboard" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

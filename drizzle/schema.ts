@@ -1001,3 +1001,146 @@ export type InsertDisputeMessage = typeof disputeMessages.$inferInsert;
 
 
 // Removed duplicates - these tables are already defined earlier in the schema
+
+
+/**
+ * Rider Performance Achievements table for leaderboard gamification
+ */
+export const riderAchievements = mysqlTable("riderAchievements", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  achievementType: mysqlEnum("achievementType", [
+    "top_performer",
+    "fast_delivery",
+    "customer_favorite",
+    "quality_champion",
+    "consistency_king",
+    "milestone_100",
+    "milestone_500",
+    "milestone_1000"
+  ]).notNull(),
+  earnedAt: timestamp("earnedAt").defaultNow().notNull(),
+  metadata: text("metadata"), // JSON for additional achievement data
+});
+
+export type RiderAchievement = typeof riderAchievements.$inferSelect;
+export type InsertRiderAchievement = typeof riderAchievements.$inferInsert;
+
+/**
+ * System Settings table for platform configuration
+ */
+export const systemSettings = mysqlTable("systemSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  settingKey: varchar("settingKey", { length: 100 }).notNull().unique(),
+  settingValue: text("settingValue").notNull(),
+  settingType: mysqlEnum("settingType", ["string", "number", "boolean", "json"]).notNull(),
+  category: mysqlEnum("category", [
+    "general",
+    "payment",
+    "delivery",
+    "notification",
+    "security",
+    "api",
+    "feature_flags"
+  ]).notNull(),
+  description: text("description"),
+  isPublic: int("isPublic").default(0).notNull(), // Boolean: visible to non-admin users
+  updatedBy: int("updatedBy"), // Admin user ID
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;
+
+/**
+ * Content Moderation Queue table
+ */
+export const contentModerationQueue = mysqlTable("contentModerationQueue", {
+  id: int("id").autoincrement().primaryKey(),
+  contentType: mysqlEnum("contentType", [
+    "user_profile",
+    "product_listing",
+    "review",
+    "seller_profile",
+    "rider_profile",
+    "support_message",
+    "other"
+  ]).notNull(),
+  contentId: int("contentId").notNull(), // ID of the content being moderated
+  userId: int("userId").notNull(), // User who created the content
+  contentUrl: varchar("contentUrl", { length: 500 }),
+  contentText: text("contentText"),
+  contentMetadata: text("contentMetadata"), // JSON for additional content data
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "flagged"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  flagReason: text("flagReason"),
+  moderatorId: int("moderatorId"), // Admin user ID
+  moderatorNotes: text("moderatorNotes"),
+  moderatedAt: timestamp("moderatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContentModerationItem = typeof contentModerationQueue.$inferSelect;
+export type InsertContentModerationItem = typeof contentModerationQueue.$inferInsert;
+
+/**
+ * Fraud Detection Alerts table
+ */
+export const fraudAlerts = mysqlTable("fraudAlerts", {
+  id: int("id").autoincrement().primaryKey(),
+  alertType: mysqlEnum("alertType", [
+    "suspicious_transaction",
+    "multiple_accounts",
+    "fake_orders",
+    "payment_fraud",
+    "identity_theft",
+    "bot_activity",
+    "unusual_pattern"
+  ]).notNull(),
+  userId: int("userId"), // User involved in the alert
+  orderId: int("orderId"), // Order involved in the alert
+  riskScore: int("riskScore").notNull(), // 0-100 risk score
+  severity: mysqlEnum("severity", ["low", "medium", "high", "critical"]).notNull(),
+  description: text("description").notNull(),
+  detectionMethod: varchar("detectionMethod", { length: 100 }), // e.g., "ml_model", "rule_based"
+  evidenceData: text("evidenceData"), // JSON with evidence details
+  status: mysqlEnum("status", ["new", "investigating", "confirmed", "false_positive", "resolved"]).default("new").notNull(),
+  assignedTo: int("assignedTo"), // Admin user ID
+  investigationNotes: text("investigationNotes"),
+  actionTaken: text("actionTaken"),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FraudAlert = typeof fraudAlerts.$inferSelect;
+export type InsertFraudAlert = typeof fraudAlerts.$inferInsert;
+
+/**
+ * Live Dashboard Events table for real-time tracking
+ */
+export const liveDashboardEvents = mysqlTable("liveDashboardEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  eventType: mysqlEnum("eventType", [
+    "order_created",
+    "order_assigned",
+    "order_picked_up",
+    "order_delivered",
+    "rider_online",
+    "rider_offline",
+    "rider_location_update",
+    "payment_completed",
+    "issue_reported"
+  ]).notNull(),
+  entityId: int("entityId").notNull(), // ID of order, rider, etc.
+  entityType: varchar("entityType", { length: 50 }).notNull(),
+  eventData: text("eventData"), // JSON with event details
+  latitude: varchar("latitude", { length: 20 }),
+  longitude: varchar("longitude", { length: 20 }),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type LiveDashboardEvent = typeof liveDashboardEvents.$inferSelect;
+export type InsertLiveDashboardEvent = typeof liveDashboardEvents.$inferInsert;

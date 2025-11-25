@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, TrendingUp, Users, DollarSign, Award, GitCompare, RefreshCw } from "lucide-react";
-import RiderDetailModal from "@/components/RiderDetailModal";
 import RiderComparisonModal from "@/components/RiderComparisonModal";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -331,7 +330,7 @@ export default function RiderLeaderboard() {
         </CardContent>
       </Card>
 
-      <RiderDetailModal riderId={selectedRiderId} open={modalOpen} onOpenChange={setModalOpen} />
+
       <RiderComparisonModal
         open={comparisonModalOpen}
         onOpenChange={setComparisonModalOpen}
