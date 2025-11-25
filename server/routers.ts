@@ -568,7 +568,7 @@ export const appRouter = router({
       }),
   }),
 
-  notifications: router({
+  notificationsCrud: router({
     list: protectedProcedure
       .input(z.object({
         userId: z.number().optional(),
@@ -918,7 +918,7 @@ export const appRouter = router({
   }),
 
   // Support & Help
-  support: router({
+  supportTickets: router({
     // FAQ Management
     getAllFaqs: protectedProcedure
       .input(z.object({
@@ -1348,7 +1348,7 @@ export const appRouter = router({
   }),
 
   // Notifications router for email templates, push notifications, and preferences
-  notifications: router({
+  notificationsEmail: router({
     // Email Templates
     getAllEmailTemplates: protectedProcedure
       .input(z.object({
@@ -1876,7 +1876,7 @@ export const appRouter = router({
       }),
   }),
 
-  financial: router({
+  financialReports: router({
     // Payouts Management
     getAllPayouts: protectedProcedure
       .input(z.object({
@@ -3224,7 +3224,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "update_scheduled_report",
           entityType: "scheduled_report",
-          entityId: id.toString(),
+          entityId: id,
           details: `Updated scheduled report ID ${id}`,
         });
 
@@ -3245,7 +3245,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: input.isActive ? "activate_scheduled_report" : "deactivate_scheduled_report",
           entityType: "scheduled_report",
-          entityId: input.id.toString(),
+          entityId: input.id,
           details: `${input.isActive ? 'Activated' : 'Deactivated'} scheduled report ID ${input.id}`,
         });
 
@@ -3265,7 +3265,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "delete_scheduled_report",
           entityType: "scheduled_report",
-          entityId: input.id.toString(),
+          entityId: input.id,
           details: `Deleted scheduled report: ${report?.name || 'Unknown'}`,
         });
 
@@ -3333,8 +3333,8 @@ export const appRouter = router({
 
         const { currentStart, currentEnd, previousStart, previousEnd } = getPeriodDates(report.periodType);
 
-        const currentTransactions = await db.getTransactionsByDateRange(currentStart, currentEnd);
-        const previousTransactions = await db.getTransactionsByDateRange(previousStart, previousEnd);
+        const currentTransactions = await db.getAllTransactions({ startDate: currentStart, endDate: currentEnd });
+        const previousTransactions = await db.getAllTransactions({ startDate: previousStart, endDate: previousEnd });
 
         const calculateMetrics = (transactions: any[]) => {
           const completed = transactions.filter(t => t.status === "completed");
@@ -3519,7 +3519,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "preview_scheduled_report",
           entityType: "scheduled_report",
-          entityId: input.id.toString(),
+          entityId: input.id,
           details: `Previewed scheduled report: ${report.name}`,
         });
 
@@ -3572,7 +3572,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "update_rider_location",
           entityType: "rider",
-          entityId: input.riderId.toString(),
+          entityId: input.riderId,
           details: `Updated rider location: ${input.latitude}, ${input.longitude}`,
         });
 
@@ -3620,7 +3620,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "resolve_inventory_alert",
           entityType: "inventory_alert",
-          entityId: input.id.toString(),
+          entityId: input.id,
           details: `Resolved inventory alert${input.notes ? `: ${input.notes}` : ''}`,
         });
         
@@ -3639,7 +3639,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "bulk_resolve_inventory_alerts",
           entityType: "inventory_alert",
-          entityId: input.ids.join(','),
+          entityId: null, // Multiple IDs, cannot store as single int
           details: `Bulk resolved ${input.ids.length} inventory alerts`,
         });
         
@@ -3656,7 +3656,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "dismiss_inventory_alert",
           entityType: "inventory_alert",
-          entityId: input.id.toString(),
+          entityId: input.id,
           details: "Dismissed inventory alert",
         });
         
@@ -3671,7 +3671,7 @@ export const appRouter = router({
         adminName: ctx.user.name || "Unknown",
         action: "check_stock_levels",
         entityType: "inventory",
-        entityId: "system",
+        entityId: null,
         details: `Stock level check completed. Created ${newAlerts.length} new alerts.`,
       });
       
@@ -3724,7 +3724,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "create_inventory_threshold",
           entityType: "inventory_threshold",
-          entityId: input.productId.toString(),
+          entityId: input.productId,
           details: `Created inventory threshold for product ${input.productId}`,
         });
         
@@ -3749,7 +3749,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "update_inventory_threshold",
           entityType: "inventory_threshold",
-          entityId: productId.toString(),
+          entityId: productId,
           details: `Updated inventory threshold for product ${productId}`,
         });
         
@@ -3766,7 +3766,7 @@ export const appRouter = router({
           adminName: ctx.user.name || "Unknown",
           action: "delete_inventory_threshold",
           entityType: "inventory_threshold",
-          entityId: input.productId.toString(),
+          entityId: input.productId,
           details: `Deleted inventory threshold for product ${input.productId}`,
         });
         
