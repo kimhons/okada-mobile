@@ -557,3 +557,13 @@
 - [x] Create tRPC procedures in leaderboard router
 - [x] Test with existing rider data (23/23 tests passed - 100%)
 - [x] Verify frontend displays leaderboard correctly (RiderLeaderboard page ready)
+
+
+## Add Tier Filter to Rider Leaderboard
+
+- [x] Update getRiderLeaderboard() to accept optional tier filter parameter
+- [x] Update tRPC procedure to include tier filter in input schema
+- [x] Add tier filter dropdown to RiderLeaderboard frontend (with emoji icons)
+- [x] Update UI to show filtered results by tier
+- [x] Write tests for tier filtering functionality (10 new tests added)
+- [x] Verify tier filter works with all time periods and categories (33/33 tests passed - 100%)

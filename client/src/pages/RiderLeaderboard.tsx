@@ -10,6 +10,7 @@ import RiderDetailModal from "@/components/RiderDetailModal";
 
 type Period = 'today' | 'week' | 'month' | 'all';
 type Category = 'overall' | 'earnings' | 'deliveries' | 'rating' | 'speed';
+type Tier = 'platinum' | 'gold' | 'silver' | 'bronze' | 'rookie' | 'all';
 
 const tierColors = {
   platinum: "bg-purple-100 text-purple-800 border-purple-300",
@@ -30,12 +31,14 @@ const statusColors = {
 export default function RiderLeaderboard() {
   const [period, setPeriod] = useState<Period>('week');
   const [category, setCategory] = useState<Category>('overall');
+  const [tier, setTier] = useState<Tier>('all');
   const [selectedRiderId, setSelectedRiderId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const { data: leaderboardData, isLoading } = trpc.leaderboard.getLeaderboard.useQuery({
     period,
     category,
+    tier: tier === 'all' ? undefined : tier,
     limit: 50,
     offset: 0,
   });
@@ -150,6 +153,20 @@ export default function RiderLeaderboard() {
                   <SelectItem value="deliveries">Delivery Champions</SelectItem>
                   <SelectItem value="rating">Customer Favorites</SelectItem>
                   <SelectItem value="speed">Speed Masters</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={tier} onValueChange={(value) => setTier(value as Tier)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="All Tiers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tiers</SelectItem>
+                  <SelectItem value="platinum">🏆 Platinum</SelectItem>
+                  <SelectItem value="gold">🥇 Gold</SelectItem>
+                  <SelectItem value="silver">🥈 Silver</SelectItem>
+                  <SelectItem value="bronze">🥉 Bronze</SelectItem>
+                  <SelectItem value="rookie">🔰 Rookie</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -3779,6 +3779,7 @@ export const appRouter = router({
       .input(z.object({
         period: z.enum(['today', 'week', 'month', 'all']),
         category: z.enum(['overall', 'earnings', 'deliveries', 'rating', 'speed']),
+        tier: z.enum(['platinum', 'gold', 'silver', 'bronze', 'rookie', 'all']).optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
       }))

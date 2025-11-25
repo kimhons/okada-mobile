@@ -2789,13 +2789,14 @@ import { inArray } from "drizzle-orm";
 export async function getRiderLeaderboard(params: {
   period: 'today' | 'week' | 'month' | 'all';
   category: 'overall' | 'earnings' | 'deliveries' | 'rating' | 'speed';
+  tier?: 'platinum' | 'gold' | 'silver' | 'bronze' | 'rookie' | 'all';
   limit?: number;
   offset?: number;
 }) {
   const db = await getDb();
   if (!db) return { leaderboard: [], total: 0, stats: null };
 
-  const { period, category, limit = 50, offset = 0 } = params;
+  const { period, category, tier, limit = 50, offset = 0 } = params;
 
   // Calculate date range based on period
   const now = new Date();
@@ -3045,12 +3046,18 @@ export async function getRiderLeaderboard(params: {
     totalEarnings: rankedData.reduce((sum, r) => sum + r.totalEarnings, 0),
   };
 
+  // Apply tier filter if specified
+  let filteredData = rankedData;
+  if (tier && tier !== 'all') {
+    filteredData = rankedData.filter((r) => r.tier === tier);
+  }
+
   // Apply pagination
-  const paginatedData = rankedData.slice(offset, offset + limit);
+  const paginatedData = filteredData.slice(offset, offset + limit);
 
   return {
     leaderboard: paginatedData,
-    total: rankedData.length,
+    total: filteredData.length,
     stats,
   };
 }

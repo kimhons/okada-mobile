@@ -347,3 +347,162 @@ describe('Rider Leaderboard Functions', () => {
     });
   });
 });
+
+describe('Tier Filtering', () => {
+  it('should filter by platinum tier', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      tier: 'platinum',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    result.leaderboard.forEach((rider) => {
+      expect(rider.tier).toBe('platinum');
+    });
+  });
+
+  it('should filter by gold tier', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      tier: 'gold',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    result.leaderboard.forEach((rider) => {
+      expect(rider.tier).toBe('gold');
+    });
+  });
+
+  it('should filter by silver tier', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      tier: 'silver',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    result.leaderboard.forEach((rider) => {
+      expect(rider.tier).toBe('silver');
+    });
+  });
+
+  it('should filter by bronze tier', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      tier: 'bronze',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    result.leaderboard.forEach((rider) => {
+      expect(rider.tier).toBe('bronze');
+    });
+  });
+
+  it('should filter by rookie tier', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      tier: 'rookie',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    result.leaderboard.forEach((rider) => {
+      expect(rider.tier).toBe('rookie');
+    });
+  });
+
+  it('should show all tiers when tier is "all"', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      tier: 'all',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    // Should include riders from multiple tiers (if data exists)
+    if (result.leaderboard.length > 0) {
+      const uniqueTiers = new Set(result.leaderboard.map((r) => r.tier));
+      expect(uniqueTiers.size).toBeGreaterThan(0);
+    }
+  });
+
+  it('should show all tiers when tier is undefined', async () => { const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    // Should include riders from multiple tiers (if data exists)
+    if (result.leaderboard.length > 0) {
+      const uniqueTiers = new Set(result.leaderboard.map((r) => r.tier));
+      expect(uniqueTiers.size).toBeGreaterThan(0);
+    }
+  });
+
+  it('should work with tier filter and week period', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'week',
+      category: 'overall',
+      tier: 'gold',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    result.leaderboard.forEach((rider) => {
+      expect(rider.tier).toBe('gold');
+    });
+  });
+
+  it('should work with tier filter and earnings category', async () => {
+    const result = await getRiderLeaderboard({
+      period: 'all',
+      category: 'earnings',
+      tier: 'platinum',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(Array.isArray(result.leaderboard)).toBe(true);
+    result.leaderboard.forEach((rider) => {
+      expect(rider.tier).toBe('platinum');
+    });
+  });
+
+  it('should return correct total count when filtered by tier', async () => {
+    const allResult = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      limit: 1000,
+      offset: 0,
+    });
+
+    const platinumResult = await getRiderLeaderboard({
+      period: 'all',
+      category: 'overall',
+      tier: 'platinum',
+      limit: 1000,
+      offset: 0,
+    });
+
+    expect(platinumResult.total).toBeLessThanOrEqual(allResult.total);
+    expect(platinumResult.total).toBe(platinumResult.leaderboard.length);
+  });
+});
