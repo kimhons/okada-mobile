@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, TrendingUp, Users, DollarSign, Award, GitCompare } from "lucide-react";
+import { Trophy, TrendingUp, Users, DollarSign, Award, GitCompare, RefreshCw } from "lucide-react";
 import RiderDetailModal from "@/components/RiderDetailModal";
 import RiderComparisonModal from "@/components/RiderComparisonModal";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,10 @@ export default function RiderLeaderboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedForComparison, setSelectedForComparison] = useState<number[]>([]);
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const utils = trpc.useUtils();
 
   const toggleRiderSelection = (riderId: number) => {
     setSelectedForComparison(prev => {
@@ -67,6 +71,26 @@ export default function RiderLeaderboard() {
     offset: 0,
   });
 
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [period, category, tier]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await utils.leaderboard.getLeaderboard.invalidate();
+    setLastUpdated(new Date());
+    setIsRefreshing(false);
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+
   const getMedalEmoji = (rank: number) => {
     if (rank === 1) return "🥇";
     if (rank === 2) return "🥈";
@@ -94,12 +118,26 @@ export default function RiderLeaderboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Trophy className="h-8 w-8 text-yellow-500" />
-          Rider Performance Leaderboard
-        </h1>
-        <p className="text-muted-foreground mt-1">Track and celebrate top-performing riders</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Trophy className="h-8 w-8 text-yellow-500" />
+            Rider Performance Leaderboard
+          </h1>
+          <p className="text-muted-foreground mt-1">Track and celebrate top-performing riders</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Last updated: {formatTime(lastUpdated)} • Auto-refreshes every 30s
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {!isLoading && leaderboardData && (

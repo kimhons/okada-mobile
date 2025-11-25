@@ -672,3 +672,30 @@
 - [x] Test growth percentage calculations
 - [x] Test chart data formatting
 - [ ] Fix remaining 5 failing tests (getFinancialDashboard and getRevenueTrends SQL issues)
+
+
+## Real-time Dashboard Auto-Refresh
+
+### Financial Overview Dashboard
+- [x] Add useEffect hook with 30-second interval for auto-refresh
+- [x] Implement refetch for all financial queries (overview, trends, commissions, payouts)
+- [x] Add visual refresh indicator (spinning RefreshCw icon)
+- [x] Add last updated timestamp display (HH:MM:SS format)
+- [x] Add manual refresh button with disabled state during refresh
+- [x] Cleanup interval on component unmount
+
+### Rider Leaderboard
+- [x] Add useEffect hook with 30-second interval for auto-refresh
+- [x] Implement refetch for leaderboard query
+- [x] Add visual refresh indicator (spinning RefreshCw icon)
+- [x] Add last updated timestamp display (HH:MM:SS format)
+- [x] Add manual refresh button with disabled state during refresh
+- [x] Preserve current filters during auto-refresh (period, category, tier)
+- [x] Cleanup interval on component unmount
+
+### Testing
+- [x] Test auto-refresh triggers every 30 seconds
+- [x] Test manual refresh button
+- [x] Test interval cleanup on unmount
+- [x] Verify filters are preserved during refresh
+- [x] Test visual indicators appear during refresh

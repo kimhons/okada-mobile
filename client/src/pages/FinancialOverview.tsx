@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, Wallet, ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, Wallet, ShoppingCart, RefreshCw } from "lucide-react";
 import { Area, AreaChart, Pie, PieChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -12,13 +13,43 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 export default function FinancialOverview() {
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const [trendDays, setTrendDays] = useState(30);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const utils = trpc.useUtils();
   const { data: overview, isLoading: overviewLoading } = trpc.financialOverview.getOverview.useQuery({ period });
   const { data: trends, isLoading: trendsLoading } = trpc.financialOverview.getRevenueTrends.useQuery({ days: trendDays });
   const { data: commissions, isLoading: commissionsLoading } = trpc.financialOverview.getCommissionSummary.useQuery();
   const { data: payoutStatuses, isLoading: payoutsLoading } = trpc.financialOverview.getPayoutStatuses.useQuery();
   const { data: topCategories, isLoading: categoriesLoading } = trpc.financialOverview.getTopRevenueCategories.useQuery({ limit: 5 });
   const { data: paymentMethods, isLoading: paymentMethodsLoading } = trpc.financialOverview.getRevenueByPaymentMethod.useQuery();
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [period, trendDays]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      utils.financialOverview.getOverview.invalidate(),
+      utils.financialOverview.getRevenueTrends.invalidate(),
+      utils.financialOverview.getCommissionSummary.invalidate(),
+      utils.financialOverview.getPayoutStatuses.invalidate(),
+      utils.financialOverview.getTopRevenueCategories.invalidate(),
+      utils.financialOverview.getRevenueByPaymentMethod.invalidate(),
+    ]);
+    setLastUpdated(new Date());
+    setIsRefreshing(false);
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
 
   const formatCurrency = (amount: number) => {
     return `${(amount / 100).toLocaleString()} FCFA`;
@@ -56,18 +87,32 @@ export default function FinancialOverview() {
           <div>
             <h1 className="text-3xl font-bold">Financial Overview</h1>
             <p className="text-muted-foreground">Track revenue, commissions, and payouts</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Last updated: {formatTime(lastUpdated)} • Auto-refreshes every 30s
+            </p>
           </div>
-          <Select value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Select value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Stats Cards */}
