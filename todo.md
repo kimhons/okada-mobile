@@ -533,3 +533,13 @@
 - [x] Fix missing getTransactionsByDateRange function reference (replaced with getAllTransactions)
 - [x] Verify all router procedures have correct types
 - [x] Run TypeScript compiler to confirm all routers.ts errors resolved (0 errors remaining)
+
+
+## Merge Duplicate Routers
+
+- [x] Renamed notificationsCrud → notificationManagement (25 procedures)
+- [x] Renamed notificationsEmail → emailAndPushNotifications (120 procedures)
+- [x] Renamed financialReports → payoutsAndTransactions (402 procedures)
+- [x] Renamed supportTickets → faqsAndHelpDocs (82 procedures)
+- [x] Verify all procedures are preserved (629 total procedures retained)
+- [x] Test TypeScript compilation after rename (0 errors in routers.ts)

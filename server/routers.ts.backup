@@ -568,7 +568,7 @@ export const appRouter = router({
       }),
   }),
 
-  notificationManagement: router({
+  notificationsCrud: router({
     list: protectedProcedure
       .input(z.object({
         userId: z.number().optional(),
@@ -918,7 +918,7 @@ export const appRouter = router({
   }),
 
   // Support & Help
-  faqsAndHelpDocs: router({
+  supportTickets: router({
     // FAQ Management
     getAllFaqs: protectedProcedure
       .input(z.object({
@@ -1348,7 +1348,7 @@ export const appRouter = router({
   }),
 
   // Notifications router for email templates, push notifications, and preferences
-  emailAndPushNotifications: router({
+  notificationsEmail: router({
     // Email Templates
     getAllEmailTemplates: protectedProcedure
       .input(z.object({
@@ -1876,7 +1876,7 @@ export const appRouter = router({
       }),
   }),
 
-  payoutsAndTransactions: router({
+  financialReports: router({
     // Payouts Management
     getAllPayouts: protectedProcedure
       .input(z.object({
