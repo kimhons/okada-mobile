@@ -3801,6 +3801,16 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getRiderPerformanceDetails(input.riderId, input.period);
       }),
+
+    compareRiders: protectedProcedure
+      .input(z.object({
+        riderId1: z.number(),
+        riderId2: z.number(),
+        period: z.enum(['today', 'week', 'month', 'all']).default('all'),
+      }))
+      .query(async ({ input }) => {
+        return await db.compareRiders(input.riderId1, input.riderId2, input.period);
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;;

@@ -3225,3 +3225,74 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
     acceptanceRate: rider[0].acceptanceRate || 0,
   };
 }
+
+/**
+ * Compare two riders side-by-side with performance metrics and trends
+ */
+export async function compareRiders(
+  riderId1: number,
+  riderId2: number,
+  period: 'today' | 'week' | 'month' | 'all' = 'all'
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Fetch both riders' details in parallel
+  const [rider1Details, rider2Details, rider1Trend, rider2Trend] = await Promise.all([
+    getRiderPerformanceDetails(riderId1, period),
+    getRiderPerformanceDetails(riderId2, period),
+    get30DayTrend(riderId1),
+    get30DayTrend(riderId2),
+  ]);
+
+  if (!rider1Details || !rider2Details) {
+    return null;
+  }
+
+  // Calculate performance score for each rider
+  const calculateScore = (details: NonNullable<Awaited<ReturnType<typeof getRiderPerformanceDetails>>>) => {
+    const deliveryScore = Math.min(details.deliveries / 100, 1) * 25;
+    const ratingScore = (details.rating / 5) * 25;
+    const onTimeScore = details.onTimeRate * 0.2;
+    const acceptanceScore = details.acceptanceRate * 0.15;
+    const qualityScore = details.qualityPhotoRate * 0.15;
+    return deliveryScore + ratingScore + onTimeScore + acceptanceScore + qualityScore;
+  };
+
+  const rider1Score = calculateScore(rider1Details);
+  const rider2Score = calculateScore(rider2Details);
+
+  // Determine winner for each metric
+  const comparison = {
+    rider1: {
+      ...rider1Details,
+      performanceScore: Math.round(rider1Score * 10) / 10,
+      trend: rider1Trend,
+    },
+    rider2: {
+      ...rider2Details,
+      performanceScore: Math.round(rider2Score * 10) / 10,
+      trend: rider2Trend,
+    },
+    winners: {
+      performanceScore: rider1Score > rider2Score ? 1 : rider1Score < rider2Score ? 2 : 0,
+      deliveries: rider1Details.deliveries > rider2Details.deliveries ? 1 : rider1Details.deliveries < rider2Details.deliveries ? 2 : 0,
+      earnings: rider1Details.totalEarnings > rider2Details.totalEarnings ? 1 : rider1Details.totalEarnings < rider2Details.totalEarnings ? 2 : 0,
+      rating: rider1Details.rating > rider2Details.rating ? 1 : rider1Details.rating < rider2Details.rating ? 2 : 0,
+      onTimeRate: rider1Details.onTimeRate > rider2Details.onTimeRate ? 1 : rider1Details.onTimeRate < rider2Details.onTimeRate ? 2 : 0,
+      acceptanceRate: rider1Details.acceptanceRate > rider2Details.acceptanceRate ? 1 : rider1Details.acceptanceRate < rider2Details.acceptanceRate ? 2 : 0,
+      qualityPhotoRate: rider1Details.qualityPhotoRate > rider2Details.qualityPhotoRate ? 1 : rider1Details.qualityPhotoRate < rider2Details.qualityPhotoRate ? 2 : 0,
+    },
+    differences: {
+      performanceScore: Math.round((rider1Score - rider2Score) * 10) / 10,
+      deliveries: rider1Details.deliveries - rider2Details.deliveries,
+      earnings: rider1Details.totalEarnings - rider2Details.totalEarnings,
+      rating: Math.round((rider1Details.rating - rider2Details.rating) * 10) / 10,
+      onTimeRate: Math.round((rider1Details.onTimeRate - rider2Details.onTimeRate) * 10) / 10,
+      acceptanceRate: Math.round((rider1Details.acceptanceRate - rider2Details.acceptanceRate) * 10) / 10,
+      qualityPhotoRate: Math.round((rider1Details.qualityPhotoRate - rider2Details.qualityPhotoRate) * 10) / 10,
+    },
+  };
+
+  return comparison;
+}

@@ -5,8 +5,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, TrendingUp, Users, DollarSign, Award } from "lucide-react";
+import { Trophy, TrendingUp, Users, DollarSign, Award, GitCompare } from "lucide-react";
 import RiderDetailModal from "@/components/RiderDetailModal";
+import RiderComparisonModal from "@/components/RiderComparisonModal";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Period = 'today' | 'week' | 'month' | 'all';
 type Category = 'overall' | 'earnings' | 'deliveries' | 'rating' | 'speed';
@@ -34,6 +37,27 @@ export default function RiderLeaderboard() {
   const [tier, setTier] = useState<Tier>('all');
   const [selectedRiderId, setSelectedRiderId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedForComparison, setSelectedForComparison] = useState<number[]>([]);
+  const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
+
+  const toggleRiderSelection = (riderId: number) => {
+    setSelectedForComparison(prev => {
+      if (prev.includes(riderId)) {
+        return prev.filter(id => id !== riderId);
+      }
+      if (prev.length >= 2) {
+        // Replace the first selected rider
+        return [prev[1], riderId];
+      }
+      return [...prev, riderId];
+    });
+  };
+
+  const openComparison = () => {
+    if (selectedForComparison.length === 2) {
+      setComparisonModalOpen(true);
+    }
+  };
 
   const { data: leaderboardData, isLoading } = trpc.leaderboard.getLeaderboard.useQuery({
     period,
@@ -169,6 +193,16 @@ export default function RiderLeaderboard() {
                   <SelectItem value="rookie">🔰 Rookie</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Button
+                onClick={openComparison}
+                disabled={selectedForComparison.length !== 2}
+                variant="outline"
+                className="gap-2"
+              >
+                <GitCompare className="h-4 w-4" />
+                Compare ({selectedForComparison.length}/2)
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -184,6 +218,7 @@ export default function RiderLeaderboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">Compare</TableHead>
                     <TableHead className="w-[60px]">Rank</TableHead>
                     <TableHead>Rider</TableHead>
                     <TableHead>Tier</TableHead>
@@ -201,10 +236,16 @@ export default function RiderLeaderboard() {
                     return (
                       <TableRow 
                         key={rider.riderId}
-                        className={`${rider.rank <= 3 ? "bg-yellow-50/50" : ""} cursor-pointer hover:bg-muted/50`}
-                        onClick={() => handleRowClick(rider.riderId)}
+                        className={`${rider.rank <= 3 ? "bg-yellow-50/50" : ""} hover:bg-muted/50`}
                       >
-                        <TableCell className="font-medium">
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={selectedForComparison.includes(rider.riderId)}
+                            onCheckedChange={() => toggleRiderSelection(rider.riderId)}
+                            disabled={selectedForComparison.length >= 2 && !selectedForComparison.includes(rider.riderId)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium cursor-pointer" onClick={() => handleRowClick(rider.riderId)}>
                           {medal ? <span className="text-2xl">{medal}</span> : <span className="text-muted-foreground">#{rider.rank}</span>}
                         </TableCell>
                         <TableCell>
@@ -253,6 +294,13 @@ export default function RiderLeaderboard() {
       </Card>
 
       <RiderDetailModal riderId={selectedRiderId} open={modalOpen} onOpenChange={setModalOpen} />
+      <RiderComparisonModal
+        open={comparisonModalOpen}
+        onOpenChange={setComparisonModalOpen}
+        riderId1={selectedForComparison[0] || 0}
+        riderId2={selectedForComparison[1] || 0}
+        period={period}
+      />
     </div>
   );
 }

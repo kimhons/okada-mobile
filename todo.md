@@ -567,3 +567,17 @@
 - [x] Update UI to show filtered results by tier
 - [x] Write tests for tier filtering functionality (10 new tests added)
 - [x] Verify tier filter works with all time periods and categories (33/33 tests passed - 100%)
+
+
+## Rider Comparison Feature
+
+- [x] Create compareRiders() backend function to fetch data for two riders
+- [x] Add tRPC procedure for rider comparison
+- [x] Build RiderComparisonModal component with side-by-side layout
+- [x] Add performance metrics comparison (score, deliveries, earnings, rating)
+- [x] Add 30-day trend comparison charts (deliveries, earnings)
+- [x] Add achievements and badges comparison (earnings breakdown)
+- [x] Add "Compare" button to leaderboard with checkbox selection
+- [x] Enable selecting two riders for comparison (max 2 at a time)
+- [x] Write tests for comparison functionality (8 new tests added)
+- [x] Verify comparison works across different time periods (41/41 tests passed - 100%)

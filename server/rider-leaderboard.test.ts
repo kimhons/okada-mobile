@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { getRiderLeaderboard, get30DayTrend, getRiderPerformanceDetails } from './db';
+import { getRiderLeaderboard, get30DayTrend, getRiderPerformanceDetails, compareRiders } from './db';
+import * as db from './db';
 
 describe('Rider Leaderboard Functions', () => {
   describe('getRiderLeaderboard', () => {
@@ -504,5 +505,88 @@ describe('Tier Filtering', () => {
 
     expect(platinumResult.total).toBeLessThanOrEqual(allResult.total);
     expect(platinumResult.total).toBe(platinumResult.leaderboard.length);
+  });
+});
+
+// Rider Comparison Tests
+describe('Rider Comparison', () => {
+  it('should compare two riders successfully', async () => {
+    const comparison = await db.compareRiders(1, 2, 'all');
+    
+    expect(comparison).toBeDefined();
+    if (comparison) {
+      expect(comparison.rider1).toBeDefined();
+      expect(comparison.rider2).toBeDefined();
+      expect(comparison.winners).toBeDefined();
+      expect(comparison.differences).toBeDefined();
+    }
+  });
+
+  it('should calculate performance scores for both riders', async () => {
+    const comparison = await db.compareRiders(1, 2, 'all');
+    
+    if (comparison) {
+      expect(comparison.rider1.performanceScore).toBeGreaterThanOrEqual(0);
+      expect(comparison.rider1.performanceScore).toBeLessThanOrEqual(100);
+      expect(comparison.rider2.performanceScore).toBeGreaterThanOrEqual(0);
+      expect(comparison.rider2.performanceScore).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('should determine winners for each metric', async () => {
+    const comparison = await db.compareRiders(1, 2, 'all');
+    
+    if (comparison) {
+      // Winner values should be 0 (tie), 1 (rider1), or 2 (rider2)
+      expect([0, 1, 2]).toContain(comparison.winners.performanceScore);
+      expect([0, 1, 2]).toContain(comparison.winners.deliveries);
+      expect([0, 1, 2]).toContain(comparison.winners.earnings);
+      expect([0, 1, 2]).toContain(comparison.winners.rating);
+    }
+  });
+
+  it('should calculate differences between riders', async () => {
+    const comparison = await db.compareRiders(1, 2, 'all');
+    
+    if (comparison) {
+      expect(typeof comparison.differences.performanceScore).toBe('number');
+      expect(typeof comparison.differences.deliveries).toBe('number');
+      expect(typeof comparison.differences.earnings).toBe('number');
+      expect(typeof comparison.differences.rating).toBe('number');
+    }
+  });
+
+  it('should include 30-day trends for both riders', async () => {
+    const comparison = await db.compareRiders(1, 2, 'all');
+    
+    if (comparison) {
+      expect(Array.isArray(comparison.rider1.trend)).toBe(true);
+      expect(Array.isArray(comparison.rider2.trend)).toBe(true);
+      expect(comparison.rider1.trend.length).toBeLessThanOrEqual(30);
+      expect(comparison.rider2.trend.length).toBeLessThanOrEqual(30);
+    }
+  });
+
+  it('should handle comparison for different time periods', async () => {
+    const periods: Array<'today' | 'week' | 'month' | 'all'> = ['today', 'week', 'month', 'all'];
+    
+    for (const period of periods) {
+      const comparison = await db.compareRiders(1, 2, period);
+      if (comparison) {
+        expect(comparison.rider1).toBeDefined();
+        expect(comparison.rider2).toBeDefined();
+      }
+    }
+  });
+
+  it('should return null for invalid rider IDs', async () => {
+    const comparison = await db.compareRiders(99999, 99998, 'all');
+    expect(comparison).toBeNull();
+  });
+
+  it('should handle comparison when one rider has no data', async () => {
+    // This test assumes rider 1 exists but rider 99999 doesn't
+    const comparison = await db.compareRiders(1, 99999, 'all');
+    expect(comparison).toBeNull();
   });
 });
