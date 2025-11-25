@@ -55,6 +55,8 @@ import ContentModeration from "./pages/ContentModeration";
 import FraudDetection from "./pages/FraudDetection";
 import LiveDashboard from "./pages/LiveDashboard";
 import RiderLeaderboard from "./pages/RiderLeaderboard";
+import GeoAnalytics from "./pages/GeoAnalytics";
+import ReferralProgram from "./pages/ReferralProgram";
 
 
 function Router() {
@@ -106,6 +108,8 @@ function Router() {
       <Route path="/platform-statistics" component={() => <DashboardLayout><PlatformStatistics /></DashboardLayout>} />
       <Route path="/disputes" component={() => <DashboardLayout><DisputeResolution /></DashboardLayout>} />
       <Route path="/rider-leaderboard" component={() => <DashboardLayout><RiderLeaderboard /></DashboardLayout>} />
+      <Route path="/geo-analytics" component={() => <DashboardLayout><GeoAnalytics /></DashboardLayout>} />
+      <Route path="/referral-program" component={() => <DashboardLayout><ReferralProgram /></DashboardLayout>} />
       <Route path="/system-settings" component={() => <DashboardLayout><SystemSettings /></DashboardLayout>} />
       <Route path="/content-moderation" component={() => <DashboardLayout><ContentModeration /></DashboardLayout>} />
       <Route path="/fraud-detection" component={() => <DashboardLayout><FraudDetection /></DashboardLayout>} />

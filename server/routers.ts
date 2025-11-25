@@ -4459,6 +4459,294 @@ export const appRouter = router({
         return await db.recordDashboardEvent(input);
       }),
   }),
+
+  // Geo Analytics
+  geoAnalytics: router({
+    getRegions: protectedProcedure
+      .input(z.object({
+        regionType: z.string().optional(),
+        parentId: z.number().optional().nullable(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getGeoRegions(input);
+      }),
+
+    getRegionalAnalytics: protectedProcedure
+      .input(z.object({
+        regionId: z.number(),
+        period: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRegionalAnalytics(input.regionId, input.period);
+      }),
+
+    getPerformanceComparison: protectedProcedure
+      .input(z.object({
+        period: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRegionalPerformanceComparison(input.period);
+      }),
+
+    getOrderHeatmap: protectedProcedure
+      .query(async () => {
+        return await db.getOrderHeatmapData();
+      }),
+
+    upsertAnalytics: protectedProcedure
+      .input(z.object({
+        regionId: z.number(),
+        period: z.string(),
+        periodStart: z.date(),
+        periodEnd: z.date(),
+        totalOrders: z.number(),
+        totalRevenue: z.number(),
+        activeUsers: z.number(),
+        activeRiders: z.number(),
+        avgDeliveryTime: z.number().optional(),
+        orderDensity: z.number().optional(),
+        customerSatisfaction: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.upsertRegionalAnalytics(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_regional_analytics",
+          entityType: "regional_analytics",
+          entityId: result || 0,
+          details: `Updated analytics for region ${input.regionId}`,
+        });
+
+        return result;
+      }),
+  }),
+
+  // Referral Program
+  referrals: router({
+    create: protectedProcedure
+      .input(z.object({
+        referrerUserId: z.number(),
+        referredUserEmail: z.string().optional(),
+        referredUserPhone: z.string().optional(),
+        rewardTier: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createReferral(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_referral",
+          entityType: "referral",
+          entityId: result?.id || 0,
+          details: `Created referral for user ${input.referrerUserId}`,
+        });
+
+        return result;
+      }),
+
+    getUserReferrals: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getUserReferrals(input.userId);
+      }),
+
+    getByCode: protectedProcedure
+      .input(z.object({
+        code: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getReferralByCode(input.code);
+      }),
+
+    complete: protectedProcedure
+      .input(z.object({
+        referralId: z.number(),
+        referredUserId: z.number(),
+        orderValue: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.completeReferral(
+          input.referralId,
+          input.referredUserId,
+          input.orderValue
+        );
+        
+        if (result) {
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "complete_referral",
+            entityType: "referral",
+            entityId: input.referralId,
+            details: `Completed referral ${input.referralId}`,
+          });
+        }
+
+        return result;
+      }),
+
+    getStats: protectedProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getReferralStats(input.userId);
+      }),
+
+    getRewards: protectedProcedure
+      .query(async () => {
+        return await db.getReferralRewards();
+      }),
+
+    updateReward: protectedProcedure
+      .input(z.object({
+        tier: z.string(),
+        referrerReward: z.number(),
+        referredReward: z.number(),
+        minOrderValue: z.number(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateReferralReward(input.tier, {
+          referrerReward: input.referrerReward,
+          referredReward: input.referredReward,
+          minOrderValue: input.minOrderValue,
+          description: input.description,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_referral_reward",
+          entityType: "referral_reward",
+          entityId: 0,
+          details: `Updated ${input.tier} tier reward`,
+        });
+
+        return result;
+      }),
+  }),
+
+  // Loyalty Program
+  loyalty: router({
+    getTiers: protectedProcedure
+      .query(async () => {
+        return await db.getLoyaltyTiers();
+      }),
+
+    getUserInfo: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getUserLoyaltyInfo(input.userId);
+      }),
+
+    initializeUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.initializeUserLoyalty(input.userId);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "initialize_loyalty",
+          entityType: "loyalty",
+          entityId: result || 0,
+          details: `Initialized loyalty for user ${input.userId}`,
+        });
+
+        return result;
+      }),
+
+    addPoints: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        points: z.number(),
+        transactionType: z.string(),
+        description: z.string(),
+        orderId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.addLoyaltyPoints(
+          input.userId,
+          input.points,
+          input.transactionType,
+          input.description,
+          input.orderId
+        );
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "add_loyalty_points",
+          entityType: "loyalty",
+          entityId: input.userId,
+          details: `Added ${input.points} points to user ${input.userId}`,
+        });
+
+        return result;
+      }),
+
+    getRewardsCatalog: protectedProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getLoyaltyRewardsCatalog(input.userId);
+      }),
+
+    redeemReward: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        rewardId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.redeemLoyaltyReward(input.userId, input.rewardId);
+        
+        if (result.success) {
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "redeem_loyalty_reward",
+            entityType: "loyalty",
+            entityId: result.redemptionId || 0,
+            details: `User ${input.userId} redeemed reward ${input.rewardId}`,
+          });
+        }
+
+        return result;
+      }),
+
+    getTransactions: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getUserLoyaltyTransactions(input.userId, input.limit);
+      }),
+
+    getRedemptions: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getUserLoyaltyRedemptions(input.userId);
+      }),
+
+    getStats: protectedProcedure
+      .query(async () => {
+        return await db.getLoyaltyProgramStats();
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 

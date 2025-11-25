@@ -1144,3 +1144,206 @@ export const liveDashboardEvents = mysqlTable("liveDashboardEvents", {
 
 export type LiveDashboardEvent = typeof liveDashboardEvents.$inferSelect;
 export type InsertLiveDashboardEvent = typeof liveDashboardEvents.$inferInsert;
+
+
+/**
+ * Geographic Regions table for Cameroon cities/zones
+ */
+export const geoRegions = mysqlTable("geoRegions", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(), // e.g., "Douala", "Yaoundé"
+  regionType: mysqlEnum("regionType", ["city", "zone", "district"]).notNull(),
+  parentId: int("parentId"), // For hierarchical regions (zone -> city)
+  latitude: varchar("latitude", { length: 20 }),
+  longitude: varchar("longitude", { length: 20 }),
+  boundaryData: text("boundaryData"), // GeoJSON polygon data
+  population: int("population"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GeoRegion = typeof geoRegions.$inferSelect;
+export type InsertGeoRegion = typeof geoRegions.$inferInsert;
+
+/**
+ * Regional Analytics table for performance metrics by region
+ */
+export const regionalAnalytics = mysqlTable("regionalAnalytics", {
+  id: int("id").autoincrement().primaryKey(),
+  regionId: int("regionId").notNull(),
+  period: mysqlEnum("period", ["day", "week", "month", "year"]).notNull(),
+  periodStart: timestamp("periodStart").notNull(),
+  periodEnd: timestamp("periodEnd").notNull(),
+  totalOrders: int("totalOrders").default(0).notNull(),
+  totalRevenue: int("totalRevenue").default(0).notNull(), // In FCFA
+  activeUsers: int("activeUsers").default(0).notNull(),
+  activeRiders: int("activeRiders").default(0).notNull(),
+  avgDeliveryTime: int("avgDeliveryTime"), // In minutes
+  orderDensity: int("orderDensity").default(0).notNull(), // Orders per square km
+  customerSatisfaction: int("customerSatisfaction"), // 0-100 score
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RegionalAnalytics = typeof regionalAnalytics.$inferSelect;
+export type InsertRegionalAnalytics = typeof regionalAnalytics.$inferInsert;
+
+/**
+ * Referral Program table
+ */
+export const referrals = mysqlTable("referrals", {
+  id: int("id").autoincrement().primaryKey(),
+  referrerUserId: int("referrerUserId").notNull(), // User who refers
+  referredUserId: int("referredUserId"), // User who was referred (null until signup)
+  referralCode: varchar("referralCode", { length: 50 }).notNull().unique(),
+  status: mysqlEnum("status", ["pending", "completed", "expired", "cancelled"]).default("pending").notNull(),
+  rewardTier: mysqlEnum("rewardTier", ["bronze", "silver", "gold", "platinum"]).default("bronze").notNull(),
+  rewardAmount: int("rewardAmount").default(0).notNull(), // In FCFA
+  rewardStatus: mysqlEnum("rewardStatus", ["pending", "approved", "paid", "rejected"]).default("pending").notNull(),
+  referredUserEmail: varchar("referredUserEmail", { length: 320 }),
+  referredUserPhone: varchar("referredUserPhone", { length: 20 }),
+  completedAt: timestamp("completedAt"), // When referred user completed first order
+  rewardPaidAt: timestamp("rewardPaidAt"),
+  expiresAt: timestamp("expiresAt"),
+  metadata: text("metadata"), // JSON with additional data
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = typeof referrals.$inferInsert;
+
+/**
+ * Referral Rewards Configuration table
+ */
+export const referralRewards = mysqlTable("referralRewards", {
+  id: int("id").autoincrement().primaryKey(),
+  tier: mysqlEnum("tier", ["bronze", "silver", "gold", "platinum"]).notNull().unique(),
+  referrerReward: int("referrerReward").notNull(), // Amount for referrer in FCFA
+  referredReward: int("referredReward").notNull(), // Amount for referred user in FCFA
+  minOrderValue: int("minOrderValue").default(0).notNull(), // Minimum first order value
+  description: text("description"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReferralReward = typeof referralRewards.$inferSelect;
+export type InsertReferralReward = typeof referralRewards.$inferInsert;
+
+/**
+ * Loyalty Program Tiers table
+ */
+export const loyaltyTiers = mysqlTable("loyaltyTiers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(), // Bronze, Silver, Gold, Platinum
+  minPoints: int("minPoints").notNull(), // Minimum points to reach this tier
+  maxPoints: int("maxPoints"), // Maximum points (null for highest tier)
+  discountPercentage: int("discountPercentage").default(0).notNull(), // Discount on orders
+  pointsMultiplier: int("pointsMultiplier").default(100).notNull(), // 100 = 1x, 150 = 1.5x
+  benefits: text("benefits"), // JSON array of benefits
+  icon: varchar("icon", { length: 100 }),
+  color: varchar("color", { length: 20 }),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LoyaltyTier = typeof loyaltyTiers.$inferSelect;
+export type InsertLoyaltyTier = typeof loyaltyTiers.$inferInsert;
+
+/**
+ * User Loyalty Points table
+ */
+export const userLoyaltyPoints = mysqlTable("userLoyaltyPoints", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  currentPoints: int("currentPoints").default(0).notNull(),
+  lifetimePoints: int("lifetimePoints").default(0).notNull(),
+  currentTierId: int("currentTierId"),
+  tierAchievedAt: timestamp("tierAchievedAt"),
+  pointsToNextTier: int("pointsToNextTier").default(0).notNull(),
+  lastActivityAt: timestamp("lastActivityAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserLoyaltyPoints = typeof userLoyaltyPoints.$inferSelect;
+export type InsertUserLoyaltyPoints = typeof userLoyaltyPoints.$inferInsert;
+
+/**
+ * Loyalty Points Transactions table
+ */
+export const loyaltyPointsTransactions = mysqlTable("loyaltyPointsTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  transactionType: mysqlEnum("transactionType", [
+    "earned",
+    "redeemed",
+    "expired",
+    "bonus",
+    "adjustment",
+    "refund"
+  ]).notNull(),
+  points: int("points").notNull(), // Positive for earned, negative for redeemed
+  orderId: int("orderId"), // Related order if applicable
+  description: text("description"),
+  balanceBefore: int("balanceBefore").notNull(),
+  balanceAfter: int("balanceAfter").notNull(),
+  expiresAt: timestamp("expiresAt"), // For earned points
+  metadata: text("metadata"), // JSON with additional data
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LoyaltyPointsTransaction = typeof loyaltyPointsTransactions.$inferSelect;
+export type InsertLoyaltyPointsTransaction = typeof loyaltyPointsTransactions.$inferInsert;
+
+/**
+ * Loyalty Rewards Catalog table
+ */
+export const loyaltyRewards = mysqlTable("loyaltyRewards", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  pointsCost: int("pointsCost").notNull(),
+  rewardType: mysqlEnum("rewardType", [
+    "discount_coupon",
+    "free_delivery",
+    "cashback",
+    "product",
+    "service"
+  ]).notNull(),
+  rewardValue: int("rewardValue"), // Value in FCFA or percentage
+  imageUrl: varchar("imageUrl", { length: 500 }),
+  stock: int("stock"), // null for unlimited
+  minTierRequired: int("minTierRequired"), // Minimum tier ID required
+  isActive: int("isActive").default(1).notNull(),
+  validityDays: int("validityDays").default(30).notNull(), // How long reward is valid after redemption
+  termsAndConditions: text("termsAndConditions"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LoyaltyReward = typeof loyaltyRewards.$inferSelect;
+export type InsertLoyaltyReward = typeof loyaltyRewards.$inferInsert;
+
+/**
+ * Loyalty Reward Redemptions table
+ */
+export const loyaltyRedemptions = mysqlTable("loyaltyRedemptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  rewardId: int("rewardId").notNull(),
+  pointsSpent: int("pointsSpent").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "used", "expired", "cancelled"]).default("pending").notNull(),
+  redemptionCode: varchar("redemptionCode", { length: 50 }).unique(),
+  usedAt: timestamp("usedAt"),
+  expiresAt: timestamp("expiresAt"),
+  orderId: int("orderId"), // Order where reward was used
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LoyaltyRedemption = typeof loyaltyRedemptions.$inferSelect;
+export type InsertLoyaltyRedemption = typeof loyaltyRedemptions.$inferInsert;

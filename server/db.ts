@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -4822,4 +4822,633 @@ export async function getLiveDashboardStats() {
     .leftJoin(riders, eq(riders.id, orders.riderId));
 
   return stats || { activeOrders: 0, activeRiders: 0, pendingOrders: 0, completedToday: 0 };
+}
+
+
+// ==================== GEO ANALYTICS FUNCTIONS ====================
+
+/**
+ * Get all geographic regions
+ */
+export async function getGeoRegions(filters?: { regionType?: string; parentId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(geoRegions).where(eq(geoRegions.isActive, 1));
+
+  if (filters?.regionType) {
+    query = query.where(eq(geoRegions.regionType, filters.regionType as any));
+  }
+  if (filters?.parentId !== undefined) {
+    if (filters.parentId === null) {
+      query = query.where(sql`${geoRegions.parentId} IS NULL`);
+    } else {
+      query = query.where(eq(geoRegions.parentId, filters.parentId));
+    }
+  }
+
+  return await query;
+}
+
+/**
+ * Get regional analytics for a specific region and period
+ */
+export async function getRegionalAnalytics(regionId: number, period: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(regionalAnalytics)
+    .where(
+      and(
+        eq(regionalAnalytics.regionId, regionId),
+        eq(regionalAnalytics.period, period as any)
+      )
+    )
+    .orderBy(desc(regionalAnalytics.periodStart))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+/**
+ * Get regional performance comparison
+ */
+export async function getRegionalPerformanceComparison(period: string = "month") {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      regionId: regionalAnalytics.regionId,
+      regionName: geoRegions.name,
+      totalOrders: regionalAnalytics.totalOrders,
+      totalRevenue: regionalAnalytics.totalRevenue,
+      activeUsers: regionalAnalytics.activeUsers,
+      activeRiders: regionalAnalytics.activeRiders,
+      avgDeliveryTime: regionalAnalytics.avgDeliveryTime,
+      orderDensity: regionalAnalytics.orderDensity,
+      customerSatisfaction: regionalAnalytics.customerSatisfaction,
+    })
+    .from(regionalAnalytics)
+    .innerJoin(geoRegions, eq(geoRegions.id, regionalAnalytics.regionId))
+    .where(eq(regionalAnalytics.period, period as any))
+    .orderBy(desc(regionalAnalytics.totalRevenue));
+
+  return results;
+}
+
+/**
+ * Create or update regional analytics
+ */
+export async function upsertRegionalAnalytics(data: {
+  regionId: number;
+  period: string;
+  periodStart: Date;
+  periodEnd: Date;
+  totalOrders: number;
+  totalRevenue: number;
+  activeUsers: number;
+  activeRiders: number;
+  avgDeliveryTime?: number;
+  orderDensity?: number;
+  customerSatisfaction?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(regionalAnalytics).values(data as any);
+  return result.insertId;
+}
+
+/**
+ * Get order heatmap data by region
+ */
+export async function getOrderHeatmapData() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      regionId: geoRegions.id,
+      regionName: geoRegions.name,
+      latitude: geoRegions.latitude,
+      longitude: geoRegions.longitude,
+      orderCount: sql<number>`COUNT(${orders.id})`,
+    })
+    .from(geoRegions)
+    .leftJoin(orders, sql`${orders.deliveryAddress} LIKE CONCAT('%', ${geoRegions.name}, '%')`)
+    .where(eq(geoRegions.isActive, 1))
+    .groupBy(geoRegions.id);
+
+  return results;
+}
+
+// ==================== REFERRAL PROGRAM FUNCTIONS ====================
+
+/**
+ * Generate unique referral code
+ */
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+/**
+ * Create a new referral
+ */
+export async function createReferral(data: {
+  referrerUserId: number;
+  referredUserEmail?: string;
+  referredUserPhone?: string;
+  rewardTier?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const referralCode = generateReferralCode();
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 90); // 90 days expiry
+
+  const [result] = await db.insert(referrals).values({
+    referrerUserId: data.referrerUserId,
+    referralCode,
+    rewardTier: (data.rewardTier as any) || 'bronze',
+    referredUserEmail: data.referredUserEmail,
+    referredUserPhone: data.referredUserPhone,
+    expiresAt,
+  } as any);
+
+  return { id: result.insertId, referralCode };
+}
+
+/**
+ * Get referrals by user
+ */
+export async function getUserReferrals(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(referrals)
+    .where(eq(referrals.referrerUserId, userId))
+    .orderBy(desc(referrals.createdAt));
+}
+
+/**
+ * Get referral by code
+ */
+export async function getReferralByCode(code: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(referrals)
+    .where(eq(referrals.referralCode, code))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+/**
+ * Complete a referral (when referred user signs up and completes first order)
+ */
+export async function completeReferral(referralId: number, referredUserId: number, orderValue: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get referral details
+  const referral = await db
+    .select()
+    .from(referrals)
+    .where(eq(referrals.id, referralId))
+    .limit(1);
+
+  if (!referral[0]) return null;
+
+  // Get reward configuration
+  const rewardConfig = await db
+    .select()
+    .from(referralRewards)
+    .where(eq(referralRewards.tier, referral[0].rewardTier))
+    .limit(1);
+
+  if (!rewardConfig[0] || orderValue < rewardConfig[0].minOrderValue) {
+    return null;
+  }
+
+  // Update referral status
+  await db
+    .update(referrals)
+    .set({
+      status: 'completed',
+      referredUserId,
+      completedAt: new Date(),
+      rewardAmount: rewardConfig[0].referrerReward,
+      rewardStatus: 'approved',
+    } as any)
+    .where(eq(referrals.id, referralId));
+
+  return {
+    referrerReward: rewardConfig[0].referrerReward,
+    referredReward: rewardConfig[0].referredReward,
+  };
+}
+
+/**
+ * Get referral statistics
+ */
+export async function getReferralStats(userId?: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  let query = db
+    .select({
+      totalReferrals: sql<number>`COUNT(*)`,
+      completedReferrals: sql<number>`COUNT(CASE WHEN ${referrals.status} = 'completed' THEN 1 END)`,
+      pendingReferrals: sql<number>`COUNT(CASE WHEN ${referrals.status} = 'pending' THEN 1 END)`,
+      totalRewards: sql<number>`SUM(CASE WHEN ${referrals.rewardStatus} = 'paid' THEN ${referrals.rewardAmount} ELSE 0 END)`,
+      pendingRewards: sql<number>`SUM(CASE WHEN ${referrals.rewardStatus} = 'approved' THEN ${referrals.rewardAmount} ELSE 0 END)`,
+    })
+    .from(referrals);
+
+  if (userId) {
+    query = query.where(eq(referrals.referrerUserId, userId));
+  }
+
+  const [stats] = await query;
+  return stats;
+}
+
+/**
+ * Get or create referral reward configuration
+ */
+export async function getReferralRewards() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(referralRewards).where(eq(referralRewards.isActive, 1));
+}
+
+/**
+ * Update referral reward configuration
+ */
+export async function updateReferralReward(tier: string, data: {
+  referrerReward: number;
+  referredReward: number;
+  minOrderValue: number;
+  description?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(referralRewards)
+    .set(data as any)
+    .where(eq(referralRewards.tier, tier as any));
+
+  return true;
+}
+
+// ==================== LOYALTY PROGRAM FUNCTIONS ====================
+
+/**
+ * Get all loyalty tiers
+ */
+export async function getLoyaltyTiers() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(loyaltyTiers)
+    .where(eq(loyaltyTiers.isActive, 1))
+    .orderBy(loyaltyTiers.minPoints);
+}
+
+/**
+ * Get user loyalty points and tier
+ */
+export async function getUserLoyaltyInfo(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select({
+      id: userLoyaltyPoints.id,
+      userId: userLoyaltyPoints.userId,
+      currentPoints: userLoyaltyPoints.currentPoints,
+      lifetimePoints: userLoyaltyPoints.lifetimePoints,
+      currentTierId: userLoyaltyPoints.currentTierId,
+      tierAchievedAt: userLoyaltyPoints.tierAchievedAt,
+      pointsToNextTier: userLoyaltyPoints.pointsToNextTier,
+      lastActivityAt: userLoyaltyPoints.lastActivityAt,
+      tierName: loyaltyTiers.name,
+      tierMinPoints: loyaltyTiers.minPoints,
+      tierMaxPoints: loyaltyTiers.maxPoints,
+      discountPercentage: loyaltyTiers.discountPercentage,
+      pointsMultiplier: loyaltyTiers.pointsMultiplier,
+      benefits: loyaltyTiers.benefits,
+      tierIcon: loyaltyTiers.icon,
+      tierColor: loyaltyTiers.color,
+    })
+    .from(userLoyaltyPoints)
+    .leftJoin(loyaltyTiers, eq(loyaltyTiers.id, userLoyaltyPoints.currentTierId))
+    .where(eq(userLoyaltyPoints.userId, userId))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+/**
+ * Initialize loyalty points for a new user
+ */
+export async function initializeUserLoyalty(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get the first tier (Bronze)
+  const tiers = await getLoyaltyTiers();
+  const firstTier = tiers[0];
+
+  const [result] = await db.insert(userLoyaltyPoints).values({
+    userId,
+    currentPoints: 0,
+    lifetimePoints: 0,
+    currentTierId: firstTier?.id,
+    tierAchievedAt: new Date(),
+    pointsToNextTier: tiers[1]?.minPoints || 0,
+  } as any);
+
+  return result.insertId;
+}
+
+/**
+ * Add loyalty points to user
+ */
+export async function addLoyaltyPoints(
+  userId: number,
+  points: number,
+  transactionType: string,
+  description: string,
+  orderId?: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get current user loyalty info
+  let userLoyalty = await db
+    .select()
+    .from(userLoyaltyPoints)
+    .where(eq(userLoyaltyPoints.userId, userId))
+    .limit(1);
+
+  // Initialize if doesn't exist
+  if (!userLoyalty[0]) {
+    await initializeUserLoyalty(userId);
+    userLoyalty = await db
+      .select()
+      .from(userLoyaltyPoints)
+      .where(eq(userLoyaltyPoints.userId, userId))
+      .limit(1);
+  }
+
+  const current = userLoyalty[0];
+  const balanceBefore = current.currentPoints;
+  const balanceAfter = balanceBefore + points;
+
+  // Record transaction
+  await db.insert(loyaltyPointsTransactions).values({
+    userId,
+    transactionType: transactionType as any,
+    points,
+    orderId,
+    description,
+    balanceBefore,
+    balanceAfter,
+  } as any);
+
+  // Update user points
+  await db
+    .update(userLoyaltyPoints)
+    .set({
+      currentPoints: balanceAfter,
+      lifetimePoints: current.lifetimePoints + (points > 0 ? points : 0),
+      lastActivityAt: new Date(),
+    } as any)
+    .where(eq(userLoyaltyPoints.userId, userId));
+
+  // Check for tier upgrade
+  await checkAndUpgradeTier(userId, balanceAfter);
+
+  return balanceAfter;
+}
+
+/**
+ * Check and upgrade user tier if eligible
+ */
+async function checkAndUpgradeTier(userId: number, currentPoints: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  const tiers = await getLoyaltyTiers();
+  const userLoyalty = await db
+    .select()
+    .from(userLoyaltyPoints)
+    .where(eq(userLoyaltyPoints.userId, userId))
+    .limit(1);
+
+  if (!userLoyalty[0]) return;
+
+  // Find the appropriate tier
+  let newTier = tiers[0];
+  for (const tier of tiers) {
+    if (currentPoints >= tier.minPoints && (!tier.maxPoints || currentPoints <= tier.maxPoints)) {
+      newTier = tier;
+    }
+  }
+
+  // Update if tier changed
+  if (newTier.id !== userLoyalty[0].currentTierId) {
+    const nextTier = tiers.find(t => t.minPoints > currentPoints);
+    await db
+      .update(userLoyaltyPoints)
+      .set({
+        currentTierId: newTier.id,
+        tierAchievedAt: new Date(),
+        pointsToNextTier: nextTier ? nextTier.minPoints - currentPoints : 0,
+      } as any)
+      .where(eq(userLoyaltyPoints.userId, userId));
+  }
+}
+
+/**
+ * Get loyalty rewards catalog
+ */
+export async function getLoyaltyRewardsCatalog(userId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select()
+    .from(loyaltyRewards)
+    .where(eq(loyaltyRewards.isActive, 1));
+
+  if (userId) {
+    const userLoyalty = await getUserLoyaltyInfo(userId);
+    if (userLoyalty?.currentTierId) {
+      query = query.where(
+        or(
+          sql`${loyaltyRewards.minTierRequired} IS NULL`,
+          sql`${loyaltyRewards.minTierRequired} <= ${userLoyalty.currentTierId}`
+        )
+      );
+    }
+  }
+
+  return await query.orderBy(loyaltyRewards.pointsCost);
+}
+
+/**
+ * Redeem a loyalty reward
+ */
+export async function redeemLoyaltyReward(userId: number, rewardId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get reward details
+  const reward = await db
+    .select()
+    .from(loyaltyRewards)
+    .where(eq(loyaltyRewards.id, rewardId))
+    .limit(1);
+
+  if (!reward[0]) return { success: false, error: 'Reward not found' };
+
+  // Get user loyalty info
+  const userLoyalty = await getUserLoyaltyInfo(userId);
+  if (!userLoyalty) return { success: false, error: 'User loyalty not initialized' };
+
+  // Check if user has enough points
+  if (userLoyalty.currentPoints < reward[0].pointsCost) {
+    return { success: false, error: 'Insufficient points' };
+  }
+
+  // Check tier requirement
+  if (reward[0].minTierRequired && userLoyalty.currentTierId < reward[0].minTierRequired) {
+    return { success: false, error: 'Tier requirement not met' };
+  }
+
+  // Check stock
+  if (reward[0].stock !== null && reward[0].stock <= 0) {
+    return { success: false, error: 'Reward out of stock' };
+  }
+
+  // Generate redemption code
+  const redemptionCode = `RWD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + reward[0].validityDays);
+
+  // Create redemption record
+  const [redemption] = await db.insert(loyaltyRedemptions).values({
+    userId,
+    rewardId,
+    pointsSpent: reward[0].pointsCost,
+    status: 'approved',
+    redemptionCode,
+    expiresAt,
+  } as any);
+
+  // Deduct points
+  await addLoyaltyPoints(
+    userId,
+    -reward[0].pointsCost,
+    'redeemed',
+    `Redeemed: ${reward[0].name}`,
+    undefined
+  );
+
+  // Update stock if applicable
+  if (reward[0].stock !== null) {
+    await db
+      .update(loyaltyRewards)
+      .set({ stock: reward[0].stock - 1 } as any)
+      .where(eq(loyaltyRewards.id, rewardId));
+  }
+
+  return {
+    success: true,
+    redemptionId: redemption.insertId,
+    redemptionCode,
+    expiresAt,
+  };
+}
+
+/**
+ * Get user loyalty transactions history
+ */
+export async function getUserLoyaltyTransactions(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(loyaltyPointsTransactions)
+    .where(eq(loyaltyPointsTransactions.userId, userId))
+    .orderBy(desc(loyaltyPointsTransactions.createdAt))
+    .limit(limit);
+}
+
+/**
+ * Get user loyalty redemptions
+ */
+export async function getUserLoyaltyRedemptions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: loyaltyRedemptions.id,
+      rewardName: loyaltyRewards.name,
+      rewardType: loyaltyRewards.rewardType,
+      rewardValue: loyaltyRewards.rewardValue,
+      pointsSpent: loyaltyRedemptions.pointsSpent,
+      status: loyaltyRedemptions.status,
+      redemptionCode: loyaltyRedemptions.redemptionCode,
+      usedAt: loyaltyRedemptions.usedAt,
+      expiresAt: loyaltyRedemptions.expiresAt,
+      createdAt: loyaltyRedemptions.createdAt,
+    })
+    .from(loyaltyRedemptions)
+    .innerJoin(loyaltyRewards, eq(loyaltyRewards.id, loyaltyRedemptions.rewardId))
+    .where(eq(loyaltyRedemptions.userId, userId))
+    .orderBy(desc(loyaltyRedemptions.createdAt));
+}
+
+/**
+ * Get loyalty program statistics
+ */
+export async function getLoyaltyProgramStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [stats] = await db
+    .select({
+      totalMembers: sql<number>`COUNT(DISTINCT ${userLoyaltyPoints.userId})`,
+      totalPointsIssued: sql<number>`SUM(${userLoyaltyPoints.lifetimePoints})`,
+      totalPointsRedeemed: sql<number>`SUM(CASE WHEN ${loyaltyPointsTransactions.transactionType} = 'redeemed' THEN ABS(${loyaltyPointsTransactions.points}) ELSE 0 END)`,
+      totalRedemptions: sql<number>`COUNT(DISTINCT ${loyaltyRedemptions.id})`,
+    })
+    .from(userLoyaltyPoints)
+    .leftJoin(loyaltyPointsTransactions, eq(loyaltyPointsTransactions.userId, userLoyaltyPoints.userId))
+    .leftJoin(loyaltyRedemptions, eq(loyaltyRedemptions.userId, userLoyaltyPoints.userId));
+
+  return stats;
 }

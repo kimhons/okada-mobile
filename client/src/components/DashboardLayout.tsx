@@ -78,6 +78,8 @@ const menuItems = [
   { icon: Eye, label: "Content Moderation", path: "/content-moderation" },
   { icon: AlertTriangle, label: "Fraud Detection", path: "/fraud-detection" },
   { icon: Map, label: "Live Dashboard", path: "/live-dashboard" },
+  { icon: MapPin, label: "Geo Analytics", path: "/geo-analytics" },
+  { icon: Users, label: "Referral Program", path: "/referral-program" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
