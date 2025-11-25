@@ -45,6 +45,8 @@ import CouponManagement from "./pages/coupon-management";
 import LoyaltyProgram from "./pages/loyalty-program";
 import TransactionHistory from "./pages/TransactionHistory";
 import TransactionAnalytics from "./pages/TransactionAnalytics";
+import OrderTrackingMap from "./pages/OrderTrackingMap";
+import InventoryAlerts from "./pages/InventoryAlerts";
 
 
 function Router() {
@@ -90,6 +92,8 @@ function Router() {
       <Route path="/loyalty-program" component={() => <DashboardLayout><LoyaltyProgram /></DashboardLayout>} />
       <Route path="/transaction-history" component={() => <DashboardLayout><TransactionHistory /></DashboardLayout>} />
       <Route path="/transaction-analytics" component={() => <DashboardLayout><TransactionAnalytics /></DashboardLayout>} />
+      <Route path="/order-tracking" component={() => <DashboardLayout><OrderTrackingMap /></DashboardLayout>} />
+      <Route path="/inventory-alerts" component={() => <DashboardLayout><InventoryAlerts /></DashboardLayout>} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

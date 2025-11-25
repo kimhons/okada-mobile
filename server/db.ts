@@ -1,6 +1,6 @@
 import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics } from "../drizzle/schema";
+import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2440,4 +2440,343 @@ export async function createRevenueAnalytics(data: InsertRevenueAnalytics) {
   return result[0];
 }
 
+
+
+// ============================================================================
+// Rider Locations Functions
+// ============================================================================
+
+export async function getAllRiderLocations(filters?: { status?: string; riderId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(riderLocations.status, filters.status as any));
+  }
+  if (filters?.riderId) {
+    conditions.push(eq(riderLocations.riderId, filters.riderId));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(riderLocations)
+    .where(whereClause)
+    .orderBy(desc(riderLocations.timestamp));
+}
+
+export async function getRiderLocationById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(riderLocations)
+    .where(eq(riderLocations.id, id))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function getLatestRiderLocation(riderId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(riderLocations)
+    .where(eq(riderLocations.riderId, riderId))
+    .orderBy(desc(riderLocations.timestamp))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function createRiderLocation(data: InsertRiderLocation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(riderLocations).values(data);
+  
+  // Return the created location
+  const result = await db
+    .select()
+    .from(riderLocations)
+    .where(eq(riderLocations.riderId, data.riderId))
+    .orderBy(desc(riderLocations.createdAt))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updateRiderLocation(riderId: number, data: Partial<InsertRiderLocation>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(riderLocations)
+    .set(data)
+    .where(eq(riderLocations.riderId, riderId));
+}
+
+export async function getActiveDeliveries() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get all orders with status in_transit along with their rider locations
+  const result = await db
+    .select({
+      order: orders,
+      rider: riders,
+      location: riderLocations,
+    })
+    .from(orders)
+    .leftJoin(riders, eq(orders.riderId, riders.id))
+    .leftJoin(riderLocations, eq(riders.id, riderLocations.riderId))
+    .where(eq(orders.status, "in_transit"))
+    .orderBy(desc(orders.createdAt));
+
+  return result;
+}
+
+// ============================================================================
+// Inventory Alerts Functions
+// ============================================================================
+
+export async function getAllInventoryAlerts(filters?: { status?: string; severity?: string; productId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(inventoryAlerts.status, filters.status as any));
+  }
+  if (filters?.severity) {
+    conditions.push(eq(inventoryAlerts.severity, filters.severity as any));
+  }
+  if (filters?.productId) {
+    conditions.push(eq(inventoryAlerts.productId, filters.productId));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(inventoryAlerts)
+    .where(whereClause)
+    .orderBy(desc(inventoryAlerts.createdAt));
+}
+
+export async function getInventoryAlertById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(inventoryAlerts)
+    .where(eq(inventoryAlerts.id, id))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function createInventoryAlert(data: InsertInventoryAlert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(inventoryAlerts).values(data);
+  
+  // Return the created alert
+  const result = await db
+    .select()
+    .from(inventoryAlerts)
+    .orderBy(desc(inventoryAlerts.createdAt))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updateInventoryAlert(id: number, data: Partial<InsertInventoryAlert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inventoryAlerts)
+    .set(data)
+    .where(eq(inventoryAlerts.id, id));
+}
+
+export async function resolveInventoryAlert(id: number, userId: number, notes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inventoryAlerts)
+    .set({
+      status: "resolved",
+      resolvedAt: new Date(),
+      resolvedBy: userId,
+      notes: notes || null,
+    })
+    .where(eq(inventoryAlerts.id, id));
+}
+
+export async function dismissInventoryAlert(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inventoryAlerts)
+    .set({ status: "dismissed" })
+    .where(eq(inventoryAlerts.id, id));
+}
+
+export async function bulkResolveInventoryAlerts(ids: number[], userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  for (const id of ids) {
+    await resolveInventoryAlert(id, userId);
+  }
+}
+
+// ============================================================================
+// Inventory Thresholds Functions
+// ============================================================================
+
+export async function getAllInventoryThresholds() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(inventoryThresholds)
+    .orderBy(desc(inventoryThresholds.createdAt));
+}
+
+export async function getInventoryThresholdByProductId(productId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(inventoryThresholds)
+    .where(eq(inventoryThresholds.productId, productId))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function createInventoryThreshold(data: InsertInventoryThreshold) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(inventoryThresholds).values(data);
+  
+  // Return the created threshold
+  const result = await db
+    .select()
+    .from(inventoryThresholds)
+    .where(eq(inventoryThresholds.productId, data.productId))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function updateInventoryThreshold(productId: number, data: Partial<InsertInventoryThreshold>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inventoryThresholds)
+    .set(data)
+    .where(eq(inventoryThresholds.productId, productId));
+}
+
+export async function deleteInventoryThreshold(productId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .delete(inventoryThresholds)
+    .where(eq(inventoryThresholds.productId, productId));
+}
+
+export async function checkStockLevelsAndCreateAlerts() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get all products with their thresholds
+  const productsWithThresholds = await db
+    .select({
+      product: products,
+      threshold: inventoryThresholds,
+    })
+    .from(products)
+    .leftJoin(inventoryThresholds, eq(products.id, inventoryThresholds.productId));
+
+  const newAlerts = [];
+
+  for (const item of productsWithThresholds) {
+    if (!item.threshold || !item.product) continue;
+
+    const stock = item.product.stock;
+    const { productId, lowStockThreshold, criticalStockThreshold, overstockThreshold } = item.threshold;
+
+    // Check if there's already an active alert for this product
+    const existingAlerts = await db
+      .select()
+      .from(inventoryAlerts)
+      .where(
+        and(
+          eq(inventoryAlerts.productId, productId),
+          eq(inventoryAlerts.status, "active")
+        )
+      );
+
+    if (existingAlerts.length > 0) continue; // Skip if alert already exists
+
+    // Determine alert type and severity
+    let alertType: "low_stock" | "out_of_stock" | "overstocked" | null = null;
+    let severity: "critical" | "warning" | "info" | null = null;
+    let threshold = 0;
+
+    if (stock === 0) {
+      alertType = "out_of_stock";
+      severity = "critical";
+      threshold = 0;
+    } else if (stock <= criticalStockThreshold) {
+      alertType = "low_stock";
+      severity = "critical";
+      threshold = criticalStockThreshold;
+    } else if (stock <= lowStockThreshold) {
+      alertType = "low_stock";
+      severity = "warning";
+      threshold = lowStockThreshold;
+    } else if (overstockThreshold && stock >= overstockThreshold) {
+      alertType = "overstocked";
+      severity = "info";
+      threshold = overstockThreshold;
+    }
+
+    if (alertType && severity) {
+      const newAlert = await createInventoryAlert({
+        productId,
+        alertType,
+        threshold,
+        currentStock: stock,
+        severity,
+        status: "active",
+        resolvedAt: null,
+        resolvedBy: null,
+        notes: null,
+      });
+      newAlerts.push(newAlert);
+    }
+  }
+
+  return newAlerts;
+}
 

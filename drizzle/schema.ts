@@ -816,3 +816,64 @@ export type RevenueAnalytics = typeof revenueAnalytics.$inferSelect;
 export type InsertRevenueAnalytics = typeof revenueAnalytics.$inferInsert;
 
 
+
+/**
+ * Rider Locations table for real-time tracking
+ */
+export const riderLocations = mysqlTable("riderLocations", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  orderId: int("orderId"), // Current order being delivered
+  latitude: varchar("latitude", { length: 20 }).notNull(),
+  longitude: varchar("longitude", { length: 20 }).notNull(),
+  status: mysqlEnum("status", ["idle", "en_route_pickup", "en_route_delivery", "offline"]).default("idle").notNull(),
+  speed: int("speed").default(0), // Speed in km/h
+  heading: int("heading").default(0), // Direction in degrees (0-360)
+  accuracy: int("accuracy").default(0), // GPS accuracy in meters
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RiderLocation = typeof riderLocations.$inferSelect;
+export type InsertRiderLocation = typeof riderLocations.$inferInsert;
+
+/**
+ * Inventory Alerts table for low stock notifications
+ */
+export const inventoryAlerts = mysqlTable("inventoryAlerts", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  alertType: mysqlEnum("alertType", ["low_stock", "out_of_stock", "overstocked"]).notNull(),
+  threshold: int("threshold").notNull(), // Stock level that triggers alert
+  currentStock: int("currentStock").notNull(),
+  severity: mysqlEnum("severity", ["critical", "warning", "info"]).notNull(),
+  status: mysqlEnum("status", ["active", "resolved", "dismissed"]).default("active").notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedBy: int("resolvedBy"), // User ID who resolved the alert
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InventoryAlert = typeof inventoryAlerts.$inferSelect;
+export type InsertInventoryAlert = typeof inventoryAlerts.$inferInsert;
+
+/**
+ * Inventory Thresholds table for alert configuration
+ */
+export const inventoryThresholds = mysqlTable("inventoryThresholds", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull().unique(),
+  lowStockThreshold: int("lowStockThreshold").notNull(),
+  criticalStockThreshold: int("criticalStockThreshold").notNull(),
+  overstockThreshold: int("overstockThreshold"),
+  autoReorder: int("autoReorder").default(0).notNull(), // Boolean: 0 or 1
+  reorderQuantity: int("reorderQuantity"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InventoryThreshold = typeof inventoryThresholds.$inferSelect;
+export type InsertInventoryThreshold = typeof inventoryThresholds.$inferInsert;
+

@@ -3532,6 +3532,247 @@ export const appRouter = router({
         };
       }),
   }),
+
+  orderTracking: router({
+    getActiveDeliveries: protectedProcedure.query(async () => {
+      return await db.getActiveDeliveries();
+    }),
+
+    getRiderLocation: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getLatestRiderLocation(input.riderId);
+      }),
+
+    updateRiderLocation: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        latitude: z.string(),
+        longitude: z.string(),
+        status: z.enum(["idle", "en_route_pickup", "en_route_delivery", "offline"]),
+        orderId: z.number().optional(),
+        speed: z.number().optional(),
+        heading: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const location = await db.createRiderLocation({
+          riderId: input.riderId,
+          orderId: input.orderId || null,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          status: input.status,
+          speed: input.speed || 0,
+          heading: input.heading || 0,
+          accuracy: 10,
+          timestamp: new Date(),
+        });
+
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_rider_location",
+          entityType: "rider",
+          entityId: input.riderId.toString(),
+          details: `Updated rider location: ${input.latitude}, ${input.longitude}`,
+        });
+
+        return location;
+      }),
+  }),
+
+  inventoryAlerts: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.enum(["active", "resolved", "dismissed"]).optional(),
+        severity: z.enum(["critical", "warning", "info"]).optional(),
+        productId: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const alerts = await db.getAllInventoryAlerts(input || {});
+        
+        // Enrich with product details
+        const enrichedAlerts = await Promise.all(
+          alerts.map(async (alert) => {
+            const product = await db.getProductById(alert.productId);
+            return { ...alert, product };
+          })
+        );
+        
+        return enrichedAlerts;
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getInventoryAlertById(input.id);
+      }),
+
+    resolve: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.resolveInventoryAlert(input.id, ctx.user.id, input.notes);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "resolve_inventory_alert",
+          entityType: "inventory_alert",
+          entityId: input.id.toString(),
+          details: `Resolved inventory alert${input.notes ? `: ${input.notes}` : ''}`,
+        });
+        
+        return { success: true };
+      }),
+
+    bulkResolve: protectedProcedure
+      .input(z.object({
+        ids: z.array(z.number()),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.bulkResolveInventoryAlerts(input.ids, ctx.user.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "bulk_resolve_inventory_alerts",
+          entityType: "inventory_alert",
+          entityId: input.ids.join(','),
+          details: `Bulk resolved ${input.ids.length} inventory alerts`,
+        });
+        
+        return { success: true, count: input.ids.length };
+      }),
+
+    dismiss: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.dismissInventoryAlert(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "dismiss_inventory_alert",
+          entityType: "inventory_alert",
+          entityId: input.id.toString(),
+          details: "Dismissed inventory alert",
+        });
+        
+        return { success: true };
+      }),
+
+    checkStockLevels: protectedProcedure.mutation(async ({ ctx }) => {
+      const newAlerts = await db.checkStockLevelsAndCreateAlerts();
+      
+      await db.logActivity({
+        adminId: ctx.user.id,
+        adminName: ctx.user.name || "Unknown",
+        action: "check_stock_levels",
+        entityType: "inventory",
+        entityId: "system",
+        details: `Stock level check completed. Created ${newAlerts.length} new alerts.`,
+      });
+      
+      return { newAlerts: newAlerts.length };
+    }),
+  }),
+
+  inventoryThresholds: router({
+    list: protectedProcedure.query(async () => {
+      const thresholds = await db.getAllInventoryThresholds();
+      
+      // Enrich with product details
+      const enrichedThresholds = await Promise.all(
+        thresholds.map(async (threshold) => {
+          const product = await db.getProductById(threshold.productId);
+          return { ...threshold, product };
+        })
+      );
+      
+      return enrichedThresholds;
+    }),
+
+    getByProductId: protectedProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getInventoryThresholdByProductId(input.productId);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        lowStockThreshold: z.number(),
+        criticalStockThreshold: z.number(),
+        overstockThreshold: z.number().optional(),
+        autoReorder: z.number().optional(),
+        reorderQuantity: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const threshold = await db.createInventoryThreshold({
+          productId: input.productId,
+          lowStockThreshold: input.lowStockThreshold,
+          criticalStockThreshold: input.criticalStockThreshold,
+          overstockThreshold: input.overstockThreshold || null,
+          autoReorder: input.autoReorder || 0,
+          reorderQuantity: input.reorderQuantity || null,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_inventory_threshold",
+          entityType: "inventory_threshold",
+          entityId: input.productId.toString(),
+          details: `Created inventory threshold for product ${input.productId}`,
+        });
+        
+        return threshold;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        lowStockThreshold: z.number().optional(),
+        criticalStockThreshold: z.number().optional(),
+        overstockThreshold: z.number().optional(),
+        autoReorder: z.number().optional(),
+        reorderQuantity: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { productId, ...data } = input;
+        await db.updateInventoryThreshold(productId, data);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_inventory_threshold",
+          entityType: "inventory_threshold",
+          entityId: productId.toString(),
+          details: `Updated inventory threshold for product ${productId}`,
+        });
+        
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ productId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.deleteInventoryThreshold(input.productId);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_inventory_threshold",
+          entityType: "inventory_threshold",
+          entityId: input.productId.toString(),
+          details: `Deleted inventory threshold for product ${input.productId}`,
+        });
+        
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
