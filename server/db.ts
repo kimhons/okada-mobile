@@ -1,6 +1,18 @@
 import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions } from "../drizzle/schema";
+import {
+  InsertUser,
+  users,
+  incidents,
+  InsertIncident,
+  customerFeedback,
+  InsertCustomerFeedback,
+  trainingModules,
+  InsertTrainingModule,
+  trainingQuizQuestions,
+  InsertTrainingQuizQuestion,
+  riderTrainingProgress,
+  InsertRiderTrainingProgress,ers, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -5449,6 +5461,607 @@ export async function getLoyaltyProgramStats() {
     .from(userLoyaltyPoints)
     .leftJoin(loyaltyPointsTransactions, eq(loyaltyPointsTransactions.userId, userLoyaltyPoints.userId))
     .leftJoin(loyaltyRedemptions, eq(loyaltyRedemptions.userId, userLoyaltyPoints.userId));
+
+  return stats;
+}
+
+
+// ============================================================================
+// INCIDENT MANAGEMENT
+// ============================================================================
+
+/**
+ * Get all incidents with filters
+ */
+export async function getIncidents(filters?: {
+  status?: string;
+  severity?: string;
+  incidentType?: string;
+  riderId?: number;
+  customerId?: number;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(incidents);
+
+  if (filters?.status) {
+    query = query.where(eq(incidents.status, filters.status as any));
+  }
+  if (filters?.severity) {
+    query = query.where(eq(incidents.severity, filters.severity as any));
+  }
+  if (filters?.incidentType) {
+    query = query.where(eq(incidents.incidentType, filters.incidentType as any));
+  }
+  if (filters?.riderId) {
+    query = query.where(eq(incidents.riderId, filters.riderId));
+  }
+  if (filters?.customerId) {
+    query = query.where(eq(incidents.customerId, filters.customerId));
+  }
+
+  return await query
+    .orderBy(desc(incidents.createdAt))
+    .limit(filters?.limit || 50);
+}
+
+/**
+ * Get incident by ID
+ */
+export async function getIncidentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [incident] = await db
+    .select()
+    .from(incidents)
+    .where(eq(incidents.id, id))
+    .limit(1);
+
+  return incident;
+}
+
+/**
+ * Create new incident
+ */
+export async function createIncident(data: InsertIncident) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(incidents).values(data);
+  return { id: Number(result.insertId), ...data };
+}
+
+/**
+ * Update incident
+ */
+export async function updateIncident(id: number, data: Partial<InsertIncident>) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.update(incidents).set(data).where(eq(incidents.id, id));
+  return await getIncidentById(id);
+}
+
+/**
+ * Update incident status
+ */
+export async function updateIncidentStatus(
+  id: number,
+  status: string,
+  resolvedBy?: number,
+  resolutionNotes?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: any = { status };
+  if (status === 'resolved' || status === 'closed') {
+    updateData.resolvedAt = new Date();
+    updateData.resolvedBy = resolvedBy;
+    if (resolutionNotes) {
+      updateData.resolutionNotes = resolutionNotes;
+    }
+  }
+
+  await db.update(incidents).set(updateData).where(eq(incidents.id, id));
+  return await getIncidentById(id);
+}
+
+/**
+ * Get incident statistics
+ */
+export async function getIncidentStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [stats] = await db
+    .select({
+      totalIncidents: sql<number>`COUNT(*)`,
+      pendingIncidents: sql<number>`SUM(CASE WHEN ${incidents.status} = 'pending' THEN 1 ELSE 0 END)`,
+      investigatingIncidents: sql<number>`SUM(CASE WHEN ${incidents.status} = 'investigating' THEN 1 ELSE 0 END)`,
+      resolvedIncidents: sql<number>`SUM(CASE WHEN ${incidents.status} = 'resolved' THEN 1 ELSE 0 END)`,
+      criticalIncidents: sql<number>`SUM(CASE WHEN ${incidents.severity} = 'critical' THEN 1 ELSE 0 END)`,
+      totalClaimAmount: sql<number>`SUM(${incidents.claimAmount})`,
+      totalCompensation: sql<number>`SUM(${incidents.compensationAmount})`,
+    })
+    .from(incidents);
+
+  return stats;
+}
+
+// ============================================================================
+// CUSTOMER FEEDBACK
+// ============================================================================
+
+/**
+ * Get all customer feedback with filters
+ */
+export async function getCustomerFeedback(filters?: {
+  status?: string;
+  sentiment?: string;
+  category?: string;
+  riderId?: number;
+  sellerId?: number;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(customerFeedback);
+
+  if (filters?.status) {
+    query = query.where(eq(customerFeedback.status, filters.status as any));
+  }
+  if (filters?.sentiment) {
+    query = query.where(eq(customerFeedback.sentiment, filters.sentiment as any));
+  }
+  if (filters?.category) {
+    query = query.where(eq(customerFeedback.category, filters.category as any));
+  }
+  if (filters?.riderId) {
+    query = query.where(eq(customerFeedback.riderId, filters.riderId));
+  }
+  if (filters?.sellerId) {
+    query = query.where(eq(customerFeedback.sellerId, filters.sellerId));
+  }
+
+  return await query
+    .orderBy(desc(customerFeedback.createdAt))
+    .limit(filters?.limit || 50);
+}
+
+/**
+ * Get feedback by ID
+ */
+export async function getFeedbackById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [feedback] = await db
+    .select()
+    .from(customerFeedback)
+    .where(eq(customerFeedback.id, id))
+    .limit(1);
+
+  return feedback;
+}
+
+/**
+ * Create customer feedback
+ */
+export async function createCustomerFeedback(data: InsertCustomerFeedback) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Simple sentiment analysis based on rating
+  let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
+  let sentimentScore = 0;
+
+  if (data.overallRating >= 4) {
+    sentiment = 'positive';
+    sentimentScore = (data.overallRating - 3) * 50;
+  } else if (data.overallRating <= 2) {
+    sentiment = 'negative';
+    sentimentScore = (data.overallRating - 3) * 50;
+  }
+
+  const feedbackData = {
+    ...data,
+    sentiment,
+    sentimentScore,
+  };
+
+  const [result] = await db.insert(customerFeedback).values(feedbackData);
+  return { id: Number(result.insertId), ...feedbackData };
+}
+
+/**
+ * Update feedback
+ */
+export async function updateFeedback(id: number, data: Partial<InsertCustomerFeedback>) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.update(customerFeedback).set(data).where(eq(customerFeedback.id, id));
+  return await getFeedbackById(id);
+}
+
+/**
+ * Respond to feedback
+ */
+export async function respondToFeedback(
+  id: number,
+  responseText: string,
+  respondedBy: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(customerFeedback)
+    .set({
+      responseText,
+      respondedBy,
+      respondedAt: new Date(),
+      status: 'responded',
+    })
+    .where(eq(customerFeedback.id, id));
+
+  return await getFeedbackById(id);
+}
+
+/**
+ * Get feedback statistics
+ */
+export async function getFeedbackStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [stats] = await db
+    .select({
+      totalFeedback: sql<number>`COUNT(*)`,
+      averageRating: sql<number>`AVG(${customerFeedback.overallRating})`,
+      averageQualityPhotoRating: sql<number>`AVG(${customerFeedback.qualityPhotoRating})`,
+      positiveFeedback: sql<number>`SUM(CASE WHEN ${customerFeedback.sentiment} = 'positive' THEN 1 ELSE 0 END)`,
+      neutralFeedback: sql<number>`SUM(CASE WHEN ${customerFeedback.sentiment} = 'neutral' THEN 1 ELSE 0 END)`,
+      negativeFeedback: sql<number>`SUM(CASE WHEN ${customerFeedback.sentiment} = 'negative' THEN 1 ELSE 0 END)`,
+      pendingFeedback: sql<number>`SUM(CASE WHEN ${customerFeedback.status} = 'pending' THEN 1 ELSE 0 END)`,
+      respondedFeedback: sql<number>`SUM(CASE WHEN ${customerFeedback.status} = 'responded' THEN 1 ELSE 0 END)`,
+    })
+    .from(customerFeedback);
+
+  return stats;
+}
+
+/**
+ * Get feedback trends over time
+ */
+export async function getFeedbackTrends(period: 'day' | 'week' | 'month' = 'month') {
+  const db = await getDb();
+  if (!db) return [];
+
+  let dateFormat = '%Y-%m-%d';
+  if (period === 'week') dateFormat = '%Y-%U';
+  if (period === 'month') dateFormat = '%Y-%m';
+
+  return await db
+    .select({
+      period: sql<string>`DATE_FORMAT(${customerFeedback.createdAt}, ${dateFormat})`,
+      totalFeedback: sql<number>`COUNT(*)`,
+      averageRating: sql<number>`AVG(${customerFeedback.overallRating})`,
+      positiveCount: sql<number>`SUM(CASE WHEN ${customerFeedback.sentiment} = 'positive' THEN 1 ELSE 0 END)`,
+      negativeCount: sql<number>`SUM(CASE WHEN ${customerFeedback.sentiment} = 'negative' THEN 1 ELSE 0 END)`,
+    })
+    .from(customerFeedback)
+    .groupBy(sql`DATE_FORMAT(${customerFeedback.createdAt}, ${dateFormat})`)
+    .orderBy(sql`DATE_FORMAT(${customerFeedback.createdAt}, ${dateFormat})`);
+}
+
+// ============================================================================
+// RIDER TRAINING
+// ============================================================================
+
+/**
+ * Get all training modules
+ */
+export async function getTrainingModules(filters?: {
+  category?: string;
+  isMandatory?: boolean;
+  isActive?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(trainingModules);
+
+  if (filters?.category) {
+    query = query.where(eq(trainingModules.category, filters.category as any));
+  }
+  if (filters?.isMandatory !== undefined) {
+    query = query.where(eq(trainingModules.isMandatory, filters.isMandatory ? 1 : 0));
+  }
+  if (filters?.isActive !== undefined) {
+    query = query.where(eq(trainingModules.isActive, filters.isActive ? 1 : 0));
+  }
+
+  return await query.orderBy(trainingModules.order);
+}
+
+/**
+ * Get training module by ID
+ */
+export async function getTrainingModuleById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [module] = await db
+    .select()
+    .from(trainingModules)
+    .where(eq(trainingModules.id, id))
+    .limit(1);
+
+  return module;
+}
+
+/**
+ * Create training module
+ */
+export async function createTrainingModule(data: InsertTrainingModule) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(trainingModules).values(data);
+  return { id: Number(result.insertId), ...data };
+}
+
+/**
+ * Update training module
+ */
+export async function updateTrainingModule(id: number, data: Partial<InsertTrainingModule>) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.update(trainingModules).set(data).where(eq(trainingModules.id, id));
+  return await getTrainingModuleById(id);
+}
+
+/**
+ * Get quiz questions for a module
+ */
+export async function getModuleQuizQuestions(moduleId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(trainingQuizQuestions)
+    .where(eq(trainingQuizQuestions.moduleId, moduleId))
+    .orderBy(trainingQuizQuestions.displayOrder);
+}
+
+/**
+ * Create quiz question
+ */
+export async function createQuizQuestion(data: InsertTrainingQuizQuestion) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(trainingQuizQuestions).values(data);
+  return { id: Number(result.insertId), ...data };
+}
+
+/**
+ * Get rider training progress
+ */
+export async function getRiderTrainingProgress(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: riderTrainingProgress.id,
+      moduleId: riderTrainingProgress.moduleId,
+      moduleTitle: trainingModules.title,
+      moduleCategory: trainingModules.category,
+      isMandatory: trainingModules.isMandatory,
+      status: riderTrainingProgress.status,
+      progressPercentage: riderTrainingProgress.progressPercentage,
+      quizAttempts: riderTrainingProgress.quizAttempts,
+      lastQuizScore: riderTrainingProgress.lastQuizScore,
+      bestQuizScore: riderTrainingProgress.bestQuizScore,
+      certificateIssued: riderTrainingProgress.certificateIssued,
+      certificateNumber: riderTrainingProgress.certificateNumber,
+      startedAt: riderTrainingProgress.startedAt,
+      completedAt: riderTrainingProgress.completedAt,
+      timeSpent: riderTrainingProgress.timeSpent,
+    })
+    .from(riderTrainingProgress)
+    .innerJoin(trainingModules, eq(trainingModules.id, riderTrainingProgress.moduleId))
+    .where(eq(riderTrainingProgress.riderId, riderId))
+    .orderBy(trainingModules.displayOrder);
+}
+
+/**
+ * Start training module for rider
+ */
+export async function startTrainingModule(riderId: number, moduleId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Check if progress already exists
+  const [existing] = await db
+    .select()
+    .from(riderTrainingProgress)
+    .where(
+      and(
+        eq(riderTrainingProgress.riderId, riderId),
+        eq(riderTrainingProgress.moduleId, moduleId)
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    // Update existing progress
+    await db
+      .update(riderTrainingProgress)
+      .set({
+        status: 'in_progress',
+        startedAt: existing.startedAt || new Date(),
+        lastAccessedAt: new Date(),
+      })
+      .where(eq(riderTrainingProgress.id, existing.id));
+    return existing;
+  }
+
+  // Create new progress
+  const [result] = await db.insert(riderTrainingProgress).values({
+    riderId,
+    moduleId,
+    status: 'in_progress',
+    startedAt: new Date(),
+    lastAccessedAt: new Date(),
+  });
+
+  return { id: Number(result.insertId), riderId, moduleId };
+}
+
+/**
+ * Submit quiz answers
+ */
+export async function submitQuizAnswers(
+  riderId: number,
+  moduleId: number,
+  answers: Array<{ questionId: number; answer: string }>
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get quiz questions
+  const questions = await getModuleQuizQuestions(moduleId);
+  if (questions.length === 0) return null;
+
+  // Calculate score
+  let correctAnswers = 0;
+  for (const answer of answers) {
+    const question = questions.find(q => q.id === answer.questionId);
+    if (question && question.correctAnswer === answer.answer) {
+      correctAnswers++;
+    }
+  }
+
+  const score = Math.round((correctAnswers / questions.length) * 100);
+
+  // Get module to check passing score
+  const module = await getTrainingModuleById(moduleId);
+  if (!module) return null;
+
+  const passed = score >= module.minPassingScore;
+
+  // Get existing progress
+  const [progress] = await db
+    .select()
+    .from(riderTrainingProgress)
+    .where(
+      and(
+        eq(riderTrainingProgress.riderId, riderId),
+        eq(riderTrainingProgress.moduleId, moduleId)
+      )
+    )
+    .limit(1);
+
+  if (!progress) return null;
+
+  // Update progress
+  const updateData: any = {
+    quizAttempts: progress.quizAttempts + 1,
+    lastQuizScore: score,
+    bestQuizScore: Math.max(score, progress.bestQuizScore || 0),
+    quizAnswers: JSON.stringify(answers),
+    lastAccessedAt: new Date(),
+  };
+
+  if (passed) {
+    updateData.status = 'completed';
+    updateData.completedAt = new Date();
+    updateData.progressPercentage = 100;
+
+    // Issue certificate if not already issued
+    if (!progress.certificateIssued) {
+      updateData.certificateIssued = 1;
+      updateData.certificateNumber = `CERT-${riderId}-${moduleId}-${Date.now()}`;
+      updateData.certificateIssuedAt = new Date();
+
+      if (module.certificateValidityDays) {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + module.certificateValidityDays);
+        updateData.certificateExpiresAt = expiryDate;
+      }
+    }
+  } else {
+    updateData.status = 'failed';
+  }
+
+  await db
+    .update(riderTrainingProgress)
+    .set(updateData)
+    .where(eq(riderTrainingProgress.id, progress.id));
+
+  return {
+    score,
+    passed,
+    correctAnswers,
+    totalQuestions: questions.length,
+  };
+}
+
+/**
+ * Get training statistics
+ */
+export async function getTrainingStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [stats] = await db
+    .select({
+      totalModules: sql<number>`COUNT(DISTINCT ${trainingModules.id})`,
+      mandatoryModules: sql<number>`SUM(CASE WHEN ${trainingModules.isMandatory} = 1 THEN 1 ELSE 0 END)`,
+      totalEnrollments: sql<number>`COUNT(DISTINCT ${riderTrainingProgress.id})`,
+      completedModules: sql<number>`SUM(CASE WHEN ${riderTrainingProgress.status} = 'completed' THEN 1 ELSE 0 END)`,
+      certificatesIssued: sql<number>`SUM(CASE WHEN ${riderTrainingProgress.certificateIssued} = 1 THEN 1 ELSE 0 END)`,
+      averageScore: sql<number>`AVG(${riderTrainingProgress.bestQuizScore})`,
+    })
+    .from(trainingModules)
+    .leftJoin(riderTrainingProgress, eq(riderTrainingProgress.moduleId, trainingModules.id));
+
+  return stats;
+}
+
+/**
+ * Get rider training completion rate
+ */
+export async function getRiderTrainingCompletionRate(riderId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [stats] = await db
+    .select({
+      totalModules: sql<number>`COUNT(*)`,
+      completedModules: sql<number>`SUM(CASE WHEN ${riderTrainingProgress.status} = 'completed' THEN 1 ELSE 0 END)`,
+      mandatoryCompleted: sql<number>`SUM(CASE WHEN ${trainingModules.isMandatory} = 1 AND ${riderTrainingProgress.status} = 'completed' THEN 1 ELSE 0 END)`,
+      totalMandatory: sql<number>`SUM(CASE WHEN ${trainingModules.isMandatory} = 1 THEN 1 ELSE 0 END)`,
+    })
+    .from(trainingModules)
+    .leftJoin(
+      riderTrainingProgress,
+      and(
+        eq(riderTrainingProgress.moduleId, trainingModules.id),
+        eq(riderTrainingProgress.riderId, riderId)
+      )
+    )
+    .where(eq(trainingModules.isActive, 1));
 
   return stats;
 }

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle, CheckCircle, Server, Scale, Trophy, Sliders, Eye, Map } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle, CheckCircle, Server, Scale, Trophy, Sliders, Eye, Map, FileWarning, ThumbsUp, GraduationCap } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -80,6 +80,9 @@ const menuItems = [
   { icon: Map, label: "Live Dashboard", path: "/live-dashboard" },
   { icon: MapPin, label: "Geo Analytics", path: "/geo-analytics" },
   { icon: Users, label: "Referral Program", path: "/referral-program" },
+  { icon: FileWarning, label: "Incident Management", path: "/incidents" },
+  { icon: ThumbsUp, label: "Feedback Analysis", path: "/feedback-analysis" },
+  { icon: GraduationCap, label: "Rider Training", path: "/rider-training" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

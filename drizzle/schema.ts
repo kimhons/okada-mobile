@@ -1347,3 +1347,231 @@ export const loyaltyRedemptions = mysqlTable("loyaltyRedemptions", {
 
 export type LoyaltyRedemption = typeof loyaltyRedemptions.$inferSelect;
 export type InsertLoyaltyRedemption = typeof loyaltyRedemptions.$inferInsert;
+
+
+/**
+ * Incidents table - Track accidents, safety incidents, and insurance claims
+ */
+export const incidents = mysqlTable("incidents", {
+  id: int("id").autoincrement().primaryKey(),
+  incidentType: mysqlEnum("incidentType", [
+    "accident",
+    "theft",
+    "damage",
+    "injury",
+    "complaint",
+    "other"
+  ]).notNull(),
+  severity: mysqlEnum("severity", ["minor", "moderate", "severe", "critical"]).notNull(),
+  status: mysqlEnum("status", ["pending", "investigating", "resolved", "closed"]).default("pending").notNull(),
+  
+  // Involved parties
+  riderId: int("riderId"),
+  customerId: int("customerId"),
+  orderId: int("orderId"),
+  thirdPartyName: varchar("thirdPartyName", { length: 200 }),
+  thirdPartyContact: varchar("thirdPartyContact", { length: 100 }),
+  
+  // Incident details
+  title: varchar("title", { length: 300 }).notNull(),
+  description: text("description").notNull(),
+  location: varchar("location", { length: 500 }),
+  latitude: varchar("latitude", { length: 50 }),
+  longitude: varchar("longitude", { length: 50 }),
+  incidentDate: timestamp("incidentDate").notNull(),
+  
+  // Insurance and liability
+  insuranceClaimNumber: varchar("insuranceClaimNumber", { length: 100 }),
+  claimStatus: mysqlEnum("claimStatus", ["not_filed", "filed", "approved", "denied", "settled"]).default("not_filed"),
+  claimAmount: int("claimAmount"), // Amount in FCFA
+  liabilityAssessment: text("liabilityAssessment"),
+  
+  // Evidence
+  photoUrls: text("photoUrls"), // JSON array of photo URLs
+  witnessStatements: text("witnessStatements"), // JSON array
+  policeReportNumber: varchar("policeReportNumber", { length: 100 }),
+  
+  // Resolution
+  resolutionNotes: text("resolutionNotes"),
+  compensationAmount: int("compensationAmount"), // Amount in FCFA
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedBy: int("resolvedBy"), // Admin user ID
+  
+  // Metadata
+  reportedBy: int("reportedBy"), // User ID who reported
+  assignedTo: int("assignedTo"), // Admin user ID
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  metadata: text("metadata"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Incident = typeof incidents.$inferSelect;
+export type InsertIncident = typeof incidents.$inferInsert;
+
+/**
+ * Customer Feedback table - Store customer feedback and ratings
+ */
+export const customerFeedback = mysqlTable("customerFeedback", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  orderId: int("orderId"),
+  riderId: int("riderId"),
+  sellerId: int("sellerId"),
+  
+  // Ratings
+  overallRating: int("overallRating").notNull(), // 1-5 stars
+  qualityPhotoRating: int("qualityPhotoRating"), // 1-5 stars
+  deliveryRating: int("deliveryRating"), // 1-5 stars
+  serviceRating: int("serviceRating"), // 1-5 stars
+  productRating: int("productRating"), // 1-5 stars
+  
+  // Feedback content
+  feedbackText: text("feedbackText"),
+  category: mysqlEnum("category", [
+    "delivery_speed",
+    "quality_photos",
+    "product_quality",
+    "rider_behavior",
+    "app_experience",
+    "pricing",
+    "customer_service",
+    "other"
+  ]),
+  
+  // Sentiment analysis
+  sentiment: mysqlEnum("sentiment", ["positive", "neutral", "negative"]),
+  sentimentScore: int("sentimentScore"), // -100 to 100
+  keywords: text("keywords"), // JSON array of extracted keywords
+  
+  // Response
+  responseText: text("responseText"),
+  respondedBy: int("respondedBy"), // Admin user ID
+  respondedAt: timestamp("respondedAt"),
+  
+  // Status
+  status: mysqlEnum("status", ["pending", "reviewed", "responded", "resolved"]).default("pending").notNull(),
+  isPublic: int("isPublic").default(1).notNull(), // Can be displayed publicly
+  isFeatured: int("isFeatured").default(0).notNull(), // Featured testimonial
+  
+  // Metadata
+  source: varchar("source", { length: 100 }), // app, web, sms, email
+  metadata: text("metadata"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomerFeedback = typeof customerFeedback.$inferSelect;
+export type InsertCustomerFeedback = typeof customerFeedback.$inferInsert;
+
+/**
+ * Training Modules table - Define training content for riders
+ */
+export const trainingModules = mysqlTable("trainingModules", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 300 }).notNull(),
+  description: text("description"),
+  category: mysqlEnum("category", [
+    "safety",
+    "customer_service",
+    "app_usage",
+    "quality_photos",
+    "delivery_procedures",
+    "compliance",
+    "maintenance"
+  ]).notNull(),
+  
+  // Content
+  contentType: mysqlEnum("contentType", ["video", "document", "interactive", "quiz"]).notNull(),
+  contentUrl: varchar("contentUrl", { length: 500 }),
+  duration: int("duration"), // Duration in minutes
+  
+  // Requirements
+  isMandatory: int("isMandatory").default(0).notNull(),
+  prerequisiteModuleId: int("prerequisiteModuleId"), // Must complete this module first
+  minPassingScore: int("minPassingScore").default(70).notNull(), // Percentage
+  
+  // Certification
+  certificateTemplate: varchar("certificateTemplate", { length: 500 }),
+  certificateValidityDays: int("certificateValidityDays"), // null for permanent
+  
+  // Metadata
+  displayOrder: int("displayOrder").default(0).notNull(), // Display order
+  isActive: int("isActive").default(1).notNull(),
+  version: varchar("version", { length: 20 }).default("1.0").notNull(),
+  metadata: text("metadata"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TrainingModule = typeof trainingModules.$inferSelect;
+export type InsertTrainingModule = typeof trainingModules.$inferInsert;
+
+/**
+ * Training Quiz Questions table
+ */
+export const trainingQuizQuestions = mysqlTable("trainingQuizQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  moduleId: int("moduleId").notNull(),
+  questionText: text("questionText").notNull(),
+  questionType: mysqlEnum("questionType", ["multiple_choice", "true_false", "short_answer"]).notNull(),
+  
+  // Options (JSON array for multiple choice)
+  options: text("options"), // JSON: [{text: string, isCorrect: boolean}]
+  correctAnswer: text("correctAnswer"),
+  explanation: text("explanation"),
+  
+  // Metadata
+  points: int("points").default(1).notNull(),
+  displayOrder: int("displayOrder").default(0).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TrainingQuizQuestion = typeof trainingQuizQuestions.$inferSelect;
+export type InsertTrainingQuizQuestion = typeof trainingQuizQuestions.$inferInsert;
+
+/**
+ * Rider Training Progress table - Track rider completion of training modules
+ */
+export const riderTrainingProgress = mysqlTable("riderTrainingProgress", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  moduleId: int("moduleId").notNull(),
+  
+  // Progress
+  status: mysqlEnum("status", ["not_started", "in_progress", "completed", "failed"]).default("not_started").notNull(),
+  progressPercentage: int("progressPercentage").default(0).notNull(),
+  
+  // Quiz results
+  quizAttempts: int("quizAttempts").default(0).notNull(),
+  lastQuizScore: int("lastQuizScore"), // Percentage
+  bestQuizScore: int("bestQuizScore"), // Percentage
+  quizAnswers: text("quizAnswers"), // JSON array of answers
+  
+  // Timestamps
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  lastAccessedAt: timestamp("lastAccessedAt"),
+  
+  // Certification
+  certificateIssued: int("certificateIssued").default(0).notNull(),
+  certificateNumber: varchar("certificateNumber", { length: 100 }).unique(),
+  certificateIssuedAt: timestamp("certificateIssuedAt"),
+  certificateExpiresAt: timestamp("certificateExpiresAt"),
+  
+  // Metadata
+  timeSpent: int("timeSpent").default(0).notNull(), // Total time in minutes
+  metadata: text("metadata"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RiderTrainingProgress = typeof riderTrainingProgress.$inferSelect;
+export type InsertRiderTrainingProgress = typeof riderTrainingProgress.$inferInsert;

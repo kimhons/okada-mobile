@@ -4747,6 +4747,386 @@ export const appRouter = router({
         return await db.getLoyaltyProgramStats();
       }),
   }),
+
+  // Incident Management
+  incidents: router({
+    getAll: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        severity: z.string().optional(),
+        incidentType: z.string().optional(),
+        riderId: z.number().optional(),
+        customerId: z.number().optional(),
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getIncidents(input);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getIncidentById(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        incidentType: z.string(),
+        severity: z.string(),
+        title: z.string(),
+        description: z.string(),
+        incidentDate: z.date(),
+        riderId: z.number().optional(),
+        customerId: z.number().optional(),
+        orderId: z.number().optional(),
+        location: z.string().optional(),
+        latitude: z.string().optional(),
+        longitude: z.string().optional(),
+        photoUrls: z.string().optional(),
+        priority: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createIncident({
+          ...input,
+          reportedBy: ctx.user.id,
+        } as any);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_incident",
+          entityType: "incident",
+          entityId: result?.id || 0,
+          details: `Created incident: ${input.title}`,
+        });
+
+        return result;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.object({
+          status: z.string().optional(),
+          severity: z.string().optional(),
+          title: z.string().optional(),
+          description: z.string().optional(),
+          resolutionNotes: z.string().optional(),
+          compensationAmount: z.number().optional(),
+          claimStatus: z.string().optional(),
+          claimAmount: z.number().optional(),
+          assignedTo: z.number().optional(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateIncident(input.id, input.data as any);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_incident",
+          entityType: "incident",
+          entityId: input.id,
+          details: `Updated incident ${input.id}`,
+        });
+
+        return result;
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.string(),
+        resolutionNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateIncidentStatus(
+          input.id,
+          input.status,
+          ctx.user.id,
+          input.resolutionNotes
+        );
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_incident_status",
+          entityType: "incident",
+          entityId: input.id,
+          details: `Updated incident ${input.id} status to ${input.status}`,
+        });
+
+        return result;
+      }),
+
+    getStats: protectedProcedure
+      .query(async () => {
+        return await db.getIncidentStats();
+      }),
+  }),
+
+  // Customer Feedback
+  feedback: router({
+    getAll: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        sentiment: z.string().optional(),
+        category: z.string().optional(),
+        riderId: z.number().optional(),
+        sellerId: z.number().optional(),
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getCustomerFeedback(input);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getFeedbackById(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        customerId: z.number(),
+        orderId: z.number().optional(),
+        riderId: z.number().optional(),
+        sellerId: z.number().optional(),
+        overallRating: z.number(),
+        qualityPhotoRating: z.number().optional(),
+        deliveryRating: z.number().optional(),
+        serviceRating: z.number().optional(),
+        productRating: z.number().optional(),
+        feedbackText: z.string().optional(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createCustomerFeedback(input as any);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_feedback",
+          entityType: "feedback",
+          entityId: result?.id || 0,
+          details: `Created feedback from customer ${input.customerId}`,
+        });
+
+        return result;
+      }),
+
+    respond: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        responseText: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.respondToFeedback(
+          input.id,
+          input.responseText,
+          ctx.user.id
+        );
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "respond_feedback",
+          entityType: "feedback",
+          entityId: input.id,
+          details: `Responded to feedback ${input.id}`,
+        });
+
+        return result;
+      }),
+
+    getStats: protectedProcedure
+      .query(async () => {
+        return await db.getFeedbackStats();
+      }),
+
+    getTrends: protectedProcedure
+      .input(z.object({
+        period: z.enum(['day', 'week', 'month']).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getFeedbackTrends(input.period);
+      }),
+  }),
+
+  // Rider Training
+  training: router({
+    getModules: protectedProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        isMandatory: z.boolean().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getTrainingModules(input);
+      }),
+
+    getModuleById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getTrainingModuleById(input.id);
+      }),
+
+    createModule: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        category: z.string(),
+        contentType: z.string(),
+        contentUrl: z.string().optional(),
+        duration: z.number().optional(),
+        isMandatory: z.boolean().optional(),
+        minPassingScore: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createTrainingModule({
+          ...input,
+          isMandatory: input.isMandatory ? 1 : 0,
+        } as any);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_training_module",
+          entityType: "training",
+          entityId: result?.id || 0,
+          details: `Created training module: ${input.title}`,
+        });
+
+        return result;
+      }),
+
+    updateModule: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.object({
+          title: z.string().optional(),
+          description: z.string().optional(),
+          contentUrl: z.string().optional(),
+          duration: z.number().optional(),
+          isActive: z.boolean().optional(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const updateData = {
+          ...input.data,
+          isActive: input.data.isActive !== undefined ? (input.data.isActive ? 1 : 0) : undefined,
+        };
+        
+        const result = await db.updateTrainingModule(input.id, updateData as any);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_training_module",
+          entityType: "training",
+          entityId: input.id,
+          details: `Updated training module ${input.id}`,
+        });
+
+        return result;
+      }),
+
+    getQuizQuestions: protectedProcedure
+      .input(z.object({ moduleId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getModuleQuizQuestions(input.moduleId);
+      }),
+
+    createQuizQuestion: protectedProcedure
+      .input(z.object({
+        moduleId: z.number(),
+        questionText: z.string(),
+        questionType: z.string(),
+        options: z.string().optional(),
+        correctAnswer: z.string(),
+        explanation: z.string().optional(),
+        points: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createQuizQuestion(input as any);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_quiz_question",
+          entityType: "training",
+          entityId: result?.id || 0,
+          details: `Created quiz question for module ${input.moduleId}`,
+        });
+
+        return result;
+      }),
+
+    getRiderProgress: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getRiderTrainingProgress(input.riderId);
+      }),
+
+    startModule: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        moduleId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.startTrainingModule(input.riderId, input.moduleId);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "start_training_module",
+          entityType: "training",
+          entityId: input.moduleId,
+          details: `Rider ${input.riderId} started module ${input.moduleId}`,
+        });
+
+        return result;
+      }),
+
+    submitQuiz: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        moduleId: z.number(),
+        answers: z.array(z.object({
+          questionId: z.number(),
+          answer: z.string(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.submitQuizAnswers(
+          input.riderId,
+          input.moduleId,
+          input.answers
+        );
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "submit_quiz",
+          entityType: "training",
+          entityId: input.moduleId,
+          details: `Rider ${input.riderId} submitted quiz for module ${input.moduleId} - Score: ${result?.score}%`,
+        });
+
+        return result;
+      }),
+
+    getStats: protectedProcedure
+      .query(async () => {
+        return await db.getTrainingStats();
+      }),
+
+    getRiderCompletionRate: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getRiderTrainingCompletionRate(input.riderId);
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 

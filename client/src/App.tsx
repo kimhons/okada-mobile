@@ -54,6 +54,9 @@ import SystemSettings from "./pages/SystemSettings";
 import ContentModeration from "./pages/ContentModeration";
 import FraudDetection from "./pages/FraudDetection";
 import LiveDashboard from "./pages/LiveDashboard";
+import IncidentManagement from "./pages/IncidentManagement";
+import CustomerFeedbackAnalysis from "./pages/CustomerFeedbackAnalysis";
+import RiderTrainingTracker from "./pages/RiderTrainingTracker";
 import RiderLeaderboard from "./pages/RiderLeaderboard";
 import GeoAnalytics from "./pages/GeoAnalytics";
 import ReferralProgram from "./pages/ReferralProgram";
@@ -113,7 +116,10 @@ function Router() {
       <Route path="/system-settings" component={() => <DashboardLayout><SystemSettings /></DashboardLayout>} />
       <Route path="/content-moderation" component={() => <DashboardLayout><ContentModeration /></DashboardLayout>} />
       <Route path="/fraud-detection" component={() => <DashboardLayout><FraudDetection /></DashboardLayout>} />
-      <Route path="/live-dashboard" component={() => <DashboardLayout><LiveDashboard /></DashboardLayout>} />
+      <Route path="/live-dashboard" component={LiveDashboard} />
+      <Route path="/incidents" component={IncidentManagement} />
+      <Route path="/feedback-analysis" component={CustomerFeedbackAnalysis} />
+      <Route path="/rider-training" component={RiderTrainingTracker} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
