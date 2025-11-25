@@ -83,6 +83,7 @@ const menuItems = [
   { icon: FileWarning, label: "Incident Management", path: "/incidents" },
   { icon: ThumbsUp, label: "Feedback Analysis", path: "/feedback-analysis" },
   { icon: GraduationCap, label: "Rider Training", path: "/rider-training" },
+  { icon: FileText, label: "Advanced Reporting", path: "/advanced-reporting" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

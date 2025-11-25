@@ -12,7 +12,18 @@ import {
   trainingQuizQuestions,
   InsertTrainingQuizQuestion,
   riderTrainingProgress,
-  InsertRiderTrainingProgress,ers, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, scheduledReports, InsertScheduledReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions } from "../drizzle/schema";
+  InsertRiderTrainingProgress,
+  customReports,
+  InsertCustomReport,
+  scheduledReports,
+  InsertScheduledReport,
+  reportExecutionHistory,
+  InsertReportExecutionHistory,
+  realtimeNotifications,
+  InsertRealtimeNotification,
+  mobileTrainingSync,
+  InsertMobileTrainingSync,
+  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -994,43 +1005,6 @@ export async function createNotification(data: InsertNotification) {
   await db.insert(notifications).values(data);
 }
 
-export async function getNotifications(filters?: {
-  userId?: number;
-  type?: string;
-  isRead?: boolean;
-  limit?: number;
-}) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  let query = db.select().from(notifications);
-  
-  if (filters?.userId) {
-    query = query.where(eq(notifications.userId, filters.userId)) as any;
-  }
-  if (filters?.type) {
-    query = query.where(eq(notifications.type, filters.type as any)) as any;
-  }
-  if (filters?.isRead !== undefined) {
-    query = query.where(eq(notifications.isRead, filters.isRead)) as any;
-  }
-  
-  query = query.orderBy(desc(notifications.createdAt)) as any;
-  
-  if (filters?.limit) {
-    query = query.limit(filters.limit) as any;
-  }
-  
-  return query;
-}
-
-export async function markNotificationAsRead(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
-}
-
 // ============================================================================
 // Activity Log
 // ============================================================================
@@ -1581,27 +1555,6 @@ export async function getScheduledReportById(id: number) {
 
   const result = await db.select().from(scheduledReports).where(eq(scheduledReports.id, id)).limit(1);
   return result[0];
-}
-
-export async function createScheduledReport(data: InsertScheduledReport) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return await db.insert(scheduledReports).values(data);
-}
-
-export async function updateScheduledReport(id: number, data: Partial<InsertScheduledReport>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return await db.update(scheduledReports).set(data).where(eq(scheduledReports.id, id));
-}
-
-export async function deleteScheduledReport(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return await db.delete(scheduledReports).where(eq(scheduledReports.id, id));
 }
 
 // ============================================================================
@@ -6062,6 +6015,499 @@ export async function getRiderTrainingCompletionRate(riderId: number) {
       )
     )
     .where(eq(trainingModules.isActive, 1));
+
+  return stats;
+}
+
+
+// ============================================================================
+// ADVANCED REPORTING SUITE
+// ============================================================================
+
+/**
+ * Create custom report template
+ */
+export async function createCustomReport(data: InsertCustomReport) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(customReports).values(data);
+  return { id: Number(result.insertId), ...data };
+}
+
+/**
+ * Get custom reports
+ */
+export async function getCustomReports(filters?: {
+  createdBy?: number;
+  reportType?: string;
+  isPublic?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(customReports);
+
+  if (filters?.createdBy) {
+    query = query.where(eq(customReports.createdBy, filters.createdBy)) as any;
+  }
+  if (filters?.reportType) {
+    query = query.where(eq(customReports.reportType, filters.reportType as any)) as any;
+  }
+  if (filters?.isPublic !== undefined) {
+    query = query.where(eq(customReports.isPublic, filters.isPublic ? 1 : 0)) as any;
+  }
+
+  return await query;
+}
+
+/**
+ * Get custom report by ID
+ */
+export async function getCustomReportById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [report] = await db
+    .select()
+    .from(customReports)
+    .where(eq(customReports.id, id))
+    .limit(1);
+
+  return report;
+}
+
+/**
+ * Update custom report
+ */
+export async function updateCustomReport(id: number, data: Partial<InsertCustomReport>) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.update(customReports).set(data).where(eq(customReports.id, id));
+  return true;
+}
+
+/**
+ * Delete custom report
+ */
+export async function deleteCustomReport(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.delete(customReports).where(eq(customReports.id, id));
+  return true;
+}
+
+/**
+ * Create scheduled report
+ */
+export async function createScheduledReport(data: InsertScheduledReport) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(scheduledReports).values(data);
+  return { id: Number(result.insertId), ...data };
+}
+
+/**
+ * Get scheduled reports
+ */
+export async function getScheduledReports(filters?: { isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(scheduledReports);
+
+  if (filters?.isActive !== undefined) {
+    query = query.where(eq(scheduledReports.isActive, filters.isActive ? 1 : 0)) as any;
+  }
+
+  return await query;
+}
+
+/**
+ * Update scheduled report
+ */
+export async function updateScheduledReport(id: number, data: Partial<InsertScheduledReport>) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.update(scheduledReports).set(data).where(eq(scheduledReports.id, id));
+  return true;
+}
+
+/**
+ * Execute report and save to history
+ */
+export async function executeReport(
+  reportId: number,
+  executedBy: number,
+  executionType: "manual" | "scheduled"
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const report = await getCustomReportById(reportId);
+  if (!report) return null;
+
+  const startedAt = new Date();
+
+  // Create execution history record
+  const [result] = await db.insert(reportExecutionHistory).values({
+    reportId,
+    executedBy,
+    executionType,
+    status: "in_progress",
+    format: "pdf",
+    startedAt,
+  });
+
+  const executionId = Number(result.insertId);
+
+  try {
+    // TODO: Generate actual report data based on report.reportType and report.filters
+    // For now, return placeholder data
+    const recordCount = 100;
+    const fileUrl = `/reports/report-${executionId}.pdf`;
+    const completedAt = new Date();
+    const duration = Math.floor((completedAt.getTime() - startedAt.getTime()) / 1000);
+
+    // Update execution history with results
+    await db
+      .update(reportExecutionHistory)
+      .set({
+        status: "success",
+        recordCount,
+        fileUrl,
+        fileSize: 1024 * 100, // 100KB placeholder
+        completedAt,
+        duration,
+      })
+      .where(eq(reportExecutionHistory.id, executionId));
+
+    return { id: executionId, status: "success", fileUrl, recordCount };
+  } catch (error) {
+    // Update execution history with error
+    await db
+      .update(reportExecutionHistory)
+      .set({
+        status: "failed",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        completedAt: new Date(),
+      })
+      .where(eq(reportExecutionHistory.id, executionId));
+
+    return { id: executionId, status: "failed", error };
+  }
+}
+
+/**
+ * Get report execution history
+ */
+export async function getReportExecutionHistory(filters?: {
+  reportId?: number;
+  executedBy?: number;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(reportExecutionHistory);
+
+  if (filters?.reportId) {
+    query = query.where(eq(reportExecutionHistory.reportId, filters.reportId)) as any;
+  }
+  if (filters?.executedBy) {
+    query = query.where(eq(reportExecutionHistory.executedBy, filters.executedBy)) as any;
+  }
+  if (filters?.status) {
+    query = query.where(eq(reportExecutionHistory.status, filters.status as any)) as any;
+  }
+
+  return await query.orderBy(desc(reportExecutionHistory.createdAt));
+}
+
+// ============================================================================
+// REAL-TIME NOTIFICATION SYSTEM
+// ============================================================================
+
+/**
+ * Create real-time notification
+ */
+export async function createRealtimeNotification(data: InsertRealtimeNotification) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(realtimeNotifications).values(data);
+  return { id: Number(result.insertId), ...data };
+}
+
+/**
+ * Get notifications for a recipient
+ */
+export async function getNotifications(filters?: {
+  recipientId?: number;
+  recipientType?: string;
+  isRead?: boolean;
+  type?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(realtimeNotifications);
+
+  if (filters?.recipientId) {
+    query = query.where(eq(realtimeNotifications.recipientId, filters.recipientId)) as any;
+  }
+  if (filters?.recipientType) {
+    query = query.where(eq(realtimeNotifications.recipientType, filters.recipientType as any)) as any;
+  }
+  if (filters?.isRead !== undefined) {
+    query = query.where(eq(realtimeNotifications.isRead, filters.isRead ? 1 : 0)) as any;
+  }
+  if (filters?.type) {
+    query = query.where(eq(realtimeNotifications.type, filters.type as any)) as any;
+  }
+
+  return await query.orderBy(desc(realtimeNotifications.createdAt)).limit(100);
+}
+
+/**
+ * Mark notification as read
+ */
+export async function markNotificationAsRead(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(realtimeNotifications)
+    .set({ isRead: 1, readAt: new Date() })
+    .where(eq(realtimeNotifications.id, id));
+
+  return true;
+}
+
+/**
+ * Mark all notifications as read for a recipient
+ */
+export async function markAllNotificationsAsRead(recipientId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(realtimeNotifications)
+    .set({ isRead: 1, readAt: new Date() })
+    .where(
+      and(
+        eq(realtimeNotifications.recipientId, recipientId),
+        eq(realtimeNotifications.isRead, 0)
+      )
+    );
+
+  return true;
+}
+
+/**
+ * Get unread notification count
+ */
+export async function getUnreadNotificationCount(recipientId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const [result] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(realtimeNotifications)
+    .where(
+      and(
+        eq(realtimeNotifications.recipientId, recipientId),
+        eq(realtimeNotifications.isRead, 0)
+      )
+    );
+
+  return result?.count || 0;
+}
+
+/**
+ * Broadcast notification to all admins
+ */
+export async function broadcastNotificationToAdmins(
+  title: string,
+  message: string,
+  type: "incident" | "feedback" | "training" | "order" | "system" | "alert" | "info",
+  severity: "low" | "medium" | "high" | "critical" = "medium",
+  metadata?: any
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const notification = await createRealtimeNotification({
+    title,
+    message,
+    type,
+    severity,
+    recipientType: "admin",
+    deliveryStatus: "sent",
+    metadata: metadata ? JSON.stringify(metadata) : null,
+  });
+
+  // TODO: Emit WebSocket event to connected admin clients
+  // websocketServer.emit('notification', notification);
+
+  return notification;
+}
+
+// ============================================================================
+// MOBILE TRAINING SYNC
+// ============================================================================
+
+/**
+ * Create mobile training sync record
+ */
+export async function createMobileTrainingSync(data: InsertMobileTrainingSync) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(mobileTrainingSync).values(data);
+  return { id: Number(result.insertId), ...data };
+}
+
+/**
+ * Get pending sync records for a rider
+ */
+export async function getPendingSync(riderId: number, deviceId: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(mobileTrainingSync)
+    .where(
+      and(
+        eq(mobileTrainingSync.riderId, riderId),
+        eq(mobileTrainingSync.deviceId, deviceId),
+        eq(mobileTrainingSync.syncStatus, "pending")
+      )
+    )
+    .orderBy(mobileTrainingSync.offlineTimestamp);
+}
+
+/**
+ * Process mobile training sync
+ */
+export async function processMobileSync(syncId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    const [syncRecord] = await db
+      .select()
+      .from(mobileTrainingSync)
+      .where(eq(mobileTrainingSync.id, syncId))
+      .limit(1);
+
+    if (!syncRecord) return false;
+
+    const data = JSON.parse(syncRecord.data);
+
+    // Process based on sync type
+    switch (syncRecord.syncType) {
+      case "progress":
+        // Update rider training progress
+        await db
+          .update(riderTrainingProgress)
+          .set({
+            progressPercentage: data.progressPercentage,
+            timeSpent: data.timeSpent,
+            lastAccessedAt: new Date(data.timestamp),
+          })
+          .where(
+            and(
+              eq(riderTrainingProgress.riderId, syncRecord.riderId),
+              eq(riderTrainingProgress.moduleId, syncRecord.moduleId)
+            )
+          );
+        break;
+
+      case "quiz_answers":
+        // Update quiz answers
+        await db
+          .update(riderTrainingProgress)
+          .set({
+            quizAnswers: JSON.stringify(data.answers),
+            quizAttempts: sql`${riderTrainingProgress.quizAttempts} + 1`,
+          })
+          .where(
+            and(
+              eq(riderTrainingProgress.riderId, syncRecord.riderId),
+              eq(riderTrainingProgress.moduleId, syncRecord.moduleId)
+            )
+          );
+        break;
+
+      case "completion":
+        // Mark module as completed
+        await db
+          .update(riderTrainingProgress)
+          .set({
+            status: "completed",
+            completedAt: new Date(data.completedAt),
+          })
+          .where(
+            and(
+              eq(riderTrainingProgress.riderId, syncRecord.riderId),
+              eq(riderTrainingProgress.moduleId, syncRecord.moduleId)
+            )
+          );
+        break;
+    }
+
+    // Mark sync as completed
+    await db
+      .update(mobileTrainingSync)
+      .set({
+        syncStatus: "synced",
+        syncedAt: new Date(),
+        onlineTimestamp: new Date(),
+      })
+      .where(eq(mobileTrainingSync.id, syncId));
+
+    return true;
+  } catch (error) {
+    // Mark sync as failed
+    await db
+      .update(mobileTrainingSync)
+      .set({
+        syncStatus: "failed",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      })
+      .where(eq(mobileTrainingSync.id, syncId));
+
+    return false;
+  }
+}
+
+/**
+ * Get sync status for a rider
+ */
+export async function getSyncStatus(riderId: number, deviceId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [stats] = await db
+    .select({
+      totalSync: sql<number>`COUNT(*)`,
+      pendingSync: sql<number>`SUM(CASE WHEN ${mobileTrainingSync.syncStatus} = 'pending' THEN 1 ELSE 0 END)`,
+      syncedCount: sql<number>`SUM(CASE WHEN ${mobileTrainingSync.syncStatus} = 'synced' THEN 1 ELSE 0 END)`,
+      failedCount: sql<number>`SUM(CASE WHEN ${mobileTrainingSync.syncStatus} = 'failed' THEN 1 ELSE 0 END)`,
+    })
+    .from(mobileTrainingSync)
+    .where(
+      and(
+        eq(mobileTrainingSync.riderId, riderId),
+        eq(mobileTrainingSync.deviceId, deviceId)
+      )
+    );
 
   return stats;
 }

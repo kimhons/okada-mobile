@@ -60,6 +60,7 @@ import RiderTrainingTracker from "./pages/RiderTrainingTracker";
 import RiderLeaderboard from "./pages/RiderLeaderboard";
 import GeoAnalytics from "./pages/GeoAnalytics";
 import ReferralProgram from "./pages/ReferralProgram";
+import AdvancedReporting from "./pages/AdvancedReporting";
 
 
 function Router() {
@@ -113,6 +114,7 @@ function Router() {
       <Route path="/rider-leaderboard" component={() => <DashboardLayout><RiderLeaderboard /></DashboardLayout>} />
       <Route path="/geo-analytics" component={() => <DashboardLayout><GeoAnalytics /></DashboardLayout>} />
       <Route path="/referral-program" component={() => <DashboardLayout><ReferralProgram /></DashboardLayout>} />
+      <Route path="/advanced-reporting" component={() => <DashboardLayout><AdvancedReporting /></DashboardLayout>} />
       <Route path="/system-settings" component={() => <DashboardLayout><SystemSettings /></DashboardLayout>} />
       <Route path="/content-moderation" component={() => <DashboardLayout><ContentModeration /></DashboardLayout>} />
       <Route path="/fraud-detection" component={() => <DashboardLayout><FraudDetection /></DashboardLayout>} />

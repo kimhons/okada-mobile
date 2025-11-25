@@ -535,33 +535,6 @@ export type Report = typeof reports.$inferSelect;
 export type InsertReport = typeof reports.$inferInsert;
 
 /**
- * Scheduled Reports table for automated report generation
- */
-export const scheduledReports = mysqlTable("scheduledReports", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  reportType: varchar("reportType", { length: 50 }).default("transaction_analytics").notNull(), // transaction_analytics, revenue, etc.
-  periodType: mysqlEnum("periodType", ["week", "month", "quarter", "year"]).default("month").notNull(),
-  frequency: mysqlEnum("frequency", ["daily", "weekly", "monthly"]).notNull(),
-  dayOfWeek: int("dayOfWeek"), // 0-6 for weekly reports (0=Sunday)
-  dayOfMonth: int("dayOfMonth"), // 1-31 for monthly reports
-  time: varchar("time", { length: 10 }).notNull(), // HH:MM format (24-hour)
-  recipients: text("recipients").notNull(), // Comma-separated email addresses
-  customMessage: text("customMessage"), // Optional message to include in email
-  isActive: boolean("isActive").default(true).notNull(),
-  lastRunAt: timestamp("lastRunAt"),
-  nextRunAt: timestamp("nextRunAt"),
-  lastRunStatus: varchar("lastRunStatus", { length: 50 }), // success, failed, skipped
-  createdBy: int("createdBy").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type ScheduledReport = typeof scheduledReports.$inferSelect;
-export type InsertScheduledReport = typeof scheduledReports.$inferInsert;
-
-/**
  * Export History table for tracking data exports
  */
 export const exportHistory = mysqlTable("exportHistory", {
@@ -1575,3 +1548,185 @@ export const riderTrainingProgress = mysqlTable("riderTrainingProgress", {
 
 export type RiderTrainingProgress = typeof riderTrainingProgress.$inferSelect;
 export type InsertRiderTrainingProgress = typeof riderTrainingProgress.$inferInsert;
+
+
+/**
+ * Custom Reports table - Save report templates and configurations
+ */
+export const customReports = mysqlTable("customReports", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  reportType: mysqlEnum("reportType", [
+    "orders",
+    "revenue",
+    "riders",
+    "users",
+    "products",
+    "incidents",
+    "feedback",
+    "training",
+    "custom"
+  ]).notNull(),
+  
+  // Configuration
+  filters: text("filters"), // JSON: {dateRange, status, category, etc}
+  metrics: text("metrics"), // JSON: array of metrics to include
+  groupBy: varchar("groupBy", { length: 100 }), // Group results by field
+  sortBy: varchar("sortBy", { length: 100 }),
+  sortOrder: mysqlEnum("sortOrder", ["asc", "desc"]).default("desc"),
+  
+  // Metadata
+  createdBy: int("createdBy").notNull(),
+  isPublic: int("isPublic").default(0).notNull(),
+  tags: text("tags"), // JSON array of tags
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomReport = typeof customReports.$inferSelect;
+export type InsertCustomReport = typeof customReports.$inferInsert;
+
+/**
+ * Scheduled Reports table - Automate report generation and delivery
+ */
+export const scheduledReports = mysqlTable("scheduledReports", {
+  id: int("id").autoincrement().primaryKey(),
+  reportId: int("reportId").notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  
+  // Schedule
+  frequency: mysqlEnum("frequency", ["daily", "weekly", "monthly", "quarterly"]).notNull(),
+  scheduleTime: varchar("scheduleTime", { length: 10 }), // HH:MM format
+  dayOfWeek: int("dayOfWeek"), // 0-6 for weekly
+  dayOfMonth: int("dayOfMonth"), // 1-31 for monthly
+  timezone: varchar("timezone", { length: 50 }).default("Africa/Douala"),
+  
+  // Delivery
+  recipients: text("recipients").notNull(), // JSON array of email addresses
+  format: mysqlEnum("format", ["pdf", "excel", "csv"]).default("pdf").notNull(),
+  subject: varchar("subject", { length: 300 }),
+  message: text("message"),
+  
+  // Status
+  isActive: int("isActive").default(1).notNull(),
+  lastRunAt: timestamp("lastRunAt"),
+  nextRunAt: timestamp("nextRunAt"),
+  lastStatus: mysqlEnum("lastStatus", ["success", "failed", "pending"]),
+  errorMessage: text("errorMessage"),
+  
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScheduledReport = typeof scheduledReports.$inferSelect;
+export type InsertScheduledReport = typeof scheduledReports.$inferInsert;
+
+/**
+ * Report Execution History table - Track report generation history
+ */
+export const reportExecutionHistory = mysqlTable("reportExecutionHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  reportId: int("reportId"),
+  scheduledReportId: int("scheduledReportId"),
+  
+  // Execution details
+  executedBy: int("executedBy"),
+  executionType: mysqlEnum("executionType", ["manual", "scheduled"]).notNull(),
+  status: mysqlEnum("status", ["success", "failed", "in_progress"]).notNull(),
+  
+  // Results
+  recordCount: int("recordCount"),
+  fileUrl: varchar("fileUrl", { length: 500 }),
+  fileSize: int("fileSize"), // bytes
+  format: mysqlEnum("format", ["pdf", "excel", "csv"]).notNull(),
+  
+  // Timing
+  startedAt: timestamp("startedAt").notNull(),
+  completedAt: timestamp("completedAt"),
+  duration: int("duration"), // seconds
+  
+  errorMessage: text("errorMessage"),
+  metadata: text("metadata"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ReportExecutionHistory = typeof reportExecutionHistory.$inferSelect;
+export type InsertReportExecutionHistory = typeof reportExecutionHistory.$inferInsert;
+
+/**
+ * Real-time Notifications table - Store notification history
+ */
+export const realtimeNotifications = mysqlTable("realtimeNotifications", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Notification content
+  title: varchar("title", { length: 300 }).notNull(),
+  message: text("message").notNull(),
+  type: mysqlEnum("type", [
+    "incident",
+    "feedback",
+    "training",
+    "order",
+    "system",
+    "alert",
+    "info"
+  ]).notNull(),
+  severity: mysqlEnum("severity", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  
+  // Targeting
+  recipientId: int("recipientId"), // null for broadcast
+  recipientType: mysqlEnum("recipientType", ["admin", "rider", "user", "seller", "all"]).default("admin").notNull(),
+  channel: varchar("channel", { length: 100 }), // WebSocket channel name
+  
+  // Related entities
+  relatedEntityType: varchar("relatedEntityType", { length: 50 }),
+  relatedEntityId: int("relatedEntityId"),
+  
+  // Status
+  isRead: int("isRead").default(0).notNull(),
+  readAt: timestamp("readAt"),
+  deliveryStatus: mysqlEnum("deliveryStatus", ["pending", "sent", "failed"]).default("pending").notNull(),
+  
+  // Action
+  actionUrl: varchar("actionUrl", { length: 500 }),
+  actionLabel: varchar("actionLabel", { length: 100 }),
+  
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RealtimeNotification = typeof realtimeNotifications.$inferSelect;
+export type InsertRealtimeNotification = typeof realtimeNotifications.$inferInsert;
+
+/**
+ * Mobile Training Sync table - Track offline training progress for sync
+ */
+export const mobileTrainingSync = mysqlTable("mobileTrainingSync", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  deviceId: varchar("deviceId", { length: 100 }).notNull(),
+  
+  // Sync data
+  syncType: mysqlEnum("syncType", ["progress", "quiz_answers", "completion", "certificate"]).notNull(),
+  moduleId: int("moduleId").notNull(),
+  data: text("data").notNull(), // JSON payload
+  
+  // Status
+  syncStatus: mysqlEnum("syncStatus", ["pending", "synced", "failed"]).default("pending").notNull(),
+  syncedAt: timestamp("syncedAt"),
+  errorMessage: text("errorMessage"),
+  
+  // Metadata
+  offlineTimestamp: timestamp("offlineTimestamp").notNull(),
+  onlineTimestamp: timestamp("onlineTimestamp"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MobileTrainingSync = typeof mobileTrainingSync.$inferSelect;
+export type InsertMobileTrainingSync = typeof mobileTrainingSync.$inferInsert;

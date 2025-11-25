@@ -5127,6 +5127,319 @@ export const appRouter = router({
         return await db.getRiderTrainingCompletionRate(input.riderId);
       }),
   }),
+
+  // ============================================================================
+  // ADVANCED REPORTING SUITE
+  // ============================================================================
+  reports: router({
+    // Custom Reports
+    createReport: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        reportType: z.enum(["orders", "revenue", "riders", "users", "products", "incidents", "feedback", "training", "custom"]),
+        filters: z.string().optional(),
+        metrics: z.string().optional(),
+        groupBy: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
+        isPublic: z.boolean().optional(),
+        tags: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createCustomReport({
+          ...input,
+          createdBy: ctx.user.id,
+          isPublic: input.isPublic ? 1 : 0,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_report",
+          entityType: "report",
+          entityId: result?.id,
+          details: `Created custom report: ${input.name}`,
+        });
+
+        return result;
+      }),
+
+    getReports: protectedProcedure
+      .input(z.object({
+        createdBy: z.number().optional(),
+        reportType: z.string().optional(),
+        isPublic: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getCustomReports(input);
+      }),
+
+    getReportById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCustomReportById(input.id);
+      }),
+
+    updateReport: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        filters: z.string().optional(),
+        metrics: z.string().optional(),
+        groupBy: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
+        isPublic: z.boolean().optional(),
+        tags: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        const result = await db.updateCustomReport(id, {
+          ...data,
+          isPublic: data.isPublic !== undefined ? (data.isPublic ? 1 : 0) : undefined,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_report",
+          entityType: "report",
+          entityId: id,
+          details: `Updated custom report ID: ${id}`,
+        });
+
+        return result;
+      }),
+
+    deleteReport: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.deleteCustomReport(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_report",
+          entityType: "report",
+          entityId: input.id,
+          details: `Deleted custom report ID: ${input.id}`,
+        });
+
+        return result;
+      }),
+
+    // Scheduled Reports
+    createScheduledReport: protectedProcedure
+      .input(z.object({
+        reportId: z.number(),
+        name: z.string(),
+        frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
+        scheduleTime: z.string().optional(),
+        dayOfWeek: z.number().optional(),
+        dayOfMonth: z.number().optional(),
+        timezone: z.string().optional(),
+        recipients: z.string(),
+        format: z.enum(["pdf", "excel", "csv"]).optional(),
+        subject: z.string().optional(),
+        message: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createScheduledReport({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: result?.id,
+          details: `Created scheduled report: ${input.name}`,
+        });
+
+        return result;
+      }),
+
+    getScheduledReports: protectedProcedure
+      .input(z.object({ isActive: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getScheduledReports(input);
+      }),
+
+    updateScheduledReport: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        isActive: z.boolean().optional(),
+        scheduleTime: z.string().optional(),
+        recipients: z.string().optional(),
+        format: z.enum(["pdf", "excel", "csv"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...data } = input;
+        const result = await db.updateScheduledReport(id, {
+          ...data,
+          isActive: data.isActive !== undefined ? (data.isActive ? 1 : 0) : undefined,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_scheduled_report",
+          entityType: "scheduled_report",
+          entityId: id,
+          details: `Updated scheduled report ID: ${id}`,
+        });
+
+        return result;
+      }),
+
+    // Execute Report
+    executeReport: protectedProcedure
+      .input(z.object({ reportId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.executeReport(input.reportId, ctx.user.id, "manual");
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "execute_report",
+          entityType: "report",
+          entityId: input.reportId,
+          details: `Executed report ID: ${input.reportId}`,
+        });
+
+        return result;
+      }),
+
+    getExecutionHistory: protectedProcedure
+      .input(z.object({
+        reportId: z.number().optional(),
+        executedBy: z.number().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getReportExecutionHistory(input);
+      }),
+  }),
+
+  // ============================================================================
+  // REAL-TIME NOTIFICATION SYSTEM
+  // ============================================================================
+  notifications: router({
+    getNotifications: protectedProcedure
+      .input(z.object({
+        recipientId: z.number().optional(),
+        recipientType: z.string().optional(),
+        isRead: z.boolean().optional(),
+        type: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getNotifications(input);
+      }),
+
+    markAsRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.markNotificationAsRead(input.id);
+      }),
+
+    markAllAsRead: protectedProcedure
+      .input(z.object({ recipientId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.markAllNotificationsAsRead(input.recipientId);
+      }),
+
+    getUnreadCount: protectedProcedure
+      .input(z.object({ recipientId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getUnreadNotificationCount(input.recipientId);
+      }),
+
+    broadcast: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        message: z.string(),
+        type: z.enum(["incident", "feedback", "training", "order", "system", "alert", "info"]),
+        severity: z.enum(["low", "medium", "high", "critical"]).optional(),
+        metadata: z.any().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.broadcastNotificationToAdmins(
+          input.title,
+          input.message,
+          input.type,
+          input.severity,
+          input.metadata
+        );
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "broadcast_notification",
+          entityType: "notification",
+          entityId: result?.id,
+          details: `Broadcast notification: ${input.title}`,
+        });
+
+        return result;
+      }),
+  }),
+
+  // ============================================================================
+  // MOBILE TRAINING SYNC
+  // ============================================================================
+  mobileSync: router({
+    createSync: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        deviceId: z.string(),
+        syncType: z.enum(["progress", "quiz_answers", "completion", "certificate"]),
+        moduleId: z.number(),
+        data: z.string(),
+        offlineTimestamp: z.date(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createMobileTrainingSync(input);
+      }),
+
+    getPendingSync: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        deviceId: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getPendingSync(input.riderId, input.deviceId);
+      }),
+
+    processSync: protectedProcedure
+      .input(z.object({ syncId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.processMobileSync(input.syncId);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "process_sync",
+          entityType: "mobile_sync",
+          entityId: input.syncId,
+          details: `Processed mobile sync ID: ${input.syncId}`,
+        });
+
+        return result;
+      }),
+
+    getSyncStatus: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        deviceId: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getSyncStatus(input.riderId, input.deviceId);
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 
