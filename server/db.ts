@@ -7374,16 +7374,16 @@ export async function getTranslations(languageCode: string, namespace?: string) 
   const db = await getDb();
   if (!db) return [];
 
-  let query = db
-    .select()
-    .from(translations)
-    .where(eq(translations.languageCode, languageCode));
-
+  const conditions = [eq(translations.languageCode, languageCode)];
+  
   if (namespace) {
-    query = query.where(eq(translations.namespace, namespace)) as any;
+    conditions.push(eq(translations.namespace, namespace));
   }
 
-  return await query;
+  return await db
+    .select()
+    .from(translations)
+    .where(and(...conditions));
 }
 
 export async function upsertTranslation(data: InsertTranslation) {

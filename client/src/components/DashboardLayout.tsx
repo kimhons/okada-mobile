@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle, CheckCircle, Server, Scale, Trophy, Sliders, Eye, Map, FileWarning, ThumbsUp, GraduationCap } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingBag, Bike, Package, BarChart3, Camera, TrendingUp, Store, DollarSign, Settings, CreditCard, Wallet, LineChart, MessageSquare, Smartphone, MapPin, Bell, Activity, Tag, Shield, UserCog, Database, Key, HelpCircle, Ticket, BookOpen, FileText, Calendar, Download, Mail, Percent, Megaphone, Award, Receipt, Navigation, AlertTriangle, CheckCircle, Server, Scale, Trophy, Sliders, Eye, Map, FileWarning, ThumbsUp, GraduationCap, Globe } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -75,6 +75,7 @@ const menuItems = [
   { icon: Server, label: "Platform Statistics", path: "/platform-statistics" },
   { icon: Scale, label: "Dispute Resolution", path: "/disputes" },
   { icon: Sliders, label: "System Settings", path: "/system-settings" },
+  { icon: Globe, label: "Translation Management", path: "/translation-management" },
   { icon: Eye, label: "Content Moderation", path: "/content-moderation" },
   { icon: AlertTriangle, label: "Fraud Detection", path: "/fraud-detection" },
   { icon: Map, label: "Live Dashboard", path: "/live-dashboard" },
