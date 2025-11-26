@@ -31,7 +31,7 @@ export function RiderBadgeProfile({ riderId }: RiderBadgeProfileProps) {
         <CardContent>
           <div className="flex gap-2">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-16 w-16 rounded-full" />
+              <Skeleton key={`skeleton-${i}`} className="h-16 w-16 rounded-full" />
             ))}
           </div>
         </CardContent>

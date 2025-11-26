@@ -151,7 +151,7 @@ export default function RiderEarningsBreakdown() {
       {loadingEarnings ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[...Array(4)].map((_, i) => (
-            <Card key={i}>
+            <Card key={`earnings-skeleton-${i}`}>
               <CardHeader>
                 <Skeleton className="h-4 w-24" />
               </CardHeader>
@@ -260,7 +260,7 @@ export default function RiderEarningsBreakdown() {
                         dataKey="value"
                       >
                         {pieChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell key={`cell-${entry.name}-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(value: number) => formatCurrency(value)} />

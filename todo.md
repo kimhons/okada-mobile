@@ -503,3 +503,30 @@
 - [x] Implement proper fix - use campaign.id only as key
 - [x] Remove hybrid key approach since IDs are unique
 - [ ] Test fix in browser (requires page reload)
+
+
+## Code Quality Audit
+
+### ESLint Index-Based Key Cleanup (IN PROGRESS)
+- [x] Run ESLint on entire client codebase
+- [x] Identify all react/no-array-index-key violations (30+ found)
+- [x] Fix ReportVisualization.tsx index-based keys (1 fixed)
+- [x] Fix RiderBadgeProfile.tsx index-based keys (1 fixed)
+- [x] Fix RiderAvailabilityCalendar.tsx index-based keys (2 fixed)
+- [x] Fix RiderEarningsBreakdown.tsx index-based keys (2 fixed)
+- [x] Fix RiderLeaderboard.tsx index-based keys (1 fixed)
+- [ ] Fix remaining 23 index-based key violations across other files
+- [ ] Verify all fixes pass ESLint
+- [ ] Document patterns for future reference
+
+**Fixed Files (7 violations):**
+- ReportVisualization.tsx - Pie chart cells now use `${entry[xAxisKey]}-${index}`
+- RiderBadgeProfile.tsx - Skeleton loading uses `skeleton-${i}`
+- RiderAvailabilityCalendar.tsx - Calendar skeletons and day buttons use proper keys
+- RiderEarningsBreakdown.tsx - Card skeletons and pie cells use descriptive keys
+- RiderLeaderboard.tsx - Skeleton rows use `leaderboard-skeleton-${i}`
+
+**Remaining Work:**
+- ~23 violations still exist in other components
+- Need systematic review of all .map() calls with index keys
+- Consider adding ESLint pre-commit hook to prevent new violations

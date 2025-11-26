@@ -247,7 +247,7 @@ export default function RiderLeaderboard() {
           {isLoading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton key={`leaderboard-skeleton-${i}`} className="h-12 w-full" />
               ))}
             </div>
           ) : leaderboardData && leaderboardData.leaderboard.length > 0 ? (

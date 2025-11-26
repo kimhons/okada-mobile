@@ -335,7 +335,7 @@ export default function RiderAvailabilityCalendar() {
           {isLoading ? (
             <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: 35 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-square" />
+                <Skeleton key={`cal-skeleton-${i}`} className="aspect-square" />
               ))}
             </div>
           ) : (
@@ -351,7 +351,7 @@ export default function RiderAvailabilityCalendar() {
 
                 return (
                   <button
-                    key={index}
+                    key={day ? day.toISOString() : `empty-${index}`}
                     onClick={() => day && isCurrentMonth && handleDateClick(day)}
                     disabled={!day || !isCurrentMonth}
                     className={`
