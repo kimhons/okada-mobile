@@ -211,8 +211,11 @@ See [docs/CI-CD-SETUP.md](./docs/CI-CD-SETUP.md) for detailed instructions.
 ## 📚 Documentation
 
 - [CI/CD Setup Guide](./docs/CI-CD-SETUP.md) - Complete CI/CD configuration
+- [GitHub Environment Setup](./docs/GITHUB-ENVIRONMENT-SETUP.md) - Environment protection and approval workflows
+- [Deployment Guide](./docs/DEPLOYMENT.md) - Staging and production deployment procedures
 - [Database Integrity Investigation](./docs/SPRINT-10-DB-INTEGRITY.md) - DB integrity findings
 - [ESLint Configuration](./docs/ESLINT.md) - Linting rules and setup
+- [GitHub Secret Setup](./docs/GITHUB-SECRET-SETUP.md) - Secret configuration guide
 - [Workflow README](./.github/workflows/README.md) - GitHub Actions workflows
 
 ---

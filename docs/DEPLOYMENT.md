@@ -17,6 +17,8 @@ This hybrid approach ensures code quality while maintaining deployment control.
 
 ## Environments
 
+> **Important**: GitHub Environments with protection rules require GitHub Pro, Team, or Enterprise. See [GitHub Environment Setup Guide](./GITHUB-ENVIRONMENT-SETUP.md) for detailed configuration instructions.
+
 ### Staging Environment
 
 **Purpose**: Pre-production testing and validation
@@ -65,9 +67,25 @@ When code is pushed to `develop` branch:
 
 **Workflow File**: `.github/workflows/deploy-staging.yml`
 
+### Approval Workflow (GitHub Environments)
+
+If GitHub Environment protection is configured:
+
+1. **Workflow Pauses**: After validation, workflow waits for approval
+2. **Review Request**: Required reviewers receive notification
+3. **Review Deployment**: 
+   - Go to Actions tab → Select workflow run
+   - Click "Review deployments" button
+   - Review validation results and commit changes
+   - Add approval comment
+   - Click "Approve and deploy"
+4. **Deployment Proceeds**: After approval, deployment job continues
+
+> See [GitHub Environment Setup Guide](./GITHUB-ENVIRONMENT-SETUP.md) for configuring approval requirements.
+
 ### Manual Deployment (Manus Dashboard)
 
-After workflow succeeds:
+After workflow succeeds (and approval if configured):
 
 1. **Open Manus Dashboard**: Navigate to project page
 2. **Review Checkpoint**: Check latest checkpoint details
