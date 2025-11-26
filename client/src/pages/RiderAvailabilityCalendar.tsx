@@ -35,6 +35,7 @@ import {
   Minus,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 /**
  * Mobile-Responsive Rider Availability Calendar
@@ -165,8 +166,13 @@ export default function RiderAvailabilityCalendar() {
   // Generate calendar days
   const calendarDays = generateCalendarDays(selectedDate);
 
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
   return (
     <DashboardLayout>
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="min-h-screen bg-background p-4 md:p-6">
         {/* Mobile-optimized header */}
         <div className="mb-6">
@@ -399,6 +405,7 @@ export default function RiderAvailabilityCalendar() {
           isLoading={setAvailabilityMutation.isPending}
         />
       </div>
+      </PullToRefresh>
     </DashboardLayout>
   );
 }

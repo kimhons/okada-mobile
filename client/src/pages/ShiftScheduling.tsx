@@ -35,6 +35,8 @@ import {
   User,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { SwipeableCard } from "@/components/SwipeableCard";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 /**
  * Mobile-Responsive Shift Scheduling Dashboard
@@ -121,8 +123,13 @@ export default function ShiftScheduling() {
     setSelectedDate(new Date());
   };
 
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
   return (
     <DashboardLayout>
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="min-h-screen bg-background p-4 md:p-6">
         {/* Mobile-optimized header */}
         <div className="mb-6">
@@ -289,11 +296,12 @@ export default function ShiftScheduling() {
           isLoading={createShiftMutation.isPending}
         />
       </div>
+      </PullToRefresh>
     </DashboardLayout>
   );
 }
 
-// Shift card component - Touch-friendly with 48px height
+// Shift card component - Touch-friendly with 48px height and swipe gestures
 function ShiftCard({
   shift,
   onUpdateStatus,
@@ -304,9 +312,30 @@ function ShiftCard({
   onCancel: () => void;
 }) {
   const [showActions, setShowActions] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleDelete = () => {
+    if (window.confirm(`Delete shift for Rider #${shift.riderId}?`)) {
+      onCancel();
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleComplete = () => {
+    onUpdateStatus("completed");
+  };
 
   return (
-    <Card className="p-4 touch-manipulation active:bg-accent transition-colors">
+    <SwipeableCard
+      onDelete={shift.status !== "completed" ? handleDelete : undefined}
+      onEdit={shift.status !== "completed" ? handleEdit : undefined}
+      onComplete={shift.status === "confirmed" ? handleComplete : undefined}
+      disabled={shift.status === "cancelled"}
+    >
+      <div className="p-4 touch-manipulation">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
@@ -380,7 +409,8 @@ function ShiftCard({
           )}
         </div>
       )}
-    </Card>
+      </div>
+    </SwipeableCard>
   );
 }
 

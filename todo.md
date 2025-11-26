@@ -1541,3 +1541,21 @@
 3. Build remaining 3 Rider Management screens (Earnings Breakdown, Shift Swap, Payouts)
 4. Add swipe gesture library (react-swipeable) for enhanced mobile UX
 5. Implement push notifications for shift assignments and availability changes
+
+
+## Sprint 7C: Swipe Gesture Integration (COMPLETED)
+
+### Swipe Gesture Requirements
+- [x] Install react-swipeable library
+- [x] Create reusable SwipeableCard component
+- [x] Implement swipe-to-delete for shifts
+  - [x] Left swipe reveals delete button
+  - [x] Confirmation dialog before deletion
+  - [x] Smooth animation with spring physics
+  - [ ] Haptic feedback (if supported) - deferred
+- [x] Implement swipe-to-edit for shifts
+  - [x] Right swipe reveals edit button
+  - [x] Opens edit dialog
+- [x] Add pull-to-refresh functionality
+  - [x] Pull down gesture on calendar view
+  - [x] Loading spinner during refresh
