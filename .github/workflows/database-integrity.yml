@@ -1,0 +1,66 @@
+name: Database Integrity Check
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  integrity-check:
+    name: Check Database Integrity
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run database integrity check
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm db:check
+        continue-on-error: false
+
+      - name: Upload integrity report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integrity-check-failure-report
+          path: |
+            scripts/check-db-integrity.ts
+          retention-days: 30
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Database Integrity Check Failed',
+              body: `Database integrity check failed on ${context.sha.substring(0, 7)}.\n\nPlease review the workflow logs and investigate duplicate IDs.\n\nWorkflow: ${context.workflow}\nRun: ${context.runNumber}`,
+              labels: ['bug', 'database', 'high-priority']
+            })
