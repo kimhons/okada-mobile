@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Trophy, Star } from "lucide-react";
+import { X, Trophy, Star, Share2 } from "lucide-react";
 import hapticFeedback from "@/lib/haptic";
 import confetti from "canvas-confetti";
+import { BadgeShareDialog } from "./BadgeShareDialog";
 
 interface BadgeNotificationProps {
   riderId: number;
@@ -13,6 +14,7 @@ interface BadgeNotificationProps {
 export function BadgeNotification({ riderId }: BadgeNotificationProps) {
   const [showNotification, setShowNotification] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<any>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const { data: notifications, refetch } = trpc.riders.getBadgeNotifications.useQuery(
     { riderId },
@@ -108,13 +110,38 @@ export function BadgeNotification({ riderId }: BadgeNotificationProps) {
             </div>
           )}
 
-          {/* Action Button */}
-          <Button
-            onClick={handleDismiss}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold"
-          >
-            Awesome!
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowShareDialog(true)}
+              variant="outline"
+              className="flex-1 border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            <Button
+              onClick={handleDismiss}
+              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold"
+            >
+              Awesome!
+            </Button>
+          </div>
+
+          {/* Share Dialog */}
+          {currentNotification?.badge && (
+            <BadgeShareDialog
+              open={showShareDialog}
+              onOpenChange={setShowShareDialog}
+              badgeName={currentNotification.badge.name}
+              badgeIcon={currentNotification.badge.icon}
+              badgeTier={currentNotification.badge.tier}
+              badgeDescription={currentNotification.badge.description}
+              riderName="Rider" // TODO: Get actual rider name
+              earnedDate={new Date()}
+              points={currentNotification.badge.points}
+            />
+          )}
         </div>
       </Card>
     </div>

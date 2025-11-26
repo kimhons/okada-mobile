@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Award, Star, TrendingUp, Zap, Gift, Lock, Check } from "lucide-react";
+import { Trophy, Award, Star, TrendingUp, Zap, Gift, Lock, Check, Share2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { BadgeShareDialog } from "@/components/BadgeShareDialog";
 
 const CATEGORY_ICONS: Record<string, any> = {
   earnings: TrendingUp,
@@ -29,6 +30,8 @@ const TIER_COLORS: Record<string, string> = {
 export default function BadgeShowcase() {
   const [selectedRider, setSelectedRider] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedBadgeForShare, setSelectedBadgeForShare] = useState<any>(null);
 
   // Fetch riders
   const { data: riders, isLoading: loadingRiders } = trpc.riders.getAllRiders.useQuery({});
@@ -189,6 +192,27 @@ export default function BadgeShowcase() {
                         <Star className="h-4 w-4 text-yellow-500" />
                         <span>{badge.points} points</span>
                       </div>
+
+                      {/* Share Button (only for earned badges) */}
+                      {isEarned && selectedRider !== "all" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-3"
+                          onClick={() => {
+                            const riderData = riders?.find(r => r.id === parseInt(selectedRider));
+                            setSelectedBadgeForShare({
+                              badge,
+                              riderName: riderData?.name || "Rider",
+                              earnedDate: riderBadges?.find(rb => rb.badgeId === badge.id)?.earnedAt || new Date(),
+                            });
+                            setShareDialogOpen(true);
+                          }}
+                        >
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Share
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -272,6 +296,21 @@ export default function BadgeShowcase() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Share Dialog */}
+      {selectedBadgeForShare && (
+        <BadgeShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          badgeName={selectedBadgeForShare.badge.name}
+          badgeIcon={selectedBadgeForShare.badge.icon}
+          badgeTier={selectedBadgeForShare.badge.tier}
+          badgeDescription={selectedBadgeForShare.badge.description}
+          riderName={selectedBadgeForShare.riderName}
+          earnedDate={new Date(selectedBadgeForShare.earnedDate)}
+          points={selectedBadgeForShare.badge.points}
+        />
+      )}
     </div>
   );
 }
