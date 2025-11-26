@@ -1,0 +1,80 @@
+{
+  "query": "SELECT id, name, type, status, createdAt FROM promotionalCampaigns ORDER BY id LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT id, name, type, status, createdAt FROM promotionalCampaigns ORDER BY id LIMIT 10",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Campaign 1763950754380",
+      "type": "discount",
+      "status": "draft",
+      "createdAt": "2025-11-24 02:19:14"
+    },
+    {
+      "id": "2",
+      "name": "Campaign 1 1763950754458",
+      "type": "free_delivery",
+      "status": "active",
+      "createdAt": "2025-11-24 02:19:14"
+    },
+    {
+      "id": "3",
+      "name": "Update Campaign 1763950754526",
+      "type": "cashback",
+      "status": "draft",
+      "createdAt": "2025-11-24 02:19:14"
+    },
+    {
+      "id": "4",
+      "name": "Delete Campaign 1763950754585",
+      "type": "bundle",
+      "status": "draft",
+      "createdAt": "2025-11-24 02:19:14"
+    },
+    {
+      "id": "5",
+      "name": "Active Campaign 1763950754637",
+      "type": "discount",
+      "status": "active",
+      "createdAt": "2025-11-24 02:19:14"
+    },
+    {
+      "id": "6",
+      "name": "Discount Campaign 1763950754811",
+      "type": "discount",
+      "status": "draft",
+      "createdAt": "2025-11-24 02:19:14"
+    },
+    {
+      "id": "7",
+      "name": "Campaign 1763950781990",
+      "type": "discount",
+      "status": "draft",
+      "createdAt": "2025-11-24 02:19:41"
+    },
+    {
+      "id": "8",
+      "name": "Campaign 1 1763950782032",
+      "type": "free_delivery",
+      "status": "active",
+      "createdAt": "2025-11-24 02:19:42"
+    },
+    {
+      "id": "9",
+      "name": "Update Campaign 1763950782080",
+      "type": "cashback",
+      "status": "draft",
+      "createdAt": "2025-11-24 02:19:42"
+    },
+    {
+      "id": "10",
+      "name": "Delete Campaign 1763950782120",
+      "type": "bundle",
+      "status": "draft",
+      "createdAt": "2025-11-24 02:19:42"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttype\tstatus\tcreatedAt\n1\tCampaign 1763950754380\tdiscount\tdraft\t2025-11-24 02:19:14\n2\tCampaign 1 1763950754458\tfree_delivery\tactive\t2025-11-24 02:19:14\n3\tUpdate Campaign 1763950754526\tcashback\tdraft\t2025-11-24 02:19:14\n4\tDelete Campaign 1763950754585\tbundle\tdraft\t2025-11-24 02:19:14\n5\tActive Campaign 1763950754637\tdiscount\tactive\t2025-11-24 02:19:14\n6\tDiscount Campaign 1763950754811\tdiscount\tdraft\t2025-11-24 02:19:14\n7\tCampaign 1763950781990\tdiscount\tdraft\t2025-11-24 02:19:41\n8\tCampaign 1 1763950782032\tfree_delivery\tactive\t2025-11-24 02:19:42\n9\tUpdate Campaign 1763950782080\tcashback\tdraft\t2025-11-24 02:19:42\n10\tDelete Campaign 1763950782120\tbundle\tdraft\t2025-11-24 02:19:42\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

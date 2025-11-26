@@ -1,0 +1,35 @@
+{
+  "query": "SELECT 'orders' as table_name, COUNT(*) as total, COUNT(DISTINCT id) as unique_ids FROM orders\nUNION ALL\nSELECT 'users', COUNT(*), COUNT(DISTINCT id) FROM users\nUNION ALL\nSELECT 'riders', COUNT(*), COUNT(DISTINCT id) FROM riders\nUNION ALL\nSELECT 'products', COUNT(*), COUNT(DISTINCT id) FROM products\nUNION ALL\nSELECT 'sellers', COUNT(*), COUNT(DISTINCT id) FROM sellers",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT 'orders' as table_name, COUNT(*) as total, COUNT(DISTINCT id) as unique_ids FROM orders\nUNION ALL\nSELECT 'users', COUNT(*), COUNT(DISTINCT id) FROM users\nUNION ALL\nSELECT 'riders', COUNT(*), COUNT(DISTINCT id) FROM riders\nUNION ALL\nSELECT 'products', COUNT(*), COUNT(DISTINCT id) FROM products\nUNION ALL\nSELECT 'sellers', COUNT(*), COUNT(DISTINCT id) FROM sellers",
+  "rows": [
+    {
+      "table_name": "users",
+      "total": "50",
+      "unique_ids": "50"
+    },
+    {
+      "table_name": "sellers",
+      "total": "0",
+      "unique_ids": "0"
+    },
+    {
+      "table_name": "riders",
+      "total": "0",
+      "unique_ids": "0"
+    },
+    {
+      "table_name": "products",
+      "total": "0",
+      "unique_ids": "0"
+    },
+    {
+      "table_name": "orders",
+      "total": "0",
+      "unique_ids": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\ttotal\tunique_ids\nusers\t50\t50\nsellers\t0\t0\nriders\t0\t0\nproducts\t0\t0\norders\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}
