@@ -1707,6 +1707,8 @@
 
 ### React Key Errors
 - [x] Fix duplicate keys in campaigns page causing React warnings
+- [x] Investigate why campaign IDs might be duplicated
+- [x] Add defensive key generation combining ID and index for uniqueness
 
 
 ## Code Quality Improvements
