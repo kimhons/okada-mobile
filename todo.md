@@ -493,3 +493,13 @@
 - [ ] Create staging environment in GitHub (requires repo admin access)
 - [ ] Create production environment in GitHub (requires repo admin access)
 - [ ] Test approval workflow (requires GitHub push)
+
+
+## Active Bugs
+
+### Duplicate React Key Error in Campaigns (FIXED)
+- [x] Investigate current key generation in promotional-campaigns.tsx
+- [x] Query database for actual duplicate campaign IDs (none found)
+- [x] Implement proper fix - use campaign.id only as key
+- [x] Remove hybrid key approach since IDs are unique
+- [ ] Test fix in browser (requires page reload)

@@ -366,7 +366,7 @@ export default function PromotionalCampaigns() {
                   </TableRow>
                 ) : (
                   campaigns.map((campaign, index) => (
-                    <TableRow key={`${campaign.id}-${index}`}>
+                    <TableRow key={campaign.id}>
                       <TableCell className="font-semibold">{campaign.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{getTypeLabel(campaign.type)}</Badge>

@@ -1,0 +1,110 @@
+{
+  "query": "SELECT id, name, COUNT(*) as count FROM promotionalCampaigns GROUP BY id, name HAVING COUNT(*) > 1 UNION ALL SELECT id, name, 1 as count FROM promotionalCampaigns ORDER BY id LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT id, name, COUNT(*) as count FROM promotionalCampaigns GROUP BY id, name HAVING COUNT(*) > 1 UNION ALL SELECT id, name, 1 as count FROM promotionalCampaigns ORDER BY id LIMIT 20",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Campaign 1763950754380",
+      "count": "1"
+    },
+    {
+      "id": "2",
+      "name": "Campaign 1 1763950754458",
+      "count": "1"
+    },
+    {
+      "id": "3",
+      "name": "Update Campaign 1763950754526",
+      "count": "1"
+    },
+    {
+      "id": "4",
+      "name": "Delete Campaign 1763950754585",
+      "count": "1"
+    },
+    {
+      "id": "5",
+      "name": "Active Campaign 1763950754637",
+      "count": "1"
+    },
+    {
+      "id": "6",
+      "name": "Discount Campaign 1763950754811",
+      "count": "1"
+    },
+    {
+      "id": "7",
+      "name": "Campaign 1763950781990",
+      "count": "1"
+    },
+    {
+      "id": "8",
+      "name": "Campaign 1 1763950782032",
+      "count": "1"
+    },
+    {
+      "id": "9",
+      "name": "Update Campaign 1763950782080",
+      "count": "1"
+    },
+    {
+      "id": "10",
+      "name": "Delete Campaign 1763950782120",
+      "count": "1"
+    },
+    {
+      "id": "11",
+      "name": "Active Campaign 1763950782159",
+      "count": "1"
+    },
+    {
+      "id": "12",
+      "name": "Discount Campaign 1763950782215",
+      "count": "1"
+    },
+    {
+      "id": "13",
+      "name": "Campaign 1763950803283",
+      "count": "1"
+    },
+    {
+      "id": "14",
+      "name": "Campaign 1 1763950803324",
+      "count": "1"
+    },
+    {
+      "id": "15",
+      "name": "Update Campaign 1763950803374",
+      "count": "1"
+    },
+    {
+      "id": "16",
+      "name": "Delete Campaign 1763950803421",
+      "count": "1"
+    },
+    {
+      "id": "17",
+      "name": "Active Campaign 1763950803466",
+      "count": "1"
+    },
+    {
+      "id": "18",
+      "name": "Discount Campaign 1763950803519",
+      "count": "1"
+    },
+    {
+      "id": "19",
+      "name": "Campaign 1763950819332",
+      "count": "1"
+    },
+    {
+      "id": "20",
+      "name": "Campaign 1 1763950819381",
+      "count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcount\n1\tCampaign 1763950754380\t1\n2\tCampaign 1 1763950754458\t1\n3\tUpdate Campaign 1763950754526\t1\n4\tDelete Campaign 1763950754585\t1\n5\tActive Campaign 1763950754637\t1\n6\tDiscount Campaign 1763950754811\t1\n7\tCampaign 1763950781990\t1\n8\tCampaign 1 1763950782032\t1\n9\tUpdate Campaign 1763950782080\t1\n10\tDelete Campaign 1763950782120\t1\n11\tActive Campaign 1763950782159\t1\n12\tDiscount Campaign 1763950782215\t1\n13\tCampaign 1763950803283\t1\n14\tCampaign 1 1763950803324\t1\n15\tUpdate Campaign 1763950803374\t1\n16\tDelete Campaign 1763950803421\t1\n17\tActive Campaign 1763950803466\t1\n18\tDiscount Campaign 1763950803519\t1\n19\tCampaign 1763950819332\t1\n20\tCampaign 1 1763950819381\t1\n",
+  "stderr": "",
+  "execution_time_ms": 544
+}
