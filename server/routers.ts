@@ -5493,6 +5493,360 @@ export const appRouter = router({
         return await db.createCustomReport(reportData);
       }),
   }),
+
+  // Sprint 7: Rider Management - Shift Scheduling & Earnings
+  riderShifts: router({
+    getShifts: protectedProcedure
+      .input(z.object({
+        riderId: z.number().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        status: z.string().optional(),
+        shiftType: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getShifts(input);
+      }),
+
+    createShift: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        shiftDate: z.date(),
+        shiftType: z.enum(["morning", "afternoon", "evening", "night", "split", "full_day"]),
+        startTime: z.string(),
+        endTime: z.string(),
+        assignedBy: z.number(),
+        zone: z.string().optional(),
+        location: z.string().optional(),
+        notes: z.string().optional(),
+        isRecurring: z.number().optional(),
+        recurringPattern: z.string().optional(),
+        recurringGroupId: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const shiftId = await db.createShift(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_shift",
+          entityType: "shift",
+          entityId: shiftId,
+          details: `Created shift for rider ${input.riderId}`,
+        });
+
+        return { success: true, shiftId };
+      }),
+
+    updateShiftStatus: protectedProcedure
+      .input(z.object({
+        shiftId: z.number(),
+        status: z.string(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateShiftStatus(input.shiftId, input.status, input.notes);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_shift_status",
+          entityType: "shift",
+          entityId: input.shiftId,
+          details: `Updated shift status to ${input.status}`,
+        });
+
+        return { success: result };
+      }),
+
+    cancelShift: protectedProcedure
+      .input(z.object({
+        shiftId: z.number(),
+        reason: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.cancelShift(input.shiftId, input.reason);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "cancel_shift",
+          entityType: "shift",
+          entityId: input.shiftId,
+          details: `Cancelled shift: ${input.reason}`,
+        });
+
+        return { success: result };
+      }),
+  }),
+
+  riderEarnings: router({
+    getEarnings: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+        status: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderEarningsDetailed(input);
+      }),
+
+    getSummary: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderEarningsSummary(input.riderId, input.startDate, input.endDate);
+      }),
+
+    createTransaction: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        transactionType: z.enum(["delivery_fee", "tip", "bonus", "penalty", "adjustment", "refund"]),
+        amount: z.number(),
+        description: z.string(),
+        orderId: z.number().optional(),
+        shiftId: z.number().optional(),
+        category: z.string().optional(),
+        metadata: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const transactionId = await db.createEarningsTransaction(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_earnings_transaction",
+          entityType: "earnings_transaction",
+          entityId: transactionId,
+          details: `Created ${input.transactionType} transaction for rider ${input.riderId}`,
+        });
+
+        return { success: true, transactionId };
+      }),
+
+    approveTransaction: protectedProcedure
+      .input(z.object({ transactionId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.approveEarningsTransaction(input.transactionId, ctx.user.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "approve_earnings",
+          entityType: "earnings_transaction",
+          entityId: input.transactionId,
+          details: `Approved earnings transaction`,
+        });
+
+        return { success: result };
+      }),
+  }),
+
+  shiftSwaps: router({
+    getPending: protectedProcedure.query(async () => {
+      return await db.getPendingShiftSwaps();
+    }),
+
+    getRiderSwaps: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getRiderShiftSwaps(input.riderId);
+      }),
+
+    createSwap: protectedProcedure
+      .input(z.object({
+        requesterId: z.number(),
+        requesterShiftId: z.number(),
+        targetRiderId: z.number().optional(),
+        targetShiftId: z.number().optional(),
+        requestType: z.enum(["swap", "give_up", "take_over"]),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const swapId = await db.createShiftSwap(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_shift_swap",
+          entityType: "shift_swap",
+          entityId: swapId,
+          details: `Created ${input.requestType} request`,
+        });
+
+        return { success: true, swapId };
+      }),
+
+    reviewSwap: protectedProcedure
+      .input(z.object({
+        swapId: z.number(),
+        status: z.enum(["approved", "rejected"]),
+        reviewNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.reviewShiftSwap(input.swapId, input.status, ctx.user.id, input.reviewNotes);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "review_shift_swap",
+          entityType: "shift_swap",
+          entityId: input.swapId,
+          details: `${input.status} shift swap request`,
+        });
+
+        return { success: result };
+      }),
+  }),
+
+  riderAvailability: router({
+    getAvailability: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        startDate: z.date(),
+        endDate: z.date(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderAvailability(input.riderId, input.startDate, input.endDate);
+      }),
+
+    setAvailability: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        availabilityDate: z.date(),
+        availabilityType: z.enum(["available", "unavailable", "preferred", "maybe"]),
+        timeSlots: z.string().optional(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        reason: z.enum(["vacation", "sick", "personal", "other", "none"]).optional(),
+        notes: z.string().optional(),
+        isRecurring: z.number().optional(),
+        recurringPattern: z.string().optional(),
+        recurringEndDate: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const availabilityId = await db.setRiderAvailability(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "set_availability",
+          entityType: "rider_availability",
+          entityId: availabilityId,
+          details: `Set availability for rider ${input.riderId}`,
+        });
+
+        return { success: true, availabilityId };
+      }),
+
+    updateAvailability: protectedProcedure
+      .input(z.object({
+        availabilityId: z.number(),
+        updates: z.object({
+          availabilityType: z.enum(["available", "unavailable", "preferred", "maybe"]).optional(),
+          timeSlots: z.string().optional(),
+          notes: z.string().optional(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updateRiderAvailability(input.availabilityId, input.updates);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_availability",
+          entityType: "rider_availability",
+          entityId: input.availabilityId,
+          details: `Updated rider availability`,
+        });
+
+        return { success: result };
+      }),
+  }),
+
+  riderPayouts: router({
+    getPending: protectedProcedure.query(async () => {
+      return await db.getPendingRiderPayouts();
+    }),
+
+    getRiderPayouts: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getRiderPayouts(input.riderId);
+      }),
+
+    createPayout: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+        payoutDate: z.date(),
+        periodStart: z.date(),
+        periodEnd: z.date(),
+        totalEarnings: z.number(),
+        deductions: z.number().optional(),
+        bonuses: z.number().optional(),
+        netAmount: z.number(),
+        paymentMethod: z.enum(["bank_transfer", "mobile_money", "cash", "wallet"]),
+        paymentAccount: z.string().optional(),
+        transactionIds: z.string().optional(),
+        metadata: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const payoutId = await db.createRiderPayout(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_payout",
+          entityType: "rider_payout",
+          entityId: payoutId,
+          details: `Created payout for rider ${input.riderId}`,
+        });
+
+        return { success: true, payoutId };
+      }),
+
+    updatePayoutStatus: protectedProcedure
+      .input(z.object({
+        payoutId: z.number(),
+        status: z.string(),
+        failureReason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.updatePayoutStatus(input.payoutId, input.status, ctx.user.id, input.failureReason);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_payout_status",
+          entityType: "rider_payout",
+          entityId: input.payoutId,
+          details: `Updated payout status to ${input.status}`,
+        });
+
+        return { success: result };
+      }),
+
+    retryPayout: protectedProcedure
+      .input(z.object({ payoutId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.retryPayout(input.payoutId);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "retry_payout",
+          entityType: "rider_payout",
+          entityId: input.payoutId,
+          details: `Retried failed payout`,
+        });
+
+        return { success: result };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

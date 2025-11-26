@@ -1730,3 +1730,199 @@ export const mobileTrainingSync = mysqlTable("mobileTrainingSync", {
 
 export type MobileTrainingSync = typeof mobileTrainingSync.$inferSelect;
 export type InsertMobileTrainingSync = typeof mobileTrainingSync.$inferInsert;
+
+
+/**
+ * Rider Shifts table - Shift scheduling and management
+ */
+export const riderShifts = mysqlTable("riderShifts", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  
+  // Shift details
+  shiftDate: timestamp("shiftDate").notNull(),
+  shiftType: mysqlEnum("shiftType", ["morning", "afternoon", "evening", "night", "split", "full_day"]).notNull(),
+  startTime: varchar("startTime", { length: 10 }).notNull(), // HH:MM format
+  endTime: varchar("endTime", { length: 10 }).notNull(),
+  
+  // Assignment
+  assignedBy: int("assignedBy").notNull(),
+  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
+  
+  // Status
+  status: mysqlEnum("status", ["scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"]).default("scheduled").notNull(),
+  confirmedAt: timestamp("confirmedAt"),
+  
+  // Location
+  zone: varchar("zone", { length: 100 }),
+  location: varchar("location", { length: 255 }),
+  
+  // Notes
+  notes: text("notes"),
+  cancellationReason: text("cancellationReason"),
+  
+  // Recurring shift
+  isRecurring: int("isRecurring").default(0).notNull(),
+  recurringPattern: varchar("recurringPattern", { length: 100 }), // "weekly_monday", "daily", etc.
+  recurringGroupId: varchar("recurringGroupId", { length: 50 }),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RiderShift = typeof riderShifts.$inferSelect;
+export type InsertRiderShift = typeof riderShifts.$inferInsert;
+
+/**
+ * Rider Earnings Transactions table - Detailed earnings tracking
+ */
+export const riderEarningsTransactions = mysqlTable("riderEarningsTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  
+  // Transaction details
+  transactionDate: timestamp("transactionDate").defaultNow().notNull(),
+  transactionType: mysqlEnum("transactionType", ["delivery_fee", "tip", "bonus", "penalty", "adjustment", "refund"]).notNull(),
+  amount: int("amount").notNull(), // In cents/smallest currency unit
+  currency: varchar("currency", { length: 10 }).default("XAF").notNull(),
+  
+  // Related entities
+  orderId: int("orderId"),
+  shiftId: int("shiftId"),
+  
+  // Description
+  description: varchar("description", { length: 500 }).notNull(),
+  category: varchar("category", { length: 100 }),
+  
+  // Status
+  status: mysqlEnum("status", ["pending", "approved", "paid", "cancelled"]).default("pending").notNull(),
+  approvedBy: int("approvedBy"),
+  approvedAt: timestamp("approvedAt"),
+  
+  // Payout
+  payoutId: int("payoutId"),
+  paidAt: timestamp("paidAt"),
+  
+  // Metadata
+  metadata: text("metadata"), // JSON for additional data
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RiderEarningsTransaction = typeof riderEarningsTransactions.$inferSelect;
+export type InsertRiderEarningsTransaction = typeof riderEarningsTransactions.$inferInsert;
+
+/**
+ * Shift Swaps table - Shift swap and trade requests
+ */
+export const shiftSwaps = mysqlTable("shiftSwaps", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Swap details
+  requesterId: int("requesterId").notNull(), // Rider requesting the swap
+  requesterShiftId: int("requesterShiftId").notNull(),
+  
+  targetRiderId: int("targetRiderId"), // Rider being asked to swap (null for open swap)
+  targetShiftId: int("targetShiftId"), // Shift being requested (null for just giving up shift)
+  
+  // Request info
+  requestType: mysqlEnum("requestType", ["swap", "give_up", "take_over"]).notNull(),
+  reason: text("reason"),
+  
+  // Status
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "cancelled", "completed"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewNotes: text("reviewNotes"),
+  
+  // Completion
+  completedAt: timestamp("completedAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ShiftSwap = typeof shiftSwaps.$inferSelect;
+export type InsertShiftSwap = typeof shiftSwaps.$inferInsert;
+
+/**
+ * Rider Availability table - Rider availability calendar
+ */
+export const riderAvailability = mysqlTable("riderAvailability", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  
+  // Availability details
+  availabilityDate: timestamp("availabilityDate").notNull(),
+  availabilityType: mysqlEnum("availabilityType", ["available", "unavailable", "preferred", "maybe"]).notNull(),
+  
+  // Time slots
+  timeSlots: text("timeSlots"), // JSON array: ["morning", "afternoon", "evening", "night"]
+  startTime: varchar("startTime", { length: 10 }),
+  endTime: varchar("endTime", { length: 10 }),
+  
+  // Reason for unavailability
+  reason: mysqlEnum("reason", ["vacation", "sick", "personal", "other", "none"]).default("none"),
+  notes: text("notes"),
+  
+  // Recurring availability
+  isRecurring: int("isRecurring").default(0).notNull(),
+  recurringPattern: varchar("recurringPattern", { length: 100 }),
+  recurringEndDate: timestamp("recurringEndDate"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RiderAvailability = typeof riderAvailability.$inferSelect;
+export type InsertRiderAvailability = typeof riderAvailability.$inferInsert;
+
+/**
+ * Rider Payouts table - Earnings payout management
+ */
+export const riderPayouts = mysqlTable("riderPayouts", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  
+  // Payout details
+  payoutDate: timestamp("payoutDate").notNull(),
+  periodStart: timestamp("periodStart").notNull(),
+  periodEnd: timestamp("periodEnd").notNull(),
+  
+  // Amount breakdown
+  totalEarnings: int("totalEarnings").notNull(), // In cents
+  deductions: int("deductions").default(0).notNull(),
+  bonuses: int("bonuses").default(0).notNull(),
+  netAmount: int("netAmount").notNull(),
+  currency: varchar("currency", { length: 10 }).default("XAF").notNull(),
+  
+  // Payment details
+  paymentMethod: mysqlEnum("paymentMethod", ["bank_transfer", "mobile_money", "cash", "wallet"]).notNull(),
+  paymentAccount: varchar("paymentAccount", { length: 255 }),
+  paymentReference: varchar("paymentReference", { length: 255 }),
+  
+  // Status
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed", "cancelled"]).default("pending").notNull(),
+  processedBy: int("processedBy"),
+  processedAt: timestamp("processedAt"),
+  
+  // Failure handling
+  failureReason: text("failureReason"),
+  retryCount: int("retryCount").default(0).notNull(),
+  lastRetryAt: timestamp("lastRetryAt"),
+  
+  // Receipt
+  receiptUrl: varchar("receiptUrl", { length: 500 }),
+  receiptNumber: varchar("receiptNumber", { length: 100 }),
+  
+  // Metadata
+  transactionIds: text("transactionIds"), // JSON array of transaction IDs included
+  metadata: text("metadata"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RiderPayout = typeof riderPayouts.$inferSelect;
+export type InsertRiderPayout = typeof riderPayouts.$inferInsert;

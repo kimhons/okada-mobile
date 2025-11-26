@@ -84,6 +84,8 @@ const menuItems = [
   { icon: ThumbsUp, label: "Feedback Analysis", path: "/feedback-analysis" },
   { icon: GraduationCap, label: "Rider Training", path: "/rider-training" },
   { icon: FileText, label: "Advanced Reporting", path: "/advanced-reporting" },
+  { icon: Calendar, label: "Shift Scheduling", path: "/shift-scheduling" },
+  { icon: Calendar, label: "Rider Availability", path: "/rider-availability" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

@@ -61,6 +61,8 @@ import RiderLeaderboard from "./pages/RiderLeaderboard";
 import GeoAnalytics from "./pages/GeoAnalytics";
 import ReferralProgram from "./pages/ReferralProgram";
 import AdvancedReporting from "./pages/AdvancedReporting";
+import ShiftScheduling from "./pages/ShiftScheduling";
+import RiderAvailabilityCalendar from "./pages/RiderAvailabilityCalendar";
 
 
 function Router() {
@@ -122,6 +124,8 @@ function Router() {
       <Route path="/incidents" component={IncidentManagement} />
       <Route path="/feedback-analysis" component={CustomerFeedbackAnalysis} />
       <Route path="/rider-training" component={RiderTrainingTracker} />
+      <Route path="/shift-scheduling" component={ShiftScheduling} />
+      <Route path="/rider-availability" component={RiderAvailabilityCalendar} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

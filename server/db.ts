@@ -23,7 +23,7 @@ import {
   InsertRealtimeNotification,
   mobileTrainingSync,
   InsertMobileTrainingSync,
-  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions } from "../drizzle/schema";
+  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions, riderShifts, InsertRiderShift, riderEarningsTransactions, InsertRiderEarningsTransaction, shiftSwaps, InsertShiftSwap, riderAvailability, InsertRiderAvailability, riderPayouts, InsertRiderPayout } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -387,7 +387,7 @@ export async function updateUserRole(userId: number, role: 'admin' | 'user') {
 
 // Additional Rider Management Queries (getAllRiders and updateRiderStatus are defined above)
 
-export async function getRiderEarnings(riderId: number) {
+export async function getRiderEarningsHistory(riderId: number) {
   const db = await getDb();
   if (!db) return [];
 
@@ -850,7 +850,7 @@ export async function getMobileMoneyAnalytics() {
   };
 }
 
-export async function getPendingPayouts() {
+export async function getPendingSellerPayouts() {
   const db = await getDb();
   if (!db) return [];
   return await db
@@ -6510,4 +6510,437 @@ export async function getSyncStatus(riderId: number, deviceId: string) {
     );
 
   return stats;
+}
+
+
+// ============================================================================
+// SPRINT 7: RIDER MANAGEMENT - SHIFT SCHEDULING & EARNINGS
+// ============================================================================
+
+/**
+ * Get shifts for a date range
+ */
+export async function getShifts(filters?: {
+  riderId?: number;
+  startDate?: Date;
+  endDate?: Date;
+  status?: string;
+  shiftType?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(riderShifts);
+
+  const conditions = [];
+  if (filters?.riderId) {
+    conditions.push(eq(riderShifts.riderId, filters.riderId));
+  }
+  if (filters?.startDate) {
+    conditions.push(sql`${riderShifts.shiftDate} >= ${filters.startDate}`);
+  }
+  if (filters?.endDate) {
+    conditions.push(sql`${riderShifts.shiftDate} <= ${filters.endDate}`);
+  }
+  if (filters?.status) {
+    conditions.push(eq(riderShifts.status, filters.status as any));
+  }
+  if (filters?.shiftType) {
+    conditions.push(eq(riderShifts.shiftType, filters.shiftType as any));
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  return await query.orderBy(riderShifts.shiftDate);
+}
+
+/**
+ * Create a new shift
+ */
+export async function createShift(shift: InsertRiderShift) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(riderShifts).values(shift);
+  return result.insertId;
+}
+
+/**
+ * Update shift status
+ */
+export async function updateShiftStatus(shiftId: number, status: string, notes?: string) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const updateData: any = { status };
+  if (status === "confirmed") {
+    updateData.confirmedAt = new Date();
+  }
+  if (notes) {
+    updateData.notes = notes;
+  }
+
+  await db
+    .update(riderShifts)
+    .set(updateData)
+    .where(eq(riderShifts.id, shiftId));
+
+  return true;
+}
+
+/**
+ * Cancel a shift
+ */
+export async function cancelShift(shiftId: number, reason: string) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(riderShifts)
+    .set({
+      status: "cancelled",
+      cancellationReason: reason,
+    })
+    .where(eq(riderShifts.id, shiftId));
+
+  return true;
+}
+
+/**
+ * Get rider earnings for a period (Sprint 7 - detailed version)
+ */
+export async function getRiderEarningsDetailed(filters: {
+  riderId: number;
+  startDate: Date;
+  endDate: Date;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select()
+    .from(riderEarningsTransactions)
+    .where(
+      and(
+        eq(riderEarningsTransactions.riderId, filters.riderId),
+        sql`${riderEarningsTransactions.transactionDate} >= ${filters.startDate}`,
+        sql`${riderEarningsTransactions.transactionDate} <= ${filters.endDate}`
+      )
+    );
+
+  if (filters.status) {
+    query = query.where(eq(riderEarningsTransactions.status, filters.status as any)) as any;
+  }
+
+  return await query.orderBy(desc(riderEarningsTransactions.transactionDate));
+}
+
+/**
+ * Get earnings summary for a rider
+ */
+export async function getRiderEarningsSummary(riderId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [summary] = await db
+    .select({
+      totalEarnings: sql<number>`SUM(CASE WHEN ${riderEarningsTransactions.transactionType} IN ('delivery_fee', 'tip', 'bonus') THEN ${riderEarningsTransactions.amount} ELSE 0 END)`,
+      totalDeductions: sql<number>`SUM(CASE WHEN ${riderEarningsTransactions.transactionType} IN ('penalty', 'refund') THEN ${riderEarningsTransactions.amount} ELSE 0 END)`,
+      deliveryFees: sql<number>`SUM(CASE WHEN ${riderEarningsTransactions.transactionType} = 'delivery_fee' THEN ${riderEarningsTransactions.amount} ELSE 0 END)`,
+      tips: sql<number>`SUM(CASE WHEN ${riderEarningsTransactions.transactionType} = 'tip' THEN ${riderEarningsTransactions.amount} ELSE 0 END)`,
+      bonuses: sql<number>`SUM(CASE WHEN ${riderEarningsTransactions.transactionType} = 'bonus' THEN ${riderEarningsTransactions.amount} ELSE 0 END)`,
+      penalties: sql<number>`SUM(CASE WHEN ${riderEarningsTransactions.transactionType} = 'penalty' THEN ${riderEarningsTransactions.amount} ELSE 0 END)`,
+      transactionCount: sql<number>`COUNT(*)`,
+    })
+    .from(riderEarningsTransactions)
+    .where(
+      and(
+        eq(riderEarningsTransactions.riderId, riderId),
+        sql`${riderEarningsTransactions.transactionDate} >= ${startDate}`,
+        sql`${riderEarningsTransactions.transactionDate} <= ${endDate}`
+      )
+    );
+
+  return summary;
+}
+
+/**
+ * Create an earnings transaction
+ */
+export async function createEarningsTransaction(transaction: InsertRiderEarningsTransaction) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(riderEarningsTransactions).values(transaction);
+  return result.insertId;
+}
+
+/**
+ * Approve an earnings transaction
+ */
+export async function approveEarningsTransaction(transactionId: number, approvedBy: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(riderEarningsTransactions)
+    .set({
+      status: "approved",
+      approvedBy,
+      approvedAt: new Date(),
+    })
+    .where(eq(riderEarningsTransactions.id, transactionId));
+
+  return true;
+}
+
+/**
+ * Get pending shift swaps
+ */
+export async function getPendingShiftSwaps() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(shiftSwaps)
+    .where(eq(shiftSwaps.status, "pending"))
+    .orderBy(shiftSwaps.createdAt);
+}
+
+/**
+ * Get shift swaps for a rider
+ */
+export async function getRiderShiftSwaps(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(shiftSwaps)
+    .where(
+      or(
+        eq(shiftSwaps.requesterId, riderId),
+        eq(shiftSwaps.targetRiderId, riderId)
+      )
+    )
+    .orderBy(desc(shiftSwaps.createdAt));
+}
+
+/**
+ * Create a shift swap request
+ */
+export async function createShiftSwap(swap: InsertShiftSwap) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(shiftSwaps).values(swap);
+  return result.insertId;
+}
+
+/**
+ * Review a shift swap (approve/reject)
+ */
+export async function reviewShiftSwap(
+  swapId: number,
+  status: "approved" | "rejected",
+  reviewedBy: number,
+  reviewNotes?: string
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(shiftSwaps)
+    .set({
+      status,
+      reviewedBy,
+      reviewedAt: new Date(),
+      reviewNotes,
+    })
+    .where(eq(shiftSwaps.id, swapId));
+
+  // If approved, update the shifts
+  if (status === "approved") {
+    const [swap] = await db
+      .select()
+      .from(shiftSwaps)
+      .where(eq(shiftSwaps.id, swapId))
+      .limit(1);
+
+    if (swap && swap.requestType === "swap" && swap.targetRiderId && swap.targetShiftId) {
+      // Swap the riders on the shifts
+      await db
+        .update(riderShifts)
+        .set({ riderId: swap.targetRiderId })
+        .where(eq(riderShifts.id, swap.requesterShiftId));
+
+      await db
+        .update(riderShifts)
+        .set({ riderId: swap.requesterId })
+        .where(eq(riderShifts.id, swap.targetShiftId));
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Get rider availability for a date range
+ */
+export async function getRiderAvailability(riderId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(riderAvailability)
+    .where(
+      and(
+        eq(riderAvailability.riderId, riderId),
+        sql`${riderAvailability.availabilityDate} >= ${startDate}`,
+        sql`${riderAvailability.availabilityDate} <= ${endDate}`
+      )
+    )
+    .orderBy(riderAvailability.availabilityDate);
+}
+
+/**
+ * Set rider availability
+ */
+export async function setRiderAvailability(availability: InsertRiderAvailability) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(riderAvailability).values(availability);
+  return result.insertId;
+}
+
+/**
+ * Update rider availability
+ */
+export async function updateRiderAvailability(
+  availabilityId: number,
+  updates: Partial<InsertRiderAvailability>
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(riderAvailability)
+    .set(updates)
+    .where(eq(riderAvailability.id, availabilityId));
+
+  return true;
+}
+
+/**
+ * Get pending rider payouts (Sprint 7)
+ */
+export async function getPendingRiderPayouts() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(riderPayouts)
+    .where(eq(riderPayouts.status, "pending"))
+    .orderBy(riderPayouts.payoutDate);
+}
+
+/**
+ * Get rider payouts
+ */
+export async function getRiderPayouts(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(riderPayouts)
+    .where(eq(riderPayouts.riderId, riderId))
+    .orderBy(desc(riderPayouts.payoutDate));
+}
+
+/**
+ * Create a rider payout (Sprint 7)
+ */
+export async function createRiderPayout(payout: InsertRiderPayout) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(riderPayouts).values(payout);
+  return result.insertId;
+}
+
+/**
+ * Update payout status
+ */
+export async function updatePayoutStatus(
+  payoutId: number,
+  status: string,
+  processedBy?: number,
+  failureReason?: string
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const updateData: any = { status };
+  if (processedBy) {
+    updateData.processedBy = processedBy;
+    updateData.processedAt = new Date();
+  }
+  if (failureReason) {
+    updateData.failureReason = failureReason;
+  }
+
+  await db
+    .update(riderPayouts)
+    .set(updateData)
+    .where(eq(riderPayouts.id, payoutId));
+
+  // If payout is completed, mark all related transactions as paid
+  if (status === "completed") {
+    const [payout] = await db
+      .select()
+      .from(riderPayouts)
+      .where(eq(riderPayouts.id, payoutId))
+      .limit(1);
+
+    if (payout && payout.transactionIds) {
+      const transactionIds = JSON.parse(payout.transactionIds);
+      await db
+        .update(riderEarningsTransactions)
+        .set({
+          status: "paid",
+          payoutId,
+          paidAt: new Date(),
+        })
+        .where(sql`${riderEarningsTransactions.id} IN (${transactionIds.join(",")})`);
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Retry a failed payout
+ */
+export async function retryPayout(payoutId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(riderPayouts)
+    .set({
+      status: "processing",
+      retryCount: sql`${riderPayouts.retryCount} + 1`,
+      lastRetryAt: new Date(),
+    })
+    .where(eq(riderPayouts.id, payoutId));
+
+  return true;
 }
