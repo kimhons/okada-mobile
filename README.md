@@ -4,6 +4,7 @@
 
 ![Database Integrity](https://github.com/YOUR_USERNAME/okada-admin/workflows/Database%20Integrity%20Check/badge.svg)
 ![CI](https://github.com/YOUR_USERNAME/okada-admin/workflows/CI/badge.svg)
+![Deploy to Staging](https://github.com/YOUR_USERNAME/okada-admin/workflows/Deploy%20to%20Staging/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-22.x-green.svg)
 

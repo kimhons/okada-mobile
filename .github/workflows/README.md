@@ -23,6 +23,16 @@ Runs linting, type checking, tests, and build verification.
 - **Jobs**: Lint → Test → Build
 - **Artifacts**: Build output uploaded for review
 
+### 🚀 Deploy to Staging
+**File**: `deploy-staging.yml`
+
+Automatically validates and prepares builds for staging deployment.
+
+- **Runs on**: Push to develop branch, manual trigger
+- **Jobs**: Validate → Deploy → Notify
+- **Deployment**: Manual via Manus UI after validation
+- **Environment**: Staging (https://staging-okada-admin.manus.space)
+
 ## Setup
 
 See [docs/CI-CD-SETUP.md](../../docs/CI-CD-SETUP.md) for detailed setup instructions.
