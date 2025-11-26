@@ -3,6 +3,9 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
   users,
+  languages,
+  translations,
+  InsertTranslation,
   incidents,
   InsertIncident,
   customerFeedback,
@@ -7336,4 +7339,107 @@ export async function seedBadges() {
   }
 
   console.log("[Badges] Seeded badge definitions");
+}
+
+
+// ========================================
+// I18N (Multi-Language Support) Functions
+// ========================================
+
+export async function getLanguages() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(languages)
+    .where(eq(languages.isActive, true))
+    .orderBy(desc(languages.isDefault), asc(languages.name));
+}
+
+export async function getDefaultLanguage() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(languages)
+    .where(eq(languages.isDefault, true))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+export async function getTranslations(languageCode: string, namespace?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select()
+    .from(translations)
+    .where(eq(translations.languageCode, languageCode));
+
+  if (namespace) {
+    query = query.where(eq(translations.namespace, namespace)) as any;
+  }
+
+  return await query;
+}
+
+export async function upsertTranslation(data: InsertTranslation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .insert(translations)
+    .values(data)
+    .onDuplicateKeyUpdate({
+      set: {
+        value: data.value,
+        context: data.context,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+export async function bulkUpsertTranslations(translationData: InsertTranslation[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Process in batches of 100
+  const batchSize = 100;
+  for (let i = 0; i < translationData.length; i += batchSize) {
+    const batch = translationData.slice(i, i + batchSize);
+    await db.insert(translations).values(batch).onDuplicateKeyUpdate({
+      set: {
+        value: sql`VALUES(value)`,
+        context: sql`VALUES(context)`,
+        updatedAt: new Date(),
+      },
+    });
+  }
+}
+
+export async function deleteTranslation(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(translations).where(eq(translations.id, id));
+}
+
+export async function getTranslationCoverage() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get count of translations per language and namespace
+  const coverage = await db
+    .select({
+      languageCode: translations.languageCode,
+      namespace: translations.namespace,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(translations)
+    .groupBy(translations.languageCode, translations.namespace);
+
+  return coverage;
 }

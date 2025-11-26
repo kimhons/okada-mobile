@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `translations` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `languageCode` varchar(10) NOT NULL,\n  `namespace` varchar(50) NOT NULL,\n  `key` varchar(255) NOT NULL,\n  `value` text NOT NULL,\n  `context` text,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `translations_id` PRIMARY KEY(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute CREATE TABLE IF NOT EXISTS `translations` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `languageCode` varchar(10) NOT NULL,\n  `namespace` varchar(50) NOT NULL,\n  `key` varchar(255) NOT NULL,\n  `value` text NOT NULL,\n  `context` text,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `translations_id` PRIMARY KEY(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 186
+}

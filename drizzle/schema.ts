@@ -1998,3 +1998,47 @@ export const badgeNotifications = mysqlTable("badgeNotifications", {
 
 export type BadgeNotification = typeof badgeNotifications.$inferSelect;
 export type InsertBadgeNotification = typeof badgeNotifications.$inferInsert;
+
+
+/**
+ * Languages table for multi-language support
+ * Critical for Cameroon market (60% French-speaking users)
+ */
+export const languages = mysqlTable("languages", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 10 }).notNull().unique(), // e.g., "en", "fr"
+  name: varchar("name", { length: 50 }).notNull(), // e.g., "English", "French"
+  nativeName: varchar("nativeName", { length: 50 }).notNull(), // e.g., "English", "Français"
+  isRTL: boolean("isRTL").default(false).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  isDefault: boolean("isDefault").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Language = typeof languages.$inferSelect;
+export type InsertLanguage = typeof languages.$inferInsert;
+
+/**
+ * Translations table for storing translated strings
+ * Supports namespace organization (common, dashboard, orders, etc.)
+ */
+export const translations = mysqlTable("translations", {
+  id: int("id").autoincrement().primaryKey(),
+  languageCode: varchar("languageCode", { length: 10 }).notNull(),
+  namespace: varchar("namespace", { length: 50 }).notNull(), // e.g., "common", "dashboard", "orders"
+  key: varchar("key", { length: 255 }).notNull(), // e.g., "welcome_message", "order_status_pending"
+  value: text("value").notNull(), // Translated text
+  context: text("context"), // Optional context for translators
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Translation = typeof translations.$inferSelect;
+export type InsertTranslation = typeof translations.$inferInsert;
+
+// Note: After adding these tables, run: pnpm db:push
+// Then create indexes manually in database:
+// CREATE UNIQUE INDEX idx_translations_unique ON translations(languageCode, namespace, key);
+// CREATE INDEX idx_translations_language ON translations(languageCode);
+// CREATE INDEX idx_translations_namespace ON translations(namespace);

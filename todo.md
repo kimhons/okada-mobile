@@ -635,3 +635,237 @@
 ### Next Review
 **Date**: December 10, 2025 (2 weeks)  
 **Focus**: Mobile app progress, TypeScript errors fixed, initial tests written
+
+
+---
+
+## 🌍 Sprint 12: Critical Market Requirements - Cameroon (IN PROGRESS)
+
+### Multi-Language Support (Task ADMIN-012) - PRIORITY: CRITICAL
+**Estimated Effort**: 16 hours  
+**Impact**: Addresses 60% of Cameroon market (French-speaking users)
+
+#### Database & Backend
+- [x] Create `languages` table in drizzle/schema.ts
+- [x] Create `translations` table in drizzle/schema.ts
+- [x] Add database indexes for translations (unique, language, namespace)
+- [x] Run `pnpm db:push` to apply schema changes
+- [x] Implement `getLanguages()` function in server/db.ts
+- [x] Implement `getDefaultLanguage()` function in server/db.ts
+- [x] Implement `getTranslations()` function in server/db.ts
+- [x] Implement `upsertTranslation()` function in server/db.ts
+- [x] Implement `bulkUpsertTranslations()` function in server/db.ts
+- [x] Implement `deleteTranslation()` function in server/db.ts
+- [x] Implement `getTranslationCoverage()` function in server/db.ts
+- [x] Create `i18n` router in server/routers.ts with 6 procedures
+- [x] Add activity logging for translation operations
+
+#### Frontend - Admin Dashboard
+- [x] Install react-i18next dependencies (`pnpm add react-i18next i18next i18next-browser-languagedetector i18next-http-backend`)
+- [x] Create i18next configuration in client/src/lib/i18n.ts
+- [x] Add i18n import to client/src/main.tsx
+- [x] Create LanguageSwitcher component
+- [ ] Add LanguageSwitcher to DashboardLayout header
+- [ ] Create TranslationManagement page (400+ lines)
+- [ ] Add CSV export functionality to TranslationManagement
+- [ ] Add CSV import functionality to TranslationManagement
+- [ ] Add translation coverage dashboard
+- [ ] Add route `/translation-management` to App.tsx
+- [ ] Add menu item "Translation Management" to DashboardLayout sidebar (System section)
+
+#### Initial Data & Testing
+- [ ] Create scripts/seed-translations.ts with initial EN/FR translations
+- [ ] Run seed script to populate initial translations
+- [ ] Add i18n test suite to server/routers.test.ts (6 test cases)
+- [ ] Test language switching in admin dashboard
+- [ ] Test CSV export/import functionality
+- [ ] Test translation coverage stats
+- [ ] Verify admin-only access enforcement
+- [ ] Test with French translations
+
+#### Mobile Apps (Flutter) - Future Phase
+- [ ] Add flutter_localizations to pubspec.yaml
+- [ ] Create customer_app/lib/l10n/app_en.arb
+- [ ] Create customer_app/lib/l10n/app_fr.arb
+- [ ] Create rider_app/lib/l10n/app_en.arb
+- [ ] Create rider_app/lib/l10n/app_fr.arb
+- [ ] Create language switcher widget for mobile
+- [ ] Update main.dart with localization delegates
+
+### Enhanced Web Offline Support (Task OFFLINE-001) - PRIORITY: CRITICAL
+**Estimated Effort**: 20 hours  
+**Impact**: Enables platform usage in low-connectivity areas (common in Cameroon)
+
+#### Service Worker Enhancement
+- [ ] Enhance client/public/service-worker.js with API caching
+- [ ] Add background sync event listener to service worker
+- [ ] Implement IndexedDB for persistent offline queue
+- [ ] Add API response caching logic
+- [ ] Add offline request queuing logic
+- [ ] Implement queue processing on reconnection
+- [ ] Test service worker registration
+
+#### Offline Manager Enhancement
+- [ ] Enhance client/src/lib/offline.ts with zustand store
+- [ ] Add retry logic (up to 5 attempts)
+- [ ] Implement conflict resolution strategies
+- [ ] Add queue processing function
+- [ ] Add online/offline event listeners
+- [ ] Test offline queue persistence
+
+#### UI Components
+- [ ] Create enhanced OfflineIndicator component
+- [ ] Add manual sync button to indicator
+- [ ] Add queue status display (pending changes count)
+- [ ] Add last sync time display
+- [ ] Create client/public/offline.html page
+- [ ] Test offline indicator visibility
+
+#### Testing & Validation
+- [ ] Test offline queue functionality in airplane mode
+- [ ] Test background sync when coming online
+- [ ] Test API response caching
+- [ ] Test offline page display for navigation
+- [ ] Test retry logic with simulated failures
+- [ ] Verify queued requests process correctly
+- [ ] Test with slow/unreliable network
+
+---
+
+## 📱 Sprint 13: Mobile Offline Support (FUTURE)
+
+### Mobile Offline Functionality (Task OFFLINE-002)
+**Estimated Effort**: 24 hours  
+**Dependencies**: Customer and Rider mobile apps must be created first
+
+#### Hive Storage Configuration
+- [ ] Add Hive dependencies to pubspec.yaml
+- [ ] Create lib/core/storage/hive_storage.dart
+- [ ] Register Hive adapters for models
+- [ ] Open Hive boxes for orders, products, queue
+- [ ] Test Hive storage initialization
+
+#### Offline Queue Manager
+- [ ] Create lib/core/offline/offline_queue_manager.dart
+- [ ] Implement OfflineQueueItem model with Hive annotations
+- [ ] Add connectivity monitoring with connectivity_plus
+- [ ] Implement queue processing logic
+- [ ] Add retry logic (up to 5 attempts)
+- [ ] Test queue manager functionality
+
+#### API Client Integration
+- [ ] Create lib/core/network/offline_aware_api_client.dart
+- [ ] Implement offline-aware GET with caching
+- [ ] Implement offline-aware POST with queuing
+- [ ] Implement offline-aware PUT with queuing
+- [ ] Test API client in offline mode
+
+#### Background Sync
+- [ ] Add WorkManager dependency
+- [ ] Create lib/core/background/background_sync.dart
+- [ ] Configure periodic sync task (every 15 minutes)
+- [ ] Test background sync functionality
+
+#### UI Components
+- [ ] Create lib/widgets/offline_indicator.dart
+- [ ] Add queue status display
+- [ ] Add manual sync button
+- [ ] Test offline indicator in both apps
+
+#### Integration
+- [ ] Initialize Hive in main.dart
+- [ ] Initialize offline queue manager in main.dart
+- [ ] Initialize background sync in main.dart
+- [ ] Test complete offline flow
+
+### Offline Map Caching (Task OFFLINE-003)
+**Estimated Effort**: 12 hours  
+**Dependencies**: Rider app navigation must be implemented first
+
+#### Map Cache Manager
+- [ ] Add flutter_cache_manager dependency
+- [ ] Create lib/features/navigation/data/map_cache_manager.dart
+- [ ] Implement tile caching logic
+- [ ] Implement area caching (10km radius)
+- [ ] Add cache size calculation
+- [ ] Add cache clearing functionality
+
+#### Offline Map Widget
+- [ ] Create lib/features/navigation/presentation/widgets/offline_map.dart
+- [ ] Implement OfflineTileProvider
+- [ ] Integrate cached tiles with GoogleMap
+- [ ] Test offline map display
+
+#### Settings Page
+- [ ] Create lib/features/settings/presentation/pages/map_cache_settings.dart
+- [ ] Add "Cache Current Area" button
+- [ ] Add "Clear Cache" button
+- [ ] Add cache size display
+- [ ] Test map caching settings
+
+#### Testing
+- [ ] Test offline maps in airplane mode
+- [ ] Verify 10km radius caching
+- [ ] Verify cache size limits (1000 tiles max)
+- [ ] Test cache expiry (30 days)
+
+---
+
+## 📊 Sprint 14: Complete Remaining Admin Dashboard Screens (15 Screens)
+
+### Advanced Analytics (5 screens)
+- [ ] Task ADMIN-001: Cohort Analysis Dashboard (8 hours)
+- [ ] Task ADMIN-002: Funnel Analytics Dashboard (8 hours)
+- [ ] Task ADMIN-003: A/B Testing Dashboard (10 hours)
+- [ ] Task ADMIN-004: Predictive Analytics Dashboard (12 hours)
+- [ ] Task ADMIN-005: Customer Lifetime Value Dashboard (10 hours)
+
+### Compliance & Legal (5 screens)
+- [ ] Task ADMIN-006: GDPR Compliance Dashboard (10 hours)
+- [ ] Task ADMIN-007: Data Privacy Center (8 hours)
+- [ ] Task ADMIN-008: Audit Log Viewer (6 hours)
+- [ ] Task ADMIN-009: Terms & Policies Management (8 hours)
+- [ ] Task ADMIN-010: Regulatory Filings Dashboard (8 hours)
+
+### Operations Management (3 screens)
+- [ ] Task ADMIN-011: Warehouse Management Dashboard (12 hours)
+- [ ] Task ADMIN-012: Fleet Management Dashboard (10 hours)
+- [ ] Task ADMIN-013: Route Optimization Dashboard (12 hours)
+
+### System Features (2 screens)
+- [ ] Task ADMIN-014: Tax & Accounting Dashboard (10 hours)
+- [ ] Task ADMIN-015: SLA Monitoring Dashboard (10 hours)
+
+---
+
+## 📝 Implementation Notes
+
+### Current Focus (Sprint 12)
+**Priority**: Complete critical market requirements before mobile app development
+1. Multi-language support (EN/FR) - 60% of Cameroon speaks French
+2. Offline functionality - Unreliable connectivity is common in Cameroon
+
+### Success Criteria
+- [ ] Admin dashboard can switch between English and French
+- [ ] Translation management interface fully functional
+- [ ] Offline queue persists across page reloads
+- [ ] Queued requests sync automatically when online
+- [ ] All tests passing (80% coverage minimum)
+
+### Dependencies
+- Multi-language support has NO dependencies - can start immediately
+- Offline support has NO dependencies - can start immediately
+- Mobile offline support requires mobile apps to be created first
+- Offline map caching requires rider app navigation to be implemented first
+
+### Risk Mitigation
+- Test offline functionality in actual low-connectivity scenarios
+- Validate French translations with native speakers
+- Ensure offline queue doesn't grow unbounded (implement size limits)
+- Monitor performance impact of service worker caching
+
+---
+
+**Last Updated**: Sprint 12 start - Critical Market Requirements  
+**Next Milestone**: Complete multi-language and offline support (36 hours total)  
+**Target Completion**: End of Sprint 12

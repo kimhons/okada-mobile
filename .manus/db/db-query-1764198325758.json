@@ -1,0 +1,9 @@
+{
+  "query": "CREATE INDEX `idx_translations_language` ON `translations` (`languageCode`)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute CREATE INDEX `idx_translations_language` ON `translations` (`languageCode`)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 522
+}

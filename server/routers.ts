@@ -5995,6 +5995,99 @@ export const appRouter = router({
         return { success: result };
       }),
   }),
+
+  // I18N (Multi-Language Support) - Critical for Cameroon market
+  i18n: router({
+    getLanguages: publicProcedure.query(async () => {
+      return await db.getLanguages();
+    }),
+
+    getDefaultLanguage: publicProcedure.query(async () => {
+      return await db.getDefaultLanguage();
+    }),
+
+    getTranslations: publicProcedure
+      .input(z.object({
+        languageCode: z.string(),
+        namespace: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getTranslations(input.languageCode, input.namespace);
+      }),
+
+    upsertTranslation: protectedProcedure
+      .input(z.object({
+        languageCode: z.string(),
+        namespace: z.string(),
+        key: z.string(),
+        value: z.string(),
+        context: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can manage translations');
+        }
+        await db.upsertTranslation(input);
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "upsert_translation",
+          entityType: "translation",
+          entityId: 0,
+          details: `Upserted translation: ${input.languageCode}.${input.namespace}.${input.key}`,
+        });
+        return { success: true };
+      }),
+
+    bulkUpsertTranslations: protectedProcedure
+      .input(z.array(z.object({
+        languageCode: z.string(),
+        namespace: z.string(),
+        key: z.string(),
+        value: z.string(),
+        context: z.string().optional(),
+      })))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can manage translations');
+        }
+        await db.bulkUpsertTranslations(input);
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "bulk_upsert_translations",
+          entityType: "translation",
+          entityId: 0,
+          details: `Bulk upserted ${input.length} translations`,
+        });
+        return { success: true, count: input.length };
+      }),
+
+    deleteTranslation: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can manage translations');
+        }
+        await db.deleteTranslation(input.id);
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_translation",
+          entityType: "translation",
+          entityId: input.id,
+          details: `Deleted translation ID: ${input.id}`,
+        });
+        return { success: true };
+      }),
+
+    getTranslationCoverage: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new Error('Only admins can view translation coverage');
+      }
+      return await db.getTranslationCoverage();
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
