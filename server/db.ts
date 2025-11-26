@@ -23,7 +23,7 @@ import {
   InsertRealtimeNotification,
   mobileTrainingSync,
   InsertMobileTrainingSync,
-  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions, riderShifts, InsertRiderShift, riderEarningsTransactions, InsertRiderEarningsTransaction, shiftSwaps, InsertShiftSwap, riderAvailability, InsertRiderAvailability, riderPayouts, InsertRiderPayout } from "../drizzle/schema";
+  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions, riderShifts, InsertRiderShift, riderEarningsTransactions, InsertRiderEarningsTransaction, shiftSwaps, InsertShiftSwap, riderAvailability, InsertRiderAvailability, riderPayouts, InsertRiderPayout, badges, riderBadges, badgeNotifications } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -6943,4 +6943,397 @@ export async function retryPayout(payoutId: number) {
     .where(eq(riderPayouts.id, payoutId));
 
   return true;
+}
+
+
+// ============================================================================
+// GAMIFICATION & BADGES
+// ============================================================================
+
+/**
+ * Get all badge definitions
+ */
+export async function getAllBadges(filters?: { category?: string; tier?: string; isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(badges);
+
+  if (filters?.category) {
+    query = query.where(eq(badges.category, filters.category as any)) as any;
+  }
+  if (filters?.tier) {
+    query = query.where(eq(badges.tier, filters.tier as any)) as any;
+  }
+  if (filters?.isActive !== undefined) {
+    query = query.where(eq(badges.isActive, filters.isActive)) as any;
+  }
+
+  return await query.orderBy(badges.tier, badges.category);
+}
+
+/**
+ * Get badges earned by a specific rider
+ */
+export async function getRiderBadges(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: riderBadges.id,
+      badgeId: riderBadges.badgeId,
+      progress: riderBadges.progress,
+      earnedAt: riderBadges.earnedAt,
+      metadata: riderBadges.metadata,
+      badge: badges,
+    })
+    .from(riderBadges)
+    .leftJoin(badges, eq(riderBadges.badgeId, badges.id))
+    .where(eq(riderBadges.riderId, riderId))
+    .orderBy(desc(riderBadges.earnedAt));
+}
+
+/**
+ * Get badge progress for a rider
+ */
+export async function getBadgeProgress(riderId: number, badgeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db
+    .select()
+    .from(riderBadges)
+    .where(and(
+      eq(riderBadges.riderId, riderId),
+      eq(riderBadges.badgeId, badgeId)
+    ))
+    .limit(1);
+
+  return result;
+}
+
+/**
+ * Award a badge to a rider
+ */
+export async function awardBadge(riderId: number, badgeId: number, metadata?: any) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Check if badge already earned
+  const existing = await getBadgeProgress(riderId, badgeId);
+  if (existing && existing.earnedAt) {
+    return existing; // Already earned
+  }
+
+  if (existing) {
+    // Update existing progress to earned
+    await db
+      .update(riderBadges)
+      .set({
+        progress: 100,
+        earnedAt: new Date(),
+        metadata: metadata ? JSON.stringify(metadata) : null,
+      })
+      .where(eq(riderBadges.id, existing.id));
+
+    return { ...existing, earnedAt: new Date(), progress: 100 };
+  } else {
+    // Create new badge entry
+    const [result] = await db.insert(riderBadges).values({
+      riderId,
+      badgeId,
+      progress: 100,
+      earnedAt: new Date(),
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    });
+
+    return { id: result.insertId, riderId, badgeId, progress: 100, earnedAt: new Date() };
+  }
+}
+
+/**
+ * Update badge progress for a rider
+ */
+export async function updateBadgeProgress(riderId: number, badgeId: number, progress: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const existing = await getBadgeProgress(riderId, badgeId);
+
+  if (existing) {
+    await db
+      .update(riderBadges)
+      .set({ progress: Math.min(progress, 100) })
+      .where(eq(riderBadges.id, existing.id));
+  } else {
+    await db.insert(riderBadges).values({
+      riderId,
+      badgeId,
+      progress: Math.min(progress, 100),
+    });
+  }
+
+  return { riderId, badgeId, progress: Math.min(progress, 100) };
+}
+
+/**
+ * Check and award badges based on rider statistics
+ */
+export async function checkAndAwardBadges(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const newlyEarnedBadges: any[] = [];
+
+  // Get rider stats
+  const rider = await getRiderById(riderId);
+  if (!rider) return [];
+
+  // Get all active badges
+  const allBadges = await getAllBadges({ isActive: true });
+
+  for (const badge of allBadges) {
+    try {
+      const criteria = JSON.parse(badge.criteria);
+      let earned = false;
+      let progress = 0;
+
+      switch (criteria.type) {
+        case "earnings": {
+          // Get total earnings
+          const now = new Date();
+          const startDate = new Date(0); // All time
+          const summary = await getRiderEarningsSummary(riderId, startDate, now);
+          const totalEarnings = summary?.totalEarnings || 0;
+
+          progress = Math.min((totalEarnings / criteria.threshold) * 100, 100);
+          earned = totalEarnings >= criteria.threshold;
+          break;
+        }
+
+        case "deliveries": {
+          progress = Math.min((rider.totalDeliveries / criteria.count) * 100, 100);
+          earned = rider.totalDeliveries >= criteria.count;
+          break;
+        }
+
+        case "rating": {
+          const ratingValue = rider.rating / 10; // Convert from stored format (48 -> 4.8)
+          progress = Math.min((ratingValue / criteria.threshold) * 100, 100);
+          earned = ratingValue >= criteria.threshold;
+          break;
+        }
+
+        case "streak": {
+          // TODO: Implement streak tracking
+          // For now, skip streak badges
+          break;
+        }
+
+        default:
+          continue;
+      }
+
+      // Update progress
+      await updateBadgeProgress(riderId, badge.id, progress);
+
+      // Award badge if earned
+      if (earned) {
+        const existingBadge = await getBadgeProgress(riderId, badge.id);
+        if (!existingBadge || !existingBadge.earnedAt) {
+          await awardBadge(riderId, badge.id, { earnedAt: new Date().toISOString() });
+          newlyEarnedBadges.push(badge);
+
+          // Create notification
+          await db.insert(badgeNotifications).values({
+            riderId,
+            badgeId: badge.id,
+            type: "earned",
+            message: `Congratulations! You've earned the "${badge.name}" badge!`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`[Badges] Error checking badge ${badge.id}:`, error);
+    }
+  }
+
+  return newlyEarnedBadges;
+}
+
+/**
+ * Get badge leaderboard
+ */
+export async function getBadgeLeaderboard(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      riderId: riderBadges.riderId,
+      riderName: riders.name,
+      badgeCount: sql<number>`COUNT(DISTINCT ${riderBadges.badgeId})`,
+      totalPoints: sql<number>`SUM(${badges.points})`,
+    })
+    .from(riderBadges)
+    .leftJoin(riders, eq(riderBadges.riderId, riders.id))
+    .leftJoin(badges, eq(riderBadges.badgeId, badges.id))
+    .where(sql`${riderBadges.earnedAt} IS NOT NULL`)
+    .groupBy(riderBadges.riderId, riders.name)
+    .orderBy(desc(sql`SUM(${badges.points})`))
+    .limit(limit);
+
+  return results;
+}
+
+/**
+ * Get unread badge notifications for a rider
+ */
+export async function getUnreadBadgeNotifications(riderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: badgeNotifications.id,
+      badgeId: badgeNotifications.badgeId,
+      type: badgeNotifications.type,
+      message: badgeNotifications.message,
+      createdAt: badgeNotifications.createdAt,
+      badge: badges,
+    })
+    .from(badgeNotifications)
+    .leftJoin(badges, eq(badgeNotifications.badgeId, badges.id))
+    .where(and(
+      eq(badgeNotifications.riderId, riderId),
+      eq(badgeNotifications.isRead, false)
+    ))
+    .orderBy(desc(badgeNotifications.createdAt));
+}
+
+/**
+ * Mark badge notification as read
+ */
+export async function markBadgeNotificationRead(notificationId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(badgeNotifications)
+    .set({
+      isRead: true,
+      readAt: new Date(),
+    })
+    .where(eq(badgeNotifications.id, notificationId));
+
+  return true;
+}
+
+/**
+ * Seed initial badge definitions
+ */
+export async function seedBadges() {
+  const db = await getDb();
+  if (!db) return;
+
+  const badgeDefinitions = [
+    // Earnings Badges
+    {
+      name: "First Earnings",
+      description: "Earned your first 100,000 FCFA",
+      icon: "💰",
+      category: "earnings" as const,
+      tier: "bronze" as const,
+      criteria: JSON.stringify({ type: "earnings", threshold: 10000000 }), // 100k FCFA in cents
+      points: 10,
+    },
+    {
+      name: "Earnings Champion",
+      description: "Earned 500,000 FCFA total",
+      icon: "🏆",
+      category: "earnings" as const,
+      tier: "silver" as const,
+      criteria: JSON.stringify({ type: "earnings", threshold: 50000000 }), // 500k FCFA in cents
+      points: 50,
+    },
+    {
+      name: "Millionaire",
+      description: "Earned 1,000,000 FCFA total",
+      icon: "💎",
+      category: "earnings" as const,
+      tier: "gold" as const,
+      criteria: JSON.stringify({ type: "earnings", threshold: 100000000 }), // 1M FCFA in cents
+      points: 100,
+    },
+
+    // Delivery Badges
+    {
+      name: "First Delivery",
+      description: "Completed your first 10 deliveries",
+      icon: "📦",
+      category: "deliveries" as const,
+      tier: "bronze" as const,
+      criteria: JSON.stringify({ type: "deliveries", count: 10 }),
+      points: 5,
+    },
+    {
+      name: "Delivery Pro",
+      description: "Completed 50 deliveries",
+      icon: "🚀",
+      category: "deliveries" as const,
+      tier: "silver" as const,
+      criteria: JSON.stringify({ type: "deliveries", count: 50 }),
+      points: 25,
+    },
+    {
+      name: "Delivery Master",
+      description: "Completed 100 deliveries",
+      icon: "⭐",
+      category: "deliveries" as const,
+      tier: "gold" as const,
+      criteria: JSON.stringify({ type: "deliveries", count: 100 }),
+      points: 50,
+    },
+    {
+      name: "Delivery Legend",
+      description: "Completed 500 deliveries",
+      icon: "👑",
+      category: "deliveries" as const,
+      tier: "platinum" as const,
+      criteria: JSON.stringify({ type: "deliveries", count: 500 }),
+      points: 200,
+    },
+
+    // Quality Badges
+    {
+      name: "5-Star Service",
+      description: "Maintained a 4.5+ star rating",
+      icon: "⭐",
+      category: "quality" as const,
+      tier: "silver" as const,
+      criteria: JSON.stringify({ type: "rating", threshold: 4.5 }),
+      points: 30,
+    },
+    {
+      name: "Perfect Service",
+      description: "Maintained a 4.8+ star rating",
+      icon: "🌟",
+      category: "quality" as const,
+      tier: "gold" as const,
+      criteria: JSON.stringify({ type: "rating", threshold: 4.8 }),
+      points: 75,
+    },
+  ];
+
+  for (const badge of badgeDefinitions) {
+    try {
+      await db.insert(badges).values(badge);
+    } catch (error) {
+      // Ignore duplicate errors
+      console.log(`[Badges] Skipping existing badge: ${badge.name}`);
+    }
+  }
+
+  console.log("[Badges] Seeded badge definitions");
 }

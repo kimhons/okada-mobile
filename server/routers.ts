@@ -230,6 +230,46 @@ export const appRouter = router({
           trends,
         };
       }),
+    // Badge procedures
+    getBadges: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRiderBadges(input.riderId);
+      }),
+    getAllBadgeDefinitions: protectedProcedure
+      .query(async () => {
+        return await db.getAllBadges({ isActive: true });
+      }),
+    checkBadges: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.checkAndAwardBadges(input.riderId);
+      }),
+    getBadgeLeaderboard: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getBadgeLeaderboard(input?.limit || 10);
+      }),
+    getBadgeNotifications: protectedProcedure
+      .input(z.object({
+        riderId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getUnreadBadgeNotifications(input.riderId);
+      }),
+    markNotificationRead: protectedProcedure
+      .input(z.object({
+        notificationId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.markBadgeNotificationRead(input.notificationId);
+      }),
   }),
 
   products: router({

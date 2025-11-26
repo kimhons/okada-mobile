@@ -65,6 +65,7 @@ import AdvancedReporting from "./pages/AdvancedReporting";
 import ShiftScheduling from "./pages/ShiftScheduling";
 import RiderAvailabilityCalendar from "./pages/RiderAvailabilityCalendar";
 import RiderEarningsBreakdown from "./pages/RiderEarningsBreakdown";
+import BadgeShowcase from "./pages/BadgeShowcase";
 
 
 function Router() {
@@ -117,6 +118,7 @@ function Router() {
       <Route path="/shift-scheduling" component={() => <DashboardLayout><ShiftScheduling /></DashboardLayout>} />
       <Route path="/rider-availability" component={() => <DashboardLayout><RiderAvailabilityCalendar /></DashboardLayout>} />
       <Route path="/rider-earnings" component={() => <DashboardLayout><RiderEarningsBreakdown /></DashboardLayout>} />
+      <Route path="/badges" component={() => <DashboardLayout><BadgeShowcase /></DashboardLayout>} />
       <Route path="/geo-analytics" component={() => <DashboardLayout><GeoAnalytics /></DashboardLayout>} />
       <Route path="/referral-program" component={() => <DashboardLayout><ReferralProgram /></DashboardLayout>} />
       <Route path="/advanced-reporting" component={() => <DashboardLayout><AdvancedReporting /></DashboardLayout>} />

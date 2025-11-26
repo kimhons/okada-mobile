@@ -1926,3 +1926,75 @@ export const riderPayouts = mysqlTable("riderPayouts", {
 
 export type RiderPayout = typeof riderPayouts.$inferSelect;
 export type InsertRiderPayout = typeof riderPayouts.$inferInsert;
+
+
+/**
+ * Badge definitions for gamification system
+ */
+export const badges = mysqlTable("badges", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  icon: varchar("icon", { length: 100 }).notNull(), // Icon name or emoji
+  category: mysqlEnum("category", ["earnings", "deliveries", "streak", "quality", "speed", "special"]).notNull(),
+  tier: mysqlEnum("tier", ["bronze", "silver", "gold", "platinum", "diamond"]).notNull(),
+  
+  // Criteria for earning the badge (JSON format)
+  // Example: {"type": "earnings", "threshold": 100000, "period": "all_time"}
+  // Example: {"type": "deliveries", "count": 50, "period": "all_time"}
+  // Example: {"type": "streak", "days": 7}
+  criteria: text("criteria").notNull(),
+  
+  points: int("points").default(0).notNull(), // Points awarded for earning this badge
+  isActive: boolean("isActive").default(true).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Badge = typeof badges.$inferSelect;
+export type InsertBadge = typeof badges.$inferInsert;
+
+/**
+ * Rider badges - tracks which badges each rider has earned
+ */
+export const riderBadges = mysqlTable("riderBadges", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  badgeId: int("badgeId").notNull(),
+  
+  // Progress towards earning the badge (0-100)
+  progress: int("progress").default(0).notNull(),
+  
+  // When the badge was earned (null if not yet earned)
+  earnedAt: timestamp("earnedAt"),
+  
+  // Metadata about how the badge was earned
+  metadata: text("metadata"), // JSON format
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RiderBadge = typeof riderBadges.$inferSelect;
+export type InsertRiderBadge = typeof riderBadges.$inferInsert;
+
+/**
+ * Badge notifications - tracks when riders should be notified about badges
+ */
+export const badgeNotifications = mysqlTable("badgeNotifications", {
+  id: int("id").autoincrement().primaryKey(),
+  riderId: int("riderId").notNull(),
+  badgeId: int("badgeId").notNull(),
+  
+  type: mysqlEnum("type", ["earned", "progress", "milestone"]).notNull(),
+  message: text("message").notNull(),
+  
+  isRead: boolean("isRead").default(false).notNull(),
+  readAt: timestamp("readAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BadgeNotification = typeof badgeNotifications.$inferSelect;
+export type InsertBadgeNotification = typeof badgeNotifications.$inferInsert;

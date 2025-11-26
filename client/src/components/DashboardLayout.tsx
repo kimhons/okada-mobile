@@ -87,6 +87,7 @@ const menuItems = [
   { icon: Calendar, label: "Shift Scheduling", path: "/shift-scheduling" },
   { icon: Calendar, label: "Rider Availability", path: "/rider-availability" },
   { icon: DollarSign, label: "Rider Earnings", path: "/rider-earnings" },
+  { icon: Trophy, label: "Badges & Achievements", path: "/badges" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
