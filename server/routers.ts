@@ -105,6 +105,11 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getAllRiders(input);
       }),
+    getAllRiders: protectedProcedure
+      .input(z.object({ search: z.string().optional(), status: z.string().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllRiders(input);
+      }),
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
@@ -121,6 +126,109 @@ export const appRouter = router({
         }
         const success = await db.updateRiderStatus(input.riderId, input.status);
         return { success };
+      }),
+    getEarningsBreakdown: protectedProcedure
+      .input(z.object({
+        riderId: z.number().optional(),
+        period: z.enum(['today', 'week', 'month', 'year']),
+      }))
+      .query(async ({ input }) => {
+        // Calculate date range based on period
+        const now = new Date();
+        let startDate: Date;
+        let endDate: Date = now;
+
+        switch (input.period) {
+          case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case 'year':
+            startDate = new Date(now.getFullYear(), 0, 1);
+            break;
+        }
+
+        // Get all riders if no specific rider selected
+        const riders = input.riderId ? [{ id: input.riderId }] : await db.getAllRiders({});
+        const riderIds = riders.map(r => r.id);
+
+        // Aggregate earnings for all selected riders
+        let totalEarnings = 0;
+        let totalDeductions = 0;
+        let deliveryFees = 0;
+        let tips = 0;
+        let bonuses = 0;
+        let penalties = 0;
+        let transactionCount = 0;
+        const allTransactions: any[] = [];
+
+        for (const riderId of riderIds) {
+          const summary = await db.getRiderEarningsSummary(riderId, startDate, endDate);
+          if (summary) {
+            totalEarnings += summary.totalEarnings || 0;
+            totalDeductions += summary.totalDeductions || 0;
+            deliveryFees += summary.deliveryFees || 0;
+            tips += summary.tips || 0;
+            bonuses += summary.bonuses || 0;
+            penalties += summary.penalties || 0;
+            transactionCount += summary.transactionCount || 0;
+          }
+
+          const transactions = await db.getRiderEarningsDetailed({
+            riderId,
+            startDate,
+            endDate,
+          });
+          allTransactions.push(...transactions);
+        }
+
+        // Sort transactions by date
+        allTransactions.sort((a, b) => 
+          new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
+        );
+
+        // Generate trend data (last 30 days)
+        const trends: { date: string; amount: number }[] = [];
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+
+          let dayEarnings = 0;
+          for (const riderId of riderIds) {
+            const daySummary = await db.getRiderEarningsSummary(riderId, dayStart, dayEnd);
+            if (daySummary) {
+              dayEarnings += (daySummary.totalEarnings || 0) - (daySummary.totalDeductions || 0);
+            }
+          }
+
+          trends.push({
+            date: dayStart.toISOString(),
+            amount: dayEarnings,
+          });
+        }
+
+        return {
+          summary: {
+            totalEarnings,
+            totalDeductions,
+            netEarnings: totalEarnings - totalDeductions,
+            transactionCount,
+          },
+          breakdown: {
+            deliveryFees,
+            tips,
+            bonuses,
+            penalties,
+          },
+          transactions: allTransactions.slice(0, 50), // Limit to 50 most recent
+          trends,
+        };
       }),
   }),
 

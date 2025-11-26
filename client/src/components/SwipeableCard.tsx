@@ -3,6 +3,7 @@ import { useSwipeable } from "react-swipeable";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Edit, Check, X } from "lucide-react";
+import hapticFeedback from "@/lib/haptic";
 
 interface SwipeableCardProps {
   children: ReactNode;
@@ -40,6 +41,11 @@ export function SwipeableCard({
       setIsSwiping(true);
       const deltaX = eventData.deltaX;
       
+      // Trigger light haptic at swipe start
+      if (Math.abs(deltaX) === 1) {
+        hapticFeedback.tap();
+      }
+      
       // Left swipe (negative deltaX) reveals delete button
       // Right swipe (positive deltaX) reveals edit/complete buttons
       const newOffset = Math.max(-MAX_SWIPE, Math.min(MAX_SWIPE, deltaX));
@@ -53,6 +59,7 @@ export function SwipeableCard({
       
       // If swiped past threshold, keep actions visible
       if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+        hapticFeedback.swipe();
         setSwipeOffset(deltaX < 0 ? -SWIPE_THRESHOLD : SWIPE_THRESHOLD);
       } else {
         // Otherwise, snap back to center
@@ -63,7 +70,12 @@ export function SwipeableCard({
     trackTouch: true,
   });
 
-  const handleAction = (action: () => void) => {
+  const handleAction = (action: () => void, isDelete: boolean = false) => {
+    if (isDelete) {
+      hapticFeedback.delete();
+    } else {
+      hapticFeedback.tap();
+    }
     action();
     setSwipeOffset(0); // Reset swipe after action
   };
@@ -84,7 +96,7 @@ export function SwipeableCard({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleAction(onDelete)}
+              onClick={() => handleAction(onDelete, true)}
               className="text-destructive-foreground hover:bg-destructive/90"
             >
               <Trash2 className="h-5 w-5 mr-2" />

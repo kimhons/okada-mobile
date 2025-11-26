@@ -1,5 +1,6 @@
-import { ReactNode, useRef, useState, useEffect } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import hapticFeedback from "@/lib/haptic";
 
 interface PullToRefreshProps {
   children: ReactNode;
@@ -58,13 +59,16 @@ export function PullToRefresh({
 
       // Trigger refresh if pulled past threshold
       if (pullDistance >= pullThreshold && !isRefreshing) {
+        hapticFeedback.refresh();
         setIsRefreshing(true);
         setPullDistance(pullThreshold); // Lock at threshold during refresh
 
         try {
           await onRefresh();
+          hapticFeedback.success();
         } catch (error) {
           console.error("Refresh failed:", error);
+          hapticFeedback.error();
         } finally {
           setIsRefreshing(false);
           setPullDistance(0);

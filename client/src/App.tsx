@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -63,6 +64,7 @@ import ReferralProgram from "./pages/ReferralProgram";
 import AdvancedReporting from "./pages/AdvancedReporting";
 import ShiftScheduling from "./pages/ShiftScheduling";
 import RiderAvailabilityCalendar from "./pages/RiderAvailabilityCalendar";
+import RiderEarningsBreakdown from "./pages/RiderEarningsBreakdown";
 
 
 function Router() {
@@ -112,8 +114,9 @@ function Router() {
       <Route path="/inventory-alerts" component={() => <DashboardLayout><InventoryAlerts /></DashboardLayout>} />
       <Route path="/user-verification" component={() => <DashboardLayout><UserVerification /></DashboardLayout>} />
       <Route path="/platform-statistics" component={() => <DashboardLayout><PlatformStatistics /></DashboardLayout>} />
-      <Route path="/disputes" component={() => <DashboardLayout><DisputeResolution /></DashboardLayout>} />
-      <Route path="/rider-leaderboard" component={() => <DashboardLayout><RiderLeaderboard /></DashboardLayout>} />
+      <Route path="/shift-scheduling" component={() => <DashboardLayout><ShiftScheduling /></DashboardLayout>} />
+      <Route path="/rider-availability" component={() => <DashboardLayout><RiderAvailabilityCalendar /></DashboardLayout>} />
+      <Route path="/rider-earnings" component={() => <DashboardLayout><RiderEarningsBreakdown /></DashboardLayout>} />
       <Route path="/geo-analytics" component={() => <DashboardLayout><GeoAnalytics /></DashboardLayout>} />
       <Route path="/referral-program" component={() => <DashboardLayout><ReferralProgram /></DashboardLayout>} />
       <Route path="/advanced-reporting" component={() => <DashboardLayout><AdvancedReporting /></DashboardLayout>} />
@@ -136,9 +139,13 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider
+        defaultTheme="light"
+        // switchable
+      >
         <TooltipProvider>
           <Toaster />
+          <OfflineIndicator />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

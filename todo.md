@@ -1559,3 +1559,46 @@
 - [x] Add pull-to-refresh functionality
   - [x] Pull down gesture on calendar view
   - [x] Loading spinner during refresh
+
+
+## Sprint 7D: Mobile Features Enhancement (COMPLETED)
+
+### Rider Earnings Breakdown Screen
+- [x] Backend: Create getRiderEarningsBreakdown procedure
+- [x] Backend: Support period filtering (today/week/month/year/custom)
+- [x] Backend: Calculate earnings by type (delivery fees, tips, bonuses, penalties)
+- [x] Backend: Generate transaction list with pagination
+- [x] Frontend: Create RiderEarningsBreakdown page component
+- [x] Frontend: Add period selector dropdown
+- [x] Frontend: Implement earnings summary cards
+- [x] Frontend: Add interactive charts (pie chart for breakdown, line chart for trends)
+- [x] Frontend: Display transaction list with infinite scroll
+- [x] Frontend: Add export functionality (CSV/PDF)
+- [x] Add route and navigation menu item
+- [ ] Write comprehensive tests (deferred)
+
+### Haptic Feedback Integration
+- [x] Create haptic feedback utility module
+- [x] Detect browser vibration API support
+- [x] Add feedback patterns (light, medium, heavy, success, error)
+- [x] Integrate with SwipeableCard component
+- [x] Integrate with PullToRefresh component
+- [x] Add feedback to button clicks
+- [x] Add feedback to form submissions
+- [x] Add feedback to delete confirmations
+- [x] Add user preference toggle in settings
+- [ ] Test on mobile devices (requires physical device)
+
+### Offline Mode with Service Workers
+- [x] Create service worker configuration
+- [x] Implement cache strategies for static assets
+- [x] Cache API responses for shifts and availability
+- [x] Create offline queue for mutations
+- [x] Implement sync manager for background sync
+- [x] Add offline indicator UI component
+- [x] Handle offline shift viewing
+- [x] Handle offline availability marking
+- [x] Implement automatic sync on reconnection
+- [ ] Add conflict resolution for concurrent edits (future enhancement)
+- [ ] Test offline functionality (requires network simulation)
+- [ ] Write service worker tests (deferred)
