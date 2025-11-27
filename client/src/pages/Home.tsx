@@ -1,32 +1,35 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingBag, Users, Bike, TrendingUp, Package, DollarSign } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Home() {
+  const { t } = useTranslation();
+
   // Mock data - will be replaced with real API calls
   const stats = [
     {
-      title: "Total Orders",
+      title: t("dashboard.total_orders"),
       value: "1,234",
       change: "+12.5%",
       icon: ShoppingBag,
       trend: "up" as const,
     },
     {
-      title: "Active Users",
+      title: t("dashboard.active_users"),
       value: "8,432",
       change: "+8.2%",
       icon: Users,
       trend: "up" as const,
     },
     {
-      title: "Active Riders",
+      title: t("dashboard.active_riders"),
       value: "156",
       change: "+5.1%",
       icon: Bike,
       trend: "up" as const,
     },
     {
-      title: "Total Revenue",
+      title: t("dashboard.total_revenue"),
       value: "12.5M FCFA",
       change: "+15.3%",
       icon: DollarSign,
@@ -50,12 +53,16 @@ export default function Home() {
     pending: "bg-gray-100 text-gray-800",
   };
 
+  const getStatusLabel = (status: string) => {
+    return t(`orders.status_${status}`);
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Welcome to Okada Admin Dashboard
+          {t("dashboard.welcome_message")}
         </p>
       </div>
 
@@ -74,7 +81,7 @@ export default function Home() {
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  <span className="text-green-600 font-medium">{stat.change}</span> from last month
+                  <span className="text-green-600 font-medium">{stat.change}</span> {t("dashboard.from_last_month")}
                 </p>
               </CardContent>
             </Card>
@@ -85,8 +92,8 @@ export default function Home() {
       {/* Recent Orders */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
-          <CardDescription>Latest orders from customers</CardDescription>
+          <CardTitle>{t("dashboard.recent_orders")}</CardTitle>
+          <CardDescription>{t("dashboard.recent_orders_description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -110,7 +117,7 @@ export default function Home() {
                       statusColors[order.status as keyof typeof statusColors]
                     }`}
                   >
-                    {order.status.replace(/_/g, " ")}
+                    {getStatusLabel(order.status)}
                   </span>
                   <p className="font-semibold text-foreground min-w-[100px] text-right">
                     {order.amount}
@@ -128,31 +135,30 @@ export default function Home() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              Manage Products
+              {t("dashboard.manage_products")}
             </CardTitle>
-            <CardDescription>Add or edit product listings</CardDescription>
+            <CardDescription>{t("dashboard.manage_products_description")}</CardDescription>
           </CardHeader>
         </Card>
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bike className="h-5 w-5 text-primary" />
-              Approve Riders
+              {t("dashboard.approve_riders")}
             </CardTitle>
-            <CardDescription>Review pending rider applications</CardDescription>
+            <CardDescription>{t("dashboard.approve_riders_description")}</CardDescription>
           </CardHeader>
         </Card>
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              View Analytics
+              {t("dashboard.view_analytics")}
             </CardTitle>
-            <CardDescription>Check performance metrics</CardDescription>
+            <CardDescription>{t("dashboard.view_analytics_description")}</CardDescription>
           </CardHeader>
         </Card>
       </div>
     </div>
   );
 }
-

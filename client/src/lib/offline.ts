@@ -1,7 +1,13 @@
 /**
- * Offline Manager
+ * Enhanced Offline Manager
  * 
- * Handles offline state detection, mutation queuing, and background sync.
+ * Handles offline state detection, mutation queuing, and background sync
+ * with enhanced features for Cameroon's unreliable connectivity:
+ * - Sync status tracking (isSyncing)
+ * - Last sync time tracking
+ * - Manual sync triggering
+ * - Service worker integration
+ * - Real-time queue updates
  */
 
 export interface QueuedMutation {
@@ -14,11 +20,23 @@ export interface QueuedMutation {
   retryCount: number;
 }
 
+export interface SyncStatus {
+  isSyncing: boolean;
+  lastSyncTime: number | null;
+  successCount: number;
+  failureCount: number;
+}
+
 class OfflineManager {
   private db: IDBDatabase | null = null;
   private isOnline: boolean = navigator.onLine;
-  private listeners: Set<(isOnline: boolean) => void> = new Set();
-  private syncInProgress: boolean = false;
+  private listeners: Set<() => void> = new Set();
+  private syncStatus: SyncStatus = {
+    isSyncing: false,
+    lastSyncTime: this.getStoredLastSyncTime(),
+    successCount: 0,
+    failureCount: 0,
+  };
 
   constructor() {
     this.init();
@@ -36,14 +54,15 @@ class OfflineManager {
     window.addEventListener("online", () => {
       console.log("[Offline] Connection restored");
       this.isOnline = true;
-      this.notifyListeners(true);
+      this.notifyListeners();
+      // Automatically sync when coming back online
       this.syncQueuedMutations();
     });
 
     window.addEventListener("offline", () => {
       console.log("[Offline] Connection lost");
       this.isOnline = false;
-      this.notifyListeners(false);
+      this.notifyListeners();
     });
 
     // Register service worker
@@ -52,12 +71,37 @@ class OfflineManager {
         const registration = await navigator.serviceWorker.register("/service-worker.js");
         console.log("[Offline] Service worker registered:", registration.scope);
 
-        // Listen for sync events from service worker
+        // Listen for messages from service worker
         navigator.serviceWorker.addEventListener("message", (event) => {
-          if (event.data && event.data.type === "SYNC_COMPLETE") {
-            console.log(`[Offline] Sync complete: ${event.data.count} mutations synced`);
-            this.notifyListeners(this.isOnline);
+          if (event.data) {
+            switch (event.data.type) {
+              case "SYNC_COMPLETE":
+                console.log(`[Offline] Sync complete from SW:`, event.data);
+                this.syncStatus.isSyncing = false;
+                this.syncStatus.successCount = event.data.successCount || 0;
+                this.syncStatus.failureCount = event.data.failureCount || 0;
+                if (event.data.successCount > 0) {
+                  this.updateLastSyncTime();
+                }
+                this.notifyListeners();
+                break;
+              
+              case "MUTATION_QUEUED":
+                console.log("[Offline] Mutation queued by SW:", event.data.url);
+                this.notifyListeners();
+                break;
+              
+              case "CONFLICT_RESOLVED":
+                console.warn("[Offline] Conflict resolved by SW:", event.data);
+                this.notifyListeners();
+                break;
+            }
           }
+        });
+
+        // Check for updates
+        registration.addEventListener("updatefound", () => {
+          console.log("[Offline] Service worker update found");
         });
       } catch (error) {
         console.error("[Offline] Service worker registration failed:", error);
@@ -67,15 +111,19 @@ class OfflineManager {
 
   private openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open("okada-offline", 1);
+      const request = indexedDB.open("okada-offline", 2);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        
+        // Create mutations store if it doesn't exist
         if (!db.objectStoreNames.contains("mutations")) {
-          db.createObjectStore("mutations", { keyPath: "id", autoIncrement: true });
+          const store = db.createObjectStore("mutations", { keyPath: "id", autoIncrement: true });
+          store.createIndex("timestamp", "timestamp", { unique: false });
+          store.createIndex("retryCount", "retryCount", { unique: false });
         }
       };
     });
@@ -89,17 +137,24 @@ class OfflineManager {
   }
 
   /**
-   * Subscribe to online/offline state changes
+   * Get current sync status
    */
-  public subscribe(listener: (isOnline: boolean) => void): () => void {
+  public getSyncStatus(): SyncStatus {
+    return { ...this.syncStatus };
+  }
+
+  /**
+   * Subscribe to state changes (online/offline, queue updates, sync status)
+   */
+  public subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
   }
 
-  private notifyListeners(isOnline: boolean) {
-    this.listeners.forEach((listener) => listener(isOnline));
+  private notifyListeners() {
+    this.listeners.forEach((listener) => listener());
   }
 
   /**
@@ -118,6 +173,7 @@ class OfflineManager {
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         console.log("[Offline] Mutation queued:", request.result);
+        this.notifyListeners();
         resolve();
       };
     });
@@ -142,6 +198,24 @@ class OfflineManager {
   }
 
   /**
+   * Get count of queued mutations
+   */
+  public async getQueuedCount(): Promise<number> {
+    if (!this.db) {
+      return 0;
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["mutations"], "readonly");
+      const store = transaction.objectStore("mutations");
+      const request = store.count();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  /**
    * Delete a queued mutation
    */
   private async deleteMutation(id: number): Promise<void> {
@@ -155,47 +229,93 @@ class OfflineManager {
       const request = store.delete(id);
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        this.notifyListeners();
+        resolve();
+      };
     });
   }
 
   /**
-   * Sync all queued mutations
+   * Sync all queued mutations with retry logic
    */
   public async syncQueuedMutations(): Promise<void> {
-    if (this.syncInProgress || !this.isOnline) {
+    if (this.syncStatus.isSyncing || !this.isOnline) {
+      console.log("[Offline] Sync skipped:", this.syncStatus.isSyncing ? "already syncing" : "offline");
       return;
     }
 
-    this.syncInProgress = true;
+    this.syncStatus.isSyncing = true;
+    this.syncStatus.successCount = 0;
+    this.syncStatus.failureCount = 0;
+    this.notifyListeners();
 
     try {
-      const mutations = await this.getQueuedMutations();
-      console.log(`[Offline] Syncing ${mutations.length} queued mutations`);
+      // Try to use service worker for sync if available
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        const messageChannel = new MessageChannel();
+        
+        const syncPromise = new Promise<void>((resolve, reject) => {
+          messageChannel.port1.onmessage = (event) => {
+            if (event.data.success) {
+              resolve();
+            } else {
+              reject(new Error(event.data.error));
+            }
+          };
+          
+          // Timeout after 30 seconds
+          setTimeout(() => reject(new Error("Sync timeout")), 30000);
+        });
 
-      for (const mutation of mutations) {
-        try {
-          const response = await fetch(mutation.url, {
-            method: mutation.method,
-            headers: mutation.headers,
-            body: mutation.body,
-          });
+        navigator.serviceWorker.controller.postMessage(
+          { type: "MANUAL_SYNC" },
+          [messageChannel.port2]
+        );
 
-          if (response.ok) {
-            // Remove successfully synced mutation
-            await this.deleteMutation(mutation.id!);
-            console.log("[Offline] Synced mutation:", mutation.id);
-          } else {
-            console.error("[Offline] Failed to sync mutation:", mutation.id, response.status);
-          }
-        } catch (error) {
-          console.error("[Offline] Failed to sync mutation:", mutation.id, error);
-        }
+        await syncPromise;
+        console.log("[Offline] Service worker sync completed");
+      } else {
+        // Fallback to direct sync if service worker not available
+        await this.directSync();
       }
+
+      this.updateLastSyncTime();
     } catch (error) {
       console.error("[Offline] Sync failed:", error);
     } finally {
-      this.syncInProgress = false;
+      this.syncStatus.isSyncing = false;
+      this.notifyListeners();
+    }
+  }
+
+  /**
+   * Direct sync without service worker (fallback)
+   */
+  private async directSync(): Promise<void> {
+    const mutations = await this.getQueuedMutations();
+    console.log(`[Offline] Direct syncing ${mutations.length} queued mutations`);
+
+    for (const mutation of mutations) {
+      try {
+        const response = await fetch(mutation.url, {
+          method: mutation.method,
+          headers: mutation.headers,
+          body: mutation.body,
+        });
+
+        if (response.ok) {
+          await this.deleteMutation(mutation.id!);
+          console.log("[Offline] Synced mutation:", mutation.id);
+          this.syncStatus.successCount++;
+        } else {
+          console.error("[Offline] Failed to sync mutation:", mutation.id, response.status);
+          this.syncStatus.failureCount++;
+        }
+      } catch (error) {
+        console.error("[Offline] Failed to sync mutation:", mutation.id, error);
+        this.syncStatus.failureCount++;
+      }
     }
   }
 
@@ -215,9 +335,26 @@ class OfflineManager {
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         console.log("[Offline] Queue cleared");
+        this.notifyListeners();
         resolve();
       };
     });
+  }
+
+  /**
+   * Update last sync time
+   */
+  private updateLastSyncTime() {
+    this.syncStatus.lastSyncTime = Date.now();
+    localStorage.setItem("okada-last-sync", this.syncStatus.lastSyncTime.toString());
+  }
+
+  /**
+   * Get stored last sync time from localStorage
+   */
+  private getStoredLastSyncTime(): number | null {
+    const stored = localStorage.getItem("okada-last-sync");
+    return stored ? parseInt(stored, 10) : null;
   }
 }
 
@@ -225,31 +362,38 @@ class OfflineManager {
 export const offlineManager = new OfflineManager();
 
 /**
- * React hook for offline state
+ * React hook for offline state with enhanced features
  */
 export function useOffline() {
   const [isOnline, setIsOnline] = React.useState(offlineManager.getIsOnline());
   const [queuedCount, setQueuedCount] = React.useState(0);
+  const [syncStatus, setSyncStatus] = React.useState(offlineManager.getSyncStatus());
 
   React.useEffect(() => {
-    const unsubscribe = offlineManager.subscribe((online) => {
-      setIsOnline(online);
-      updateQueuedCount();
-    });
+    const updateState = async () => {
+      setIsOnline(offlineManager.getIsOnline());
+      setSyncStatus(offlineManager.getSyncStatus());
+      const count = await offlineManager.getQueuedCount();
+      setQueuedCount(count);
+    };
 
-    updateQueuedCount();
+    const unsubscribe = offlineManager.subscribe(updateState);
+    updateState();
 
-    return unsubscribe;
+    // Poll for queue updates every 5 seconds
+    const interval = setInterval(updateState, 5000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, []);
-
-  const updateQueuedCount = async () => {
-    const mutations = await offlineManager.getQueuedMutations();
-    setQueuedCount(mutations.length);
-  };
 
   return {
     isOnline,
     queuedCount,
+    isSyncing: syncStatus.isSyncing,
+    lastSyncTime: syncStatus.lastSyncTime,
     syncNow: () => offlineManager.syncQueuedMutations(),
   };
 }

@@ -889,3 +889,43 @@
 - [x] Add route to App.tsx
 - [x] Add menu item to DashboardLayout sidebar
 - [x] Test all CRUD operations
+
+
+---
+
+## 🚀 Sprint 13: UI Internationalization & Offline Enhancement (IN PROGRESS)
+
+### Task 1: Integrate LanguageSwitcher into Header
+- [x] Add LanguageSwitcher component to DashboardLayout header
+- [x] Position switcher next to user profile menu (mobile and desktop)
+- [ ] Test language switching across all pages
+- [ ] Verify language persistence in localStorage
+
+### Task 2: Translate Existing UI Strings
+- [x] Update Home/Dashboard page with translation keys
+- [x] Add dashboard translations to seed data (20+ keys)
+- [x] Add order status translations (6 status keys)
+- [x] Add offline translations to seed data (30+ keys)
+- [x] Seed 196 total translations (English and French)
+- [ ] Update Orders page with translation keys
+- [ ] Update Users page with translation keys
+- [ ] Update Riders page with translation keys
+- [ ] Update Products page with translation keys
+- [ ] Update common UI components (buttons, labels, status badges)
+- [ ] Test UI in both English and French
+
+### Task 3: Enhanced Offline Functionality (Task OFFLINE-001)
+- [x] Enhance service worker with API response caching
+- [x] Add background sync event listener
+- [x] Implement IndexedDB for persistent offline queue
+- [x] Add retry logic (up to 5 attempts with exponential backoff)
+- [x] Implement conflict resolution strategies (last-write-wins)
+- [x] Create enhanced OfflineIndicator with manual sync button
+- [x] Add queue status display (pending changes count)
+- [x] Add last sync time display
+- [x] Add isSyncing state tracking
+- [x] Implement stale-while-revalidate caching strategy
+- [ ] Create offline fallback page
+- [ ] Test offline queue in airplane mode
+- [ ] Test background sync on reconnection
+- [ ] Test with slow/unreliable network simulation
