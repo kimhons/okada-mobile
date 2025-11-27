@@ -407,7 +407,7 @@ export const appRouter = router({
   }),
 
   // Notification triggers for key events
-  notifications: router({
+  notificationTriggers: router({
     // Trigger notification when order status changes to quality_verification
     onQualityVerification: protectedProcedure
       .input(z.object({ orderId: z.number(), orderNumber: z.string() }))
@@ -5279,7 +5279,7 @@ export const appRouter = router({
   // ============================================================================
   // ADVANCED REPORTING SUITE
   // ============================================================================
-  reports: router({
+  advancedReports: router({
     // Custom Reports
     createReport: protectedProcedure
       .input(z.object({

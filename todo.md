@@ -929,3 +929,138 @@
 - [ ] Test offline queue in airplane mode
 - [ ] Test background sync on reconnection
 - [ ] Test with slow/unreliable network simulation
+
+
+---
+
+## 🧪 Sprint 14: Quality Assurance & Test Coverage (Target: 98%+)
+
+### Phase 1: Audit & Test Existing Code
+- [x] Run current test suite and generate coverage report
+- [x] Review i18n.test.ts - ensure all 14 tests pass ✅
+- [ ] Write frontend tests for LanguageSwitcher component (skipped - mocking issues)
+- [ ] Write frontend tests for TranslationManagement page
+- [ ] Write tests for i18n configuration and hooks
+- [x] Write tests for offline manager utility ✅ (7/7 tests pass)
+- [ ] Write tests for OfflineIndicator components
+- [ ] Write tests for service worker functionality
+- [x] Fix duplicate notifications key in routers.ts
+- [x] Delete routers_temp.ts to eliminate TypeScript errors
+- [x] Fix duplicate reports router (renamed to advancedReports)
+
+### Phase 2: Translate Remaining Pages with Tests
+- [ ] Orders page: Add i18n keys + write component tests
+- [ ] Users page: Add i18n keys + write component tests
+- [ ] Riders page: Add i18n keys + write component tests
+- [ ] Products page: Add i18n keys + write component tests
+- [ ] Sellers page: Add i18n keys + write component tests
+- [ ] Add missing translations to seed data
+- [ ] Write integration tests for language switching
+- [ ] Test all pages in English and French
+
+### Phase 3: Offline Functionality Testing
+- [ ] Write unit tests for offline queue operations
+- [ ] Write integration tests for background sync
+- [ ] Test offline mode in browser DevTools (airplane mode)
+- [ ] Test mutation queuing (create order, update product while offline)
+- [ ] Test automatic sync on reconnection
+- [ ] Test manual sync button functionality
+- [ ] Test retry logic with exponential backoff
+- [ ] Test conflict resolution scenarios
+- [ ] Test with slow/unreliable network simulation
+- [ ] Test service worker cache invalidation
+- [ ] Document offline functionality behavior
+
+### Phase 4: Cohort Analysis Dashboard
+- [ ] Design database schema for cohort data
+- [ ] Write database functions with tests
+- [ ] Write tRPC procedures with tests
+- [ ] Implement frontend UI
+- [ ] Write frontend component tests
+- [ ] Write integration tests
+- [ ] Add i18n translations
+- [ ] Test in English and French
+
+### Phase 5: Funnel Analytics Dashboard
+- [ ] Design database schema for funnel data
+- [ ] Write database functions with tests
+- [ ] Write tRPC procedures with tests
+- [ ] Implement frontend UI
+- [ ] Write frontend component tests
+- [ ] Write integration tests
+- [ ] Add i18n translations
+- [ ] Test in English and French
+
+### Phase 6: A/B Testing Dashboard
+- [ ] Design database schema for A/B tests
+- [ ] Write database functions with tests
+- [ ] Write tRPC procedures with tests
+- [ ] Implement frontend UI
+- [ ] Write frontend component tests
+- [ ] Write integration tests
+- [ ] Add i18n translations
+- [ ] Test in English and French
+
+### Phase 7: Predictive Analytics Dashboard
+- [ ] Design database schema for predictions
+- [ ] Write database functions with tests
+- [ ] Write tRPC procedures with tests
+- [ ] Implement frontend UI with charts
+- [ ] Write frontend component tests
+- [ ] Write integration tests
+- [ ] Add i18n translations
+- [ ] Test in English and French
+
+### Phase 8: GDPR Compliance Dashboard
+- [ ] Design database schema for compliance data
+- [ ] Write database functions with tests
+- [ ] Write tRPC procedures with tests
+- [ ] Implement frontend UI
+- [ ] Write frontend component tests
+- [ ] Write integration tests
+- [ ] Add i18n translations
+- [ ] Test in English and French
+
+### Phase 9: Remaining Admin Screens (10 screens)
+- [ ] Customer Segmentation: Schema + Functions + Tests + UI + i18n
+- [ ] Marketing Automation: Schema + Functions + Tests + UI + i18n
+- [ ] Loyalty Programs: Schema + Functions + Tests + UI + i18n
+- [ ] Referral Management: Schema + Functions + Tests + UI + i18n
+- [ ] Fraud Detection: Schema + Functions + Tests + UI + i18n
+- [ ] Risk Management: Schema + Functions + Tests + UI + i18n
+- [ ] Compliance Monitoring: Schema + Functions + Tests + UI + i18n
+- [ ] API Management: Schema + Functions + Tests + UI + i18n
+- [ ] Webhook Configuration: Schema + Functions + Tests + UI + i18n
+- [ ] System Health Monitoring: Schema + Functions + Tests + UI + i18n
+
+### Phase 10: Final Quality Assurance
+- [ ] Run complete test suite (backend + frontend)
+- [ ] Generate comprehensive coverage report
+- [ ] Ensure 98%+ test coverage achieved
+- [ ] Fix any remaining failing tests
+- [ ] Run end-to-end tests for critical user flows
+- [ ] Test performance (load time, API response time)
+- [ ] Test accessibility (WCAG compliance)
+- [ ] Test responsive design (mobile, tablet, desktop)
+- [ ] Test in both English and French
+- [ ] Test offline functionality end-to-end
+- [ ] Document all test results
+- [ ] Save final checkpoint with full test coverage
+
+---
+
+## 📊 Test Coverage Goals
+
+**Backend (tRPC + Database)**
+- Database functions: 100% coverage
+- tRPC procedures: 100% coverage
+- Auth middleware: 100% coverage
+- Error handling: 100% coverage
+
+**Frontend (React Components)**
+- Page components: 95%+ coverage
+- UI components: 95%+ coverage
+- Hooks and utilities: 100% coverage
+- Integration tests: Key user flows covered
+
+**Overall Target: 98%+ test coverage**
