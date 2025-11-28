@@ -4,6 +4,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 // Initialize i18next for multi-language support
 // Critical for Cameroon market (60% French-speaking users)
+// Translations will be loaded dynamically from database via useI18nLoader hook
 i18n
   .use(LanguageDetector) // Detect user language
   .use(initReactI18next) // Pass i18n instance to react-i18next
@@ -74,7 +75,7 @@ i18n
     },
     fallbackLng: "en",
     defaultNS: "common",
-    ns: ["common", "dashboard"],
+    ns: ["common", "dashboard", "orders", "users", "riders", "products", "sellers"],
     interpolation: {
       escapeValue: false, // React already escapes values
     },

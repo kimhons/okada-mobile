@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { Search, Package, Plus, Edit, Trash2, Image as ImageIcon } from "lucide-
 import { toast } from "sonner";
 
 export default function Products() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -130,15 +132,15 @@ export default function Products() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
-          <p className="text-gray-600 mt-1">Manage your product catalog and inventory</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('products:title')}</h1>
+          <p className="text-gray-600 mt-1">{t('products:description')}</p>
         </div>
         <Button
           onClick={() => setIsCreateDialogOpen(true)}
           className="bg-[#2D8659] hover:bg-[#236B47]"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Product
+          {t('products:add_product')}
         </Button>
       </div>
 
@@ -149,7 +151,7 @@ export default function Products() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search products..."
+                placeholder={t('products:search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -157,10 +159,10 @@ export default function Products() {
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by category" />
+                <SelectValue placeholder={t('products:filter_by_category')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">{t('products:all_categories')}</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
@@ -175,30 +177,30 @@ export default function Products() {
       {/* Products Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Products ({products.length})</CardTitle>
+          <CardTitle>{t('products:all_products', { count: products.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D8659] mx-auto"></div>
-              <p className="text-gray-600 mt-4">Loading products...</p>
+              <p className="text-gray-600 mt-4">{t('products:loading')}</p>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No products found</p>
+              <p className="text-gray-600">{t('products:no_products')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('products:table_product')}</TableHead>
+                    <TableHead>{t('products:table_category')}</TableHead>
+                    <TableHead>{t('products:table_price')}</TableHead>
+                    <TableHead>{t('products:table_stock')}</TableHead>
+                    <TableHead>{t('products:table_status')}</TableHead>
+                    <TableHead>{t('products:table_actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -252,7 +254,7 @@ export default function Products() {
                               : ""
                           }
                         >
-                          {product.isActive ? "Active" : "Inactive"}
+                          {product.isActive ? t('products:active') : t('products:inactive')}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -289,24 +291,24 @@ export default function Products() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Product</DialogTitle>
+            <DialogTitle>{t('products:add_new_product')}</DialogTitle>
             <DialogDescription>
-              Create a new product in your catalog
+              {t('products:add_product_description')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate}>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Product Name</label>
-                <Input name="name" required placeholder="Enter product name" />
+                <label className="text-sm font-medium">{t('products:product_name')}</label>
+                <Input name="name" required placeholder={t('products:product_name_placeholder')} />
               </div>
               <div>
-                <label className="text-sm font-medium">Description</label>
-                <Textarea name="description" placeholder="Enter product description" />
+                <label className="text-sm font-medium">{t('products:description')}</label>
+                <Textarea name="description" placeholder={t('products:description_placeholder')} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Price (FCFA cents)</label>
+                  <label className="text-sm font-medium">{t('products:price')}</label>
                   <Input
                     name="price"
                     type="number"
@@ -317,7 +319,7 @@ export default function Products() {
                   <p className="text-xs text-gray-500 mt-1">e.g., 250000 for 2500 FCFA</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Stock</label>
+                  <label className="text-sm font-medium">{t('products:stock')}</label>
                   <Input
                     name="stock"
                     type="number"
@@ -328,13 +330,13 @@ export default function Products() {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium">Category</label>
+                <label className="text-sm font-medium">{t('products:category')}</label>
                 <select
                   name="categoryId"
                   required
                   className="w-full border rounded-md px-3 py-2"
                 >
-                  <option value="">Select category</option>
+                  <option value="">{t('products:select_category')}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -343,16 +345,16 @@ export default function Products() {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium">Image URL</label>
+                <label className="text-sm font-medium">{t('products:image_url')}</label>
                 <Input name="imageUrl" type="url" placeholder="https://..." />
               </div>
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
+                {t('products:cancel')}
               </Button>
               <Button type="submit" className="bg-[#2D8659] hover:bg-[#236B47]">
-                Create Product
+                {t('products:create_product')}
               </Button>
             </DialogFooter>
           </form>
@@ -363,9 +365,9 @@ export default function Products() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>{t('products:edit_product')}</DialogTitle>
             <DialogDescription>
-              Update product information
+              {t('products:edit_product_description')}
             </DialogDescription>
           </DialogHeader>
           {selectedProduct && (
@@ -390,7 +392,7 @@ export default function Products() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Price (FCFA cents)</label>
+                    <label className="text-sm font-medium">{t('products:price')}</label>
                     <Input
                       name="price"
                       type="number"
@@ -400,7 +402,7 @@ export default function Products() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Stock</label>
+                    <label className="text-sm font-medium">{t('products:stock')}</label>
                     <Input
                       name="stock"
                       type="number"
@@ -411,7 +413,7 @@ export default function Products() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Category</label>
+                  <label className="text-sm font-medium">{t('products:category')}</label>
                   <select
                     name="categoryId"
                     defaultValue={selectedProduct.categoryId}
@@ -425,7 +427,7 @@ export default function Products() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Image URL</label>
+                  <label className="text-sm font-medium">{t('products:image_url')}</label>
                   <Input
                     name="imageUrl"
                     type="url"
@@ -443,10 +445,10 @@ export default function Products() {
                     setSelectedProduct(null);
                   }}
                 >
-                  Cancel
+                  {t('products:cancel')}
                 </Button>
                 <Button type="submit" className="bg-[#2D8659] hover:bg-[#236B47]">
-                  Update Product
+                  {t('products:update_product')}
                 </Button>
               </DialogFooter>
             </form>

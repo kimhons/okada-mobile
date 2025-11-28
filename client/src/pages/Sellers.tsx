@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ import { Search, Eye, Store, TrendingUp, DollarSign, Package } from "lucide-reac
 import { useLocation } from "wouter";
 
 export default function Sellers() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -49,10 +51,10 @@ export default function Sellers() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; label: string }> = {
-      pending: { variant: "secondary", label: "Pending" },
-      approved: { variant: "default", label: "Approved" },
-      rejected: { variant: "destructive", label: "Rejected" },
-      suspended: { variant: "outline", label: "Suspended" },
+      pending: { variant: "secondary", label: t('sellers:status_pending') },
+      approved: { variant: "default", label: t('sellers:status_approved') },
+      rejected: { variant: "destructive", label: t('sellers:status_rejected') },
+      suspended: { variant: "outline", label: t('sellers:status_suspended') },
     };
     const config = variants[status] || variants.pending;
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -70,7 +72,7 @@ export default function Sellers() {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Loading sellers...</p>
+          <p className="text-muted-foreground">{t('sellers:loading')}</p>
         </div>
       </div>
     );
@@ -78,28 +80,28 @@ export default function Sellers() {
 
   const stats = [
     {
-      title: "Total Sellers",
+      title: t('sellers:total_sellers'),
       value: sellers?.length.toLocaleString() || "0",
       icon: Store,
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
     {
-      title: "Approved Sellers",
+      title: t('sellers:approved_sellers'),
       value: sellers?.filter((s: any) => s.status === "approved").length.toLocaleString() || "0",
       icon: TrendingUp,
       color: "text-green-600",
       bgColor: "bg-green-100",
     },
     {
-      title: "Pending Approval",
+      title: t('sellers:pending_approval'),
       value: sellers?.filter((s: any) => s.status === "pending").length.toLocaleString() || "0",
       icon: Package,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
     },
     {
-      title: "Total Revenue",
+      title: t('sellers:total_revenue'),
       value: formatCurrency(
         sellers?.reduce((sum: number, s: any) => sum + (s.totalSales || 0), 0) || 0
       ),
@@ -112,9 +114,9 @@ export default function Sellers() {
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Sellers Management</h1>
+        <h1 className="text-3xl font-bold">{t('sellers:title')}</h1>
         <p className="text-muted-foreground mt-2">
-          Manage marketplace vendors and their verification status
+          {t('sellers:description')}
         </p>
       </div>
 
@@ -141,14 +143,14 @@ export default function Sellers() {
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
+          <CardTitle>{t('sellers:search_filter')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by business name, email, or owner..."
+                placeholder={t('sellers:search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -156,14 +158,14 @@ export default function Sellers() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('sellers:filter_by_status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="all">{t('sellers:all_statuses')}</SelectItem>
+                <SelectItem value="pending">{t('sellers:status_pending')}</SelectItem>
+                <SelectItem value="approved">{t('sellers:status_approved')}</SelectItem>
+                <SelectItem value="rejected">{t('sellers:status_rejected')}</SelectItem>
+                <SelectItem value="suspended">{t('sellers:status_suspended')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -173,9 +175,9 @@ export default function Sellers() {
       {/* Sellers Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Sellers</CardTitle>
+          <CardTitle>{t('sellers:all_sellers')}</CardTitle>
           <CardDescription>
-            {filteredSellers?.length || 0} seller{filteredSellers?.length !== 1 ? "s" : ""} found
+            {t('sellers:sellers_found', { count: filteredSellers?.length || 0 })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -183,22 +185,22 @@ export default function Sellers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Business Name</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total Sales</TableHead>
-                  <TableHead className="text-right">Orders</TableHead>
-                  <TableHead className="text-right">Rating</TableHead>
-                  <TableHead className="text-right">Commission</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('sellers:table_business_name')}</TableHead>
+                  <TableHead>{t('sellers:table_owner')}</TableHead>
+                  <TableHead>{t('sellers:table_type')}</TableHead>
+                  <TableHead>{t('sellers:table_status')}</TableHead>
+                  <TableHead className="text-right">{t('sellers:table_total_sales')}</TableHead>
+                  <TableHead className="text-right">{t('sellers:table_orders')}</TableHead>
+                  <TableHead className="text-right">{t('sellers:table_rating')}</TableHead>
+                  <TableHead className="text-right">{t('sellers:table_commission')}</TableHead>
+                  <TableHead className="text-right">{t('sellers:table_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {!filteredSellers || filteredSellers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      No sellers found
+                      {t('sellers:no_sellers')}
                     </TableCell>
                   </TableRow>
                 ) : (

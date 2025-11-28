@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ const statusOptions = [
 ];
 
 export default function Orders() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
@@ -110,9 +112,9 @@ export default function Orders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Orders</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('orders:title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage and track all customer orders
+            {t('orders:description')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -121,14 +123,14 @@ export default function Orders() {
             variant="outline"
           >
             <FileText className="h-4 w-4 mr-2" />
-            Export PDF
+            {t('orders:export_pdf')}
           </Button>
           <Button
             onClick={handleExportExcel}
             className="bg-[#2D8659] hover:bg-[#236B47]"
           >
             <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Export Excel
+            {t('orders:export_excel')}
           </Button>
         </div>
       </div>
@@ -136,15 +138,15 @@ export default function Orders() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>Search and filter orders</CardDescription>
+          <CardTitle>{t('orders:filters')}</CardTitle>
+          <CardDescription>{t('orders:filters_description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by order number or address..."
+                placeholder={t('orders:search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -152,7 +154,7 @@ export default function Orders() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('orders:filter_by_status')} />
               </SelectTrigger>
               <SelectContent>
                 {statusOptions.map((option) => (
@@ -169,15 +171,15 @@ export default function Orders() {
       {/* Orders List */}
       <Card>
         <CardHeader>
-          <CardTitle>Orders List</CardTitle>
+          <CardTitle>{t('orders:orders_list')}</CardTitle>
           <CardDescription>
-            {orders?.length || 0} orders found
+            {t('orders:orders_found', { count: orders?.length || 0 })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
-              Loading orders...
+              {t('orders:loading')}
             </div>
           ) : orders && orders.length > 0 ? (
             <div className="space-y-3">
@@ -226,7 +228,7 @@ export default function Orders() {
                       onClick={() => setSelectedOrderId(order.id)}
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      View
+                      {t('orders:view')}
                     </Button>
                   </div>
                 </div>
@@ -234,7 +236,7 @@ export default function Orders() {
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              No orders found
+              {t('orders:no_orders')}
             </div>
           )}
         </CardContent>
@@ -244,7 +246,7 @@ export default function Orders() {
       <Dialog open={selectedOrderId !== null} onOpenChange={() => setSelectedOrderId(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle>{t('orders:order_details')}</DialogTitle>
             <DialogDescription>
               {orderDetails?.order?.orderNumber}
             </DialogDescription>
@@ -276,7 +278,7 @@ export default function Orders() {
               {/* Order Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="text-sm text-muted-foreground">{t('orders:status')}</p>
                   <Badge
                     className={`mt-1 ${
                       statusColors[orderDetails.order?.status as keyof typeof statusColors]
@@ -286,19 +288,19 @@ export default function Orders() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="text-sm text-muted-foreground">{t('orders:total_amount')}</p>
                   <p className="font-bold text-lg mt-1">
                     {formatCurrency(orderDetails.order?.total || 0)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Payment Method</p>
+                  <p className="text-sm text-muted-foreground">{t('orders:payment_method')}</p>
                   <p className="font-medium mt-1">
                     {orderDetails.order?.paymentMethod.replace(/_/g, " ")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Payment Status</p>
+                  <p className="text-sm text-muted-foreground">{t('orders:payment_status')}</p>
                   <p className="font-medium mt-1">
                     {orderDetails.order?.paymentStatus}
                   </p>
@@ -309,7 +311,7 @@ export default function Orders() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <MapPin className="h-4 w-4 text-primary" />
-                  <p className="font-semibold">Delivery Address</p>
+                  <p className="font-semibold">{t('orders:delivery_address')}</p>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {orderDetails.order?.deliveryAddress}
@@ -320,7 +322,7 @@ export default function Orders() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Package className="h-4 w-4 text-primary" />
-                  <p className="font-semibold">Order Items</p>
+                  <p className="font-semibold">{t('orders:order_items')}</p>
                 </div>
                 <div className="space-y-2">
                   {orderDetails.items.map((item) => (
@@ -331,7 +333,7 @@ export default function Orders() {
                       <div>
                         <p className="font-medium">{item.productName}</p>
                         <p className="text-sm text-muted-foreground">
-                          Quantity: {item.quantity}
+                          {t('orders:quantity')}: {item.quantity}
                         </p>
                       </div>
                       <p className="font-semibold">{formatCurrency(item.total)}</p>
@@ -343,7 +345,7 @@ export default function Orders() {
               {/* Quality Photos */}
               {orderDetails.photos.length > 0 && (
                 <div>
-                  <p className="font-semibold mb-3">Quality Verification Photos</p>
+                  <p className="font-semibold mb-3">{t('orders:quality_photos')}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {orderDetails.photos.map((photo) => (
                       <div key={photo.id} className="relative">
@@ -371,7 +373,7 @@ export default function Orders() {
 
               {/* Update Status */}
               <div>
-                <p className="font-semibold mb-3">Update Order Status</p>
+                <p className="font-semibold mb-3">{t('orders:update_status')}</p>
                 <div className="flex gap-2 flex-wrap">
                   {statusOptions.slice(1).map((status) => (
                     <Button

@@ -5,6 +5,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { useI18nLoader } from "./hooks/useI18nLoader";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
 import Orders from "./pages/Orders";
@@ -141,6 +142,9 @@ function Router() {
 }
 
 function App() {
+  // Load translations from database on mount
+  useI18nLoader();
+  
   return (
     <ErrorBoundary>
       <ThemeProvider

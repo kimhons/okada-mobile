@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import { toast } from "sonner";
 import { exportUsersToExcel } from "@/lib/exportUtils";
 
 export default function Users() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -75,8 +77,8 @@ export default function Users() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-1">Manage customer accounts and permissions</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('users:title')}</h1>
+          <p className="text-gray-600 mt-1">{t('users:description')}</p>
         </div>
         <Button
           onClick={() => {
@@ -90,7 +92,7 @@ export default function Users() {
           className="bg-[#2D8659] hover:bg-[#236B47]"
         >
           <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Export Excel
+          {t('users:export_excel')}
         </Button>
       </div>
 
@@ -101,7 +103,7 @@ export default function Users() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search by name or email..."
+                placeholder={t('users:search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -109,12 +111,12 @@ export default function Users() {
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder={t('users:filter_by_role')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="all">{t('users:all_roles')}</SelectItem>
+                <SelectItem value="user">{t('users:role_user')}</SelectItem>
+                <SelectItem value="admin">{t('users:role_admin')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -124,31 +126,31 @@ export default function Users() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Users ({users.length})</CardTitle>
+          <CardTitle>{t('users:all_users', { count: users.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D8659] mx-auto"></div>
-              <p className="text-gray-600 mt-4">Loading users...</p>
+              <p className="text-gray-600 mt-4">{t('users:loading')}</p>
             </div>
           ) : users.length === 0 ? (
             <div className="text-center py-12">
               <UserCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No users found</p>
+              <p className="text-gray-600">{t('users:no_users')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Login Method</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Last Sign In</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('users:table_user')}</TableHead>
+                    <TableHead>{t('users:table_email')}</TableHead>
+                    <TableHead>{t('users:table_login_method')}</TableHead>
+                    <TableHead>{t('users:table_role')}</TableHead>
+                    <TableHead>{t('users:table_joined')}</TableHead>
+                    <TableHead>{t('users:table_last_signin')}</TableHead>
+                    <TableHead>{t('users:table_actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -189,7 +191,7 @@ export default function Users() {
                           size="sm"
                           onClick={() => setSelectedUserId(user.id)}
                         >
-                          View Details
+                          {t('users:view_details')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -205,9 +207,9 @@ export default function Users() {
       <Dialog open={!!selectedUserId} onOpenChange={() => setSelectedUserId(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
+            <DialogTitle>{t('users:user_details')}</DialogTitle>
             <DialogDescription>
-              View user information and order history
+              {t('users:user_details_description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -216,28 +218,28 @@ export default function Users() {
               {/* User Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">User Information</CardTitle>
+                  <CardTitle className="text-lg">{t('users:user_information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Name</label>
+                      <label className="text-sm font-medium text-gray-500">{t('users:name')}</label>
                       <p className="text-base">{userDetails.user?.name || "N/A"}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Email</label>
+                      <label className="text-sm font-medium text-gray-500">{t('users:email')}</label>
                       <p className="text-base">{userDetails.user?.email || "N/A"}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">
-                        Login Method
+                        {t('users:login_method')}
                       </label>
                       <p className="text-base">
                         {userDetails.user?.loginMethod || "N/A"}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Role</label>
+                      <label className="text-sm font-medium text-gray-500">{t('users:role')}</label>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge
                           variant={
@@ -272,7 +274,7 @@ export default function Users() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">
-                        Member Since
+                        {t('users:member_since')}
                       </label>
                       <p className="text-base flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
@@ -281,7 +283,7 @@ export default function Users() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">
-                        Last Sign In
+                        {t('users:last_signin')}
                       </label>
                       <p className="text-base flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
@@ -297,12 +299,12 @@ export default function Users() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <ShoppingBag className="h-5 w-5" />
-                    Order History ({userDetails.orders?.length || 0})
+                    {t('users:order_history', { count: userDetails.orders?.length || 0 })}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {!userDetails.orders || userDetails.orders.length === 0 ? (
-                    <p className="text-gray-500 text-center py-6">No orders yet</p>
+                    <p className="text-gray-500 text-center py-6">{t('users:no_orders')}</p>
                   ) : (
                     <div className="space-y-3">
                       {userDetails.orders.map((order) => (

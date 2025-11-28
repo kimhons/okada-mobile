@@ -1,0 +1,60 @@
+{
+  "query": "SELECT * FROM translations WHERE namespace = 'orders' AND languageCode = 'en' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT * FROM translations WHERE namespace = 'orders' AND languageCode = 'en' LIMIT 5",
+  "rows": [
+    {
+      "id": "63",
+      "languageCode": "en",
+      "namespace": "orders",
+      "key": "customer",
+      "value": "Customer",
+      "context": "Customer label",
+      "createdAt": "2025-11-26 23:31:20",
+      "updatedAt": "2025-11-26 23:31:20"
+    },
+    {
+      "id": "71",
+      "languageCode": "en",
+      "namespace": "orders",
+      "key": "confirmed",
+      "value": "Confirmed",
+      "context": "Confirmed status",
+      "createdAt": "2025-11-26 23:31:20",
+      "updatedAt": "2025-11-26 23:31:20"
+    },
+    {
+      "id": "75",
+      "languageCode": "en",
+      "namespace": "orders",
+      "key": "delivered",
+      "value": "Delivered",
+      "context": "Delivered status",
+      "createdAt": "2025-11-26 23:31:20",
+      "updatedAt": "2025-11-26 23:31:20"
+    },
+    {
+      "id": "150002",
+      "languageCode": "en",
+      "namespace": "orders",
+      "key": "description",
+      "value": "Manage and track all customer orders",
+      "context": "NULL",
+      "createdAt": "2025-11-27 04:42:39",
+      "updatedAt": "2025-11-27 04:42:39"
+    },
+    {
+      "id": "150019",
+      "languageCode": "en",
+      "namespace": "orders",
+      "key": "delivery_address",
+      "value": "Delivery Address",
+      "context": "NULL",
+      "createdAt": "2025-11-27 04:42:39",
+      "updatedAt": "2025-11-27 04:42:39"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlanguageCode\tnamespace\tkey\tvalue\tcontext\tcreatedAt\tupdatedAt\n63\ten\torders\tcustomer\tCustomer\tCustomer label\t2025-11-26 23:31:20\t2025-11-26 23:31:20\n71\ten\torders\tconfirmed\tConfirmed\tConfirmed status\t2025-11-26 23:31:20\t2025-11-26 23:31:20\n75\ten\torders\tdelivered\tDelivered\tDelivered status\t2025-11-26 23:31:20\t2025-11-26 23:31:20\n150002\ten\torders\tdescription\tManage and track all customer orders\tNULL\t2025-11-27 04:42:39\t2025-11-27 04:42:39\n150019\ten\torders\tdelivery_address\tDelivery Address\tNULL\t2025-11-27 04:42:39\t2025-11-27 04:42:39\n",
+  "stderr": "",
+  "execution_time_ms": 387
+}

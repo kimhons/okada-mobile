@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ import { toast } from "sonner";
 import { exportRidersToExcel } from "@/lib/exportUtils";
 
 export default function Riders() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [selectedRiderId, setSelectedRiderId] = useState<number | null>(null);
@@ -122,9 +124,9 @@ export default function Riders() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Rider Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('riders:title')}</h1>
           <p className="text-gray-600 mt-1">
-            Manage rider applications, approvals, and performance
+            {t('riders:description')}
           </p>
         </div>
         <Button
@@ -139,7 +141,7 @@ export default function Riders() {
           className="bg-[#2D8659] hover:bg-[#236B47]"
         >
           <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Export Excel
+          {t('riders:export_excel')}
         </Button>
       </div>
 
@@ -150,7 +152,7 @@ export default function Riders() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search by name or phone..."
+                placeholder={t('riders:search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -158,14 +160,14 @@ export default function Riders() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('riders:filter_by_status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="all">{t('riders:all_status')}</SelectItem>
+                <SelectItem value="pending">{t('riders:status_pending')}</SelectItem>
+                <SelectItem value="approved">{t('riders:status_approved')}</SelectItem>
+                <SelectItem value="rejected">{t('riders:status_rejected')}</SelectItem>
+                <SelectItem value="suspended">{t('riders:status_suspended')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -175,31 +177,31 @@ export default function Riders() {
       {/* Riders Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Riders ({riders.length})</CardTitle>
+          <CardTitle>{t('riders:all_riders', { count: riders.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D8659] mx-auto"></div>
-              <p className="text-gray-600 mt-4">Loading riders...</p>
+              <p className="text-gray-600 mt-4">{t('riders:loading')}</p>
             </div>
           ) : riders.length === 0 ? (
             <div className="text-center py-12">
               <Bike className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No riders found</p>
+              <p className="text-gray-600">{t('riders:no_riders')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Rider</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('riders:table_rider')}</TableHead>
+                    <TableHead>{t('riders:table_phone')}</TableHead>
+                    <TableHead>{t('riders:table_vehicle')}</TableHead>
+                    <TableHead>{t('riders:table_rating')}</TableHead>
+                    <TableHead>{t('riders:table_status')}</TableHead>
+                    <TableHead>{t('riders:table_joined')}</TableHead>
+                    <TableHead>{t('riders:table_actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -251,7 +253,7 @@ export default function Riders() {
                           size="sm"
                           onClick={() => setSelectedRiderId(rider.id)}
                         >
-                          View Details
+                          {t('riders:view_details')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -267,9 +269,9 @@ export default function Riders() {
       <Dialog open={!!selectedRiderId} onOpenChange={() => setSelectedRiderId(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Rider Details</DialogTitle>
+            <DialogTitle>{t('riders:rider_details')}</DialogTitle>
             <DialogDescription>
-              View rider information, earnings, and delivery history
+              {t('riders:rider_details_description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -278,23 +280,23 @@ export default function Riders() {
               {/* Rider Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Rider Information</CardTitle>
+                  <CardTitle className="text-lg">{t('riders:rider_information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Name</label>
+                      <label className="text-sm font-medium text-gray-500">{t('riders:name')}</label>
                       <p className="text-base">{riderDetails.rider?.name}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500 flex items-center gap-1">
                         <Phone className="h-4 w-4" />
-                        Phone
+                        {t('riders:phone')}
                       </label>
                       <p className="text-base">{riderDetails.rider?.phone}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Rating</label>
+                      <label className="text-sm font-medium text-gray-500">{t('riders:rating')}</label>
                       <div className="flex items-center gap-1">
                         <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
                         <span className="text-base font-semibold">
@@ -304,18 +306,18 @@ export default function Riders() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">
-                        Vehicle Type
+                        {t('riders:vehicle_type')}
                       </label>
                       <p className="text-base">{riderDetails.rider?.vehicleType}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">
-                        Vehicle Number
+                        {t('riders:vehicle_number')}
                       </label>
                       <p className="text-base">{riderDetails.rider?.vehicleNumber}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Status</label>
+                      <label className="text-sm font-medium text-gray-500">{t('riders:status')}</label>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge
                           variant="outline"
@@ -340,7 +342,7 @@ export default function Riders() {
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Approve Rider
+                        {t('riders:approve_rider')}
                       </Button>
                       <Button
                         onClick={() =>
@@ -349,7 +351,7 @@ export default function Riders() {
                         variant="destructive"
                       >
                         <XCircle className="h-4 w-4 mr-2" />
-                        Reject Application
+                        {t('riders:reject_application')}
                       </Button>
                     </div>
                   )}
@@ -364,7 +366,7 @@ export default function Riders() {
                         className="border-orange-500 text-orange-700 hover:bg-orange-50"
                       >
                         <Ban className="h-4 w-4 mr-2" />
-                        Suspend Rider
+                        {t('riders:suspend_rider')}
                       </Button>
                     </div>
                   )}
@@ -378,7 +380,7 @@ export default function Riders() {
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Reactivate Rider
+                        {t('riders:reactivate_rider')}
                       </Button>
                     </div>
                   )}
@@ -390,17 +392,17 @@ export default function Riders() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
-                    Earnings Summary
+                    {t('riders:earnings_summary')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {!riderDetails.earnings || riderDetails.earnings.length === 0 ? (
-                    <p className="text-gray-500 text-center py-6">No earnings yet</p>
+                    <p className="text-gray-500 text-center py-6">{t('riders:no_earnings')}</p>
                   ) : (
                     <div className="space-y-3">
                       <div className="grid grid-cols-3 gap-4 mb-4">
                         <div className="bg-green-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-600">Total Earnings</p>
+                          <p className="text-sm text-gray-600">{t('riders:total_earnings')}</p>
                           <p className="text-2xl font-bold text-[#2D8659]">
                             {riderDetails.earnings
                               .reduce((sum, e) => sum + e.amount, 0)
@@ -409,13 +411,13 @@ export default function Riders() {
                           </p>
                         </div>
                         <div className="bg-blue-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-600">Total Deliveries</p>
+                          <p className="text-sm text-gray-600">{t('riders:total_deliveries')}</p>
                           <p className="text-2xl font-bold text-blue-700">
                             {riderDetails.deliveries?.length || 0}
                           </p>
                         </div>
                         <div className="bg-purple-50 p-4 rounded-lg">
-                          <p className="text-sm text-gray-600">Avg per Delivery</p>
+                          <p className="text-sm text-gray-600">{t('riders:avg_per_delivery')}</p>
                           <p className="text-2xl font-bold text-purple-700">
                             {riderDetails.earnings.length > 0
                               ? (
@@ -460,13 +462,13 @@ export default function Riders() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Package className="h-5 w-5" />
-                    Recent Deliveries ({riderDetails.deliveries?.length || 0})
+                    {t('riders:recent_deliveries', { count: riderDetails.deliveries?.length || 0 })}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {!riderDetails.deliveries || riderDetails.deliveries.length === 0 ? (
                     <p className="text-gray-500 text-center py-6">
-                      No deliveries yet
+                      {t('riders:no_deliveries')}
                     </p>
                   ) : (
                     <div className="space-y-3">

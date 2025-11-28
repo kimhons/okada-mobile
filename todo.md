@@ -948,13 +948,16 @@
 - [x] Delete routers_temp.ts to eliminate TypeScript errors
 - [x] Fix duplicate reports router (renamed to advancedReports)
 
-### Phase 2: Translate Remaining Pages with Tests
-- [ ] Orders page: Add i18n keys + write component tests
-- [ ] Users page: Add i18n keys + write component tests
-- [ ] Riders page: Add i18n keys + write component tests
-- [ ] Products page: Add i18n keys + write component tests
-- [ ] Sellers page: Add i18n keys + write component tests
-- [ ] Add missing translations to seed data
+### Phase 2: Translate Remaining Pages with Tests (IN PROGRESS)
+- [x] Orders page: Add i18n keys to all UI text
+- [x] Users page: Add i18n keys to all UI text
+- [x] Riders page: Add i18n keys to all UI text
+- [x] Products page: Add i18n keys to all UI text
+- [x] Sellers page: Add i18n keys to all UI text
+- [x] Add all new translation keys to database (English + French)
+- [x] Configure i18n to load translations from database via tRPC
+- [ ] Test language switching on all pages (English → French)
+- [ ] Write component tests for translated pages
 - [ ] Write integration tests for language switching
 - [ ] Test all pages in English and French
 
