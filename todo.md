@@ -1067,3 +1067,14 @@
 - Integration tests: Key user flows covered
 
 **Overall Target: 98%+ test coverage**
+
+### Phase 2.5: Translate Dashboard/Home Page (COMPLETED)
+- [x] Analyze Home.tsx and identify all UI text requiring translation
+- [x] Add i18n translation keys to Home page component
+- [x] Create dashboard namespace translations (English + French)
+- [x] Seed dashboard translations to database
+- [x] Update i18n loader to include dashboard namespace
+- [x] Add dashboard translations to i18n initial config
+- [x] Fix translation timing issue (move t() calls to render)
+- [ ] Test French language switching
+- [ ] Save checkpoint

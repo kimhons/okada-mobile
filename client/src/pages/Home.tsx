@@ -8,28 +8,28 @@ export default function Home() {
   // Mock data - will be replaced with real API calls
   const stats = [
     {
-      title: t("dashboard.total_orders"),
+      titleKey: "total_orders",
       value: "1,234",
       change: "+12.5%",
       icon: ShoppingBag,
       trend: "up" as const,
     },
     {
-      title: t("dashboard.active_users"),
+      titleKey: "active_users",
       value: "8,432",
       change: "+8.2%",
       icon: Users,
       trend: "up" as const,
     },
     {
-      title: t("dashboard.active_riders"),
+      titleKey: "active_riders",
       value: "156",
       change: "+5.1%",
       icon: Bike,
       trend: "up" as const,
     },
     {
-      title: t("dashboard.total_revenue"),
+      titleKey: "total_revenue",
       value: "12.5M FCFA",
       change: "+15.3%",
       icon: DollarSign,
@@ -60,9 +60,9 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t("dashboard:title")}</h1>
         <p className="text-muted-foreground mt-1">
-          {t("dashboard.welcome_message")}
+          {t("dashboard:welcome_message")}
         </p>
       </div>
 
@@ -71,17 +71,17 @@ export default function Home() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title}>
+            <Card key={stat.titleKey}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  {stat.title}
+                  {t(`dashboard:${stat.titleKey}`)}
                 </CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  <span className="text-green-600 font-medium">{stat.change}</span> {t("dashboard.from_last_month")}
+                  <span className="text-green-600 font-medium">{stat.change}</span> {t("dashboard:from_last_month")}
                 </p>
               </CardContent>
             </Card>
@@ -92,8 +92,8 @@ export default function Home() {
       {/* Recent Orders */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("dashboard.recent_orders")}</CardTitle>
-          <CardDescription>{t("dashboard.recent_orders_description")}</CardDescription>
+          <CardTitle>{t("dashboard:recent_orders")}</CardTitle>
+          <CardDescription>{t("dashboard:recent_orders_description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -135,27 +135,27 @@ export default function Home() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              {t("dashboard.manage_products")}
+              {t("dashboard:manage_products")}
             </CardTitle>
-            <CardDescription>{t("dashboard.manage_products_description")}</CardDescription>
+            <CardDescription>{t("dashboard:manage_products_description")}</CardDescription>
           </CardHeader>
         </Card>
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bike className="h-5 w-5 text-primary" />
-              {t("dashboard.approve_riders")}
+              {t("dashboard:approve_riders")}
             </CardTitle>
-            <CardDescription>{t("dashboard.approve_riders_description")}</CardDescription>
+            <CardDescription>{t("dashboard:approve_riders_description")}</CardDescription>
           </CardHeader>
         </Card>
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              {t("dashboard.view_analytics")}
+              {t("dashboard:view_analytics")}
             </CardTitle>
-            <CardDescription>{t("dashboard.view_analytics_description")}</CardDescription>
+            <CardDescription>{t("dashboard:view_analytics_description")}</CardDescription>
           </CardHeader>
         </Card>
       </div>

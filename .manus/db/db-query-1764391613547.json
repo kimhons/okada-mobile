@@ -1,0 +1,60 @@
+{
+  "query": "SELECT * FROM translations WHERE namespace = 'dashboard' AND languageCode = 'en' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT * FROM translations WHERE namespace = 'dashboard' AND languageCode = 'en' LIMIT 5",
+  "rows": [
+    {
+      "id": "47",
+      "languageCode": "en",
+      "namespace": "dashboard",
+      "key": "analytics",
+      "value": "Analytics",
+      "context": "Analytics section",
+      "createdAt": "2025-11-26 23:31:19",
+      "updatedAt": "2025-11-26 23:31:19"
+    },
+    {
+      "id": "53",
+      "languageCode": "en",
+      "namespace": "dashboard",
+      "key": "active_users",
+      "value": "Active Users",
+      "context": "Active users metric",
+      "createdAt": "2025-11-26 23:31:19",
+      "updatedAt": "2025-11-29 04:44:35"
+    },
+    {
+      "id": "55",
+      "languageCode": "en",
+      "namespace": "dashboard",
+      "key": "active_riders",
+      "value": "Active Riders",
+      "context": "Active riders metric",
+      "createdAt": "2025-11-26 23:31:19",
+      "updatedAt": "2025-11-29 04:44:35"
+    },
+    {
+      "id": "30071",
+      "languageCode": "en",
+      "namespace": "dashboard",
+      "key": "approve_riders",
+      "value": "Approve Riders",
+      "context": "Approve riders action",
+      "createdAt": "2025-11-27 03:51:48",
+      "updatedAt": "2025-11-29 04:44:35"
+    },
+    {
+      "id": "30073",
+      "languageCode": "en",
+      "namespace": "dashboard",
+      "key": "approve_riders_description",
+      "value": "Review and approve pending rider applications",
+      "context": "Approve riders description",
+      "createdAt": "2025-11-27 03:51:48",
+      "updatedAt": "2025-11-29 04:44:35"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlanguageCode\tnamespace\tkey\tvalue\tcontext\tcreatedAt\tupdatedAt\n47\ten\tdashboard\tanalytics\tAnalytics\tAnalytics section\t2025-11-26 23:31:19\t2025-11-26 23:31:19\n53\ten\tdashboard\tactive_users\tActive Users\tActive users metric\t2025-11-26 23:31:19\t2025-11-29 04:44:35\n55\ten\tdashboard\tactive_riders\tActive Riders\tActive riders metric\t2025-11-26 23:31:19\t2025-11-29 04:44:35\n30071\ten\tdashboard\tapprove_riders\tApprove Riders\tApprove riders action\t2025-11-27 03:51:48\t2025-11-29 04:44:35\n30073\ten\tdashboard\tapprove_riders_description\tReview and approve pending rider applications\tApprove riders description\t2025-11-27 03:51:48\t2025-11-29 04:44:35\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

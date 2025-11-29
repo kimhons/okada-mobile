@@ -28,6 +28,10 @@ export function useI18nLoader() {
   // Load Sellers namespace translations
   const { data: sellersEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "sellers" });
   const { data: sellersFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "sellers" });
+  
+  // Load Dashboard namespace translations
+  const { data: dashboardEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "dashboard" });
+  const { data: dashboardFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "dashboard" });
 
   // Add translations to i18next when data is loaded
   useEffect(() => {
@@ -53,5 +57,7 @@ export function useI18nLoader() {
     if (productsFr) addTranslations("fr", "products", productsFr);
     if (sellersEn) addTranslations("en", "sellers", sellersEn);
     if (sellersFr) addTranslations("fr", "sellers", sellersFr);
-  }, [i18n, ordersEn, ordersFr, usersEn, usersFr, ridersEn, ridersFr, productsEn, productsFr, sellersEn, sellersFr]);
+    if (dashboardEn) addTranslations("en", "dashboard", dashboardEn);
+    if (dashboardFr) addTranslations("fr", "dashboard", dashboardFr);
+  }, [i18n, ordersEn, ordersFr, usersEn, usersFr, ridersEn, ridersFr, productsEn, productsFr, sellersEn, sellersFr, dashboardEn, dashboardFr]);
 }
