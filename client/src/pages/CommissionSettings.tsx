@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ import { Settings, Percent, DollarSign, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CommissionSettings() {
+  const { t } = useTranslation();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState<number>(0);
   const [editIsActive, setEditIsActive] = useState<boolean>(true);
@@ -84,7 +86,7 @@ export default function CommissionSettings() {
 
   const stats = [
     {
-      title: "Seller Commission",
+      title: t("commission:seller_commission"),
       value: settings?.find((s: any) => s.entityType === "seller")?.value || 15,
       suffix: "%",
       icon: DollarSign,
@@ -92,7 +94,7 @@ export default function CommissionSettings() {
       bgColor: "bg-blue-100",
     },
     {
-      title: "Rider Commission",
+      title: t("commission:rider_commission"),
       value: settings?.find((s: any) => s.entityType === "rider")?.value || 20,
       suffix: "%",
       icon: TrendingUp,
@@ -100,7 +102,7 @@ export default function CommissionSettings() {
       bgColor: "bg-green-100",
     },
     {
-      title: "Active Settings",
+      title: t("commission:active_settings"),
       value: settings?.filter((s: any) => s.isActive).length || 0,
       suffix: "",
       icon: Settings,
@@ -108,7 +110,7 @@ export default function CommissionSettings() {
       bgColor: "bg-purple-100",
     },
     {
-      title: "Total Settings",
+      title: t("commission:total_settings"),
       value: settings?.length || 0,
       suffix: "",
       icon: Percent,
@@ -120,9 +122,9 @@ export default function CommissionSettings() {
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Commission Settings</h1>
+        <h1 className="text-3xl font-bold">{t("commission:title")}</h1>
         <p className="text-muted-foreground mt-2">
-          Configure platform fees and commission rates for sellers and riders
+          {t("commission:description")}
         </p>
       </div>
 
@@ -152,9 +154,9 @@ export default function CommissionSettings() {
       {/* Commission Settings Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Commission Configuration</CardTitle>
+          <CardTitle>{t("commission:configuration_title")}</CardTitle>
           <CardDescription>
-            Manage commission rates and platform fees for different entity types
+            {t("commission:configuration_description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -162,20 +164,20 @@ export default function CommissionSettings() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Entity Type</TableHead>
-                  <TableHead>Commission Type</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
-                  <TableHead className="text-right">Min Amount</TableHead>
-                  <TableHead className="text-right">Max Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("commission:entity_type")}</TableHead>
+                  <TableHead>{t("commission:commission_type")}</TableHead>
+                  <TableHead className="text-right">{t("commission:value")}</TableHead>
+                  <TableHead className="text-right">{t("commission:min_amount")}</TableHead>
+                  <TableHead className="text-right">{t("commission:max_amount")}</TableHead>
+                  <TableHead>{t("commission:status")}</TableHead>
+                  <TableHead className="text-right">{t("commission:actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {!settings || settings.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No commission settings configured
+                      {t("commission:no_settings")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -196,7 +198,7 @@ export default function CommissionSettings() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={setting.isActive ? "default" : "secondary"}>
-                          {setting.isActive ? "Active" : "Inactive"}
+                          {setting.isActive ? t("commission:active") : t("commission:inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -205,7 +207,7 @@ export default function CommissionSettings() {
                           variant="outline"
                           onClick={() => handleEdit(setting)}
                         >
-                          Edit
+                          {t("commission:edit")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -221,16 +223,16 @@ export default function CommissionSettings() {
       <Dialog open={editingId !== null} onOpenChange={(open) => !open && setEditingId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Commission Setting</DialogTitle>
+            <DialogTitle>{t("commission:edit_dialog_title")}</DialogTitle>
             <DialogDescription>
-              Update the commission rate and status for this entity type
+              {t("commission:edit_dialog_description")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="value">
-                Commission Value{" "}
+                {t("commission:commission_value")}{" "}
                 {settings?.find((s: any) => s.id === editingId)?.commissionType === "percentage"
                   ? "(%)"
                   : "(FCFA cents)"}
@@ -255,16 +257,16 @@ export default function CommissionSettings() {
                 checked={editIsActive}
                 onCheckedChange={setEditIsActive}
               />
-              <Label htmlFor="isActive">Active</Label>
+              <Label htmlFor="isActive">{t("commission:active")}</Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingId(null)}>
-              Cancel
+              {t("commission:cancel")}
             </Button>
             <Button onClick={handleSave} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? "Saving..." : "Save Changes"}
+              {updateSetting.isPending ? t("commission:saving") : t("commission:save_changes")}
             </Button>
           </DialogFooter>
         </DialogContent>

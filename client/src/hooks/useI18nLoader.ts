@@ -32,6 +32,14 @@ export function useI18nLoader() {
   // Load Dashboard namespace translations
   const { data: dashboardEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "dashboard" });
   const { data: dashboardFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "dashboard" });
+  
+  // Load Financial namespace translations
+  const { data: financialEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "financial" });
+  const { data: financialFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "financial" });
+  
+  // Load Commission namespace translations
+  const { data: commissionEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "commission" });
+  const { data: commissionFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "commission" });
 
   // Add translations to i18next when data is loaded
   useEffect(() => {
@@ -59,5 +67,9 @@ export function useI18nLoader() {
     if (sellersFr) addTranslations("fr", "sellers", sellersFr);
     if (dashboardEn) addTranslations("en", "dashboard", dashboardEn);
     if (dashboardFr) addTranslations("fr", "dashboard", dashboardFr);
-  }, [i18n, ordersEn, ordersFr, usersEn, usersFr, ridersEn, ridersFr, productsEn, productsFr, sellersEn, sellersFr, dashboardEn, dashboardFr]);
+    if (financialEn) addTranslations("en", "financial", financialEn);
+    if (financialFr) addTranslations("fr", "financial", financialFr);
+    if (commissionEn) addTranslations("en", "commission", commissionEn);
+    if (commissionFr) addTranslations("fr", "commission", commissionFr);
+  }, [i18n, ordersEn, ordersFr, usersEn, usersFr, ridersEn, ridersFr, productsEn, productsFr, sellersEn, sellersFr, dashboardEn, dashboardFr, financialEn, financialFr, commissionEn, commissionFr]);
 }

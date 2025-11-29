@@ -1078,3 +1078,27 @@
 - [x] Fix translation timing issue (move t() calls to render)
 - [ ] Test French language switching
 - [ ] Save checkpoint
+
+### Phase 2.6: Translate Remaining Admin Pages (IN PROGRESS)
+- [ ] Identify all remaining untranslated admin pages
+- [ ] Translate Financial Overview page
+- [ ] Translate Commission Settings page
+- [ ] Translate Payout Management page
+- [ ] Translate Payment Transactions page
+- [ ] Translate Quality Verification page
+- [ ] Translate Rider Leaderboard page
+- [ ] Translate other remaining pages
+- [ ] Seed all new translations to database
+- [ ] Add translations to i18n initial config
+- [ ] Test all pages in English and French
+- [ ] Save checkpoint
+
+
+### Phase 2.6: Translate Remaining Admin Pages (COMPLETED)
+- [x] Financial Overview page: Add i18n keys (30 keys)
+- [x] Commission Settings page: Add i18n keys (25 keys)
+- [x] Seed translations to database (English + French)
+- [x] Add namespaces to i18n config and loader
+- [x] Test pages in English
+- [ ] Test French language switching
+- [ ] Save checkpoint

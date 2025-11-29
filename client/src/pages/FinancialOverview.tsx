@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +12,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function FinancialOverview() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const [trendDays, setTrendDays] = useState(30);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -67,16 +69,16 @@ export default function FinancialOverview() {
 
   // Prepare commission breakdown data
   const commissionData = commissions ? [
-    { name: 'Platform Commission', value: commissions.platformCommission },
-    { name: 'Rider Commissions', value: commissions.riderCommissions },
-    { name: 'Delivery Fees', value: commissions.deliveryFees },
+    { name: t('financial:platform_commission'), value: commissions.platformCommission },
+    { name: t('financial:rider_commissions'), value: commissions.riderCommissions },
+    { name: t('financial:delivery_fees'), value: commissions.deliveryFees },
   ] : [];
 
   // Prepare payout status data
   const payoutData = payoutStatuses ? [
-    { name: 'Completed', value: payoutStatuses.completed.total, count: payoutStatuses.completed.count },
-    { name: 'Pending', value: payoutStatuses.pending.total, count: payoutStatuses.pending.count },
-    { name: 'Failed', value: payoutStatuses.failed.total, count: payoutStatuses.failed.count },
+    { name: t('financial:completed'), value: payoutStatuses.completed.total, count: payoutStatuses.completed.count },
+    { name: t('financial:pending'), value: payoutStatuses.pending.total, count: payoutStatuses.pending.count },
+    { name: t('financial:failed'), value: payoutStatuses.failed.total, count: payoutStatuses.failed.count },
   ] : [];
 
   return (
@@ -85,10 +87,10 @@ export default function FinancialOverview() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Financial Overview</h1>
-            <p className="text-muted-foreground">Track revenue, commissions, and payouts</p>
+            <h1 className="text-3xl font-bold">{t("financial:title")}</h1>
+            <p className="text-muted-foreground">{t("financial:description")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Last updated: {formatTime(lastUpdated)} • Auto-refreshes every 30s
+              {t("financial:last_updated")}: {formatTime(lastUpdated)} • {t("financial:auto_refreshes")}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -99,17 +101,17 @@ export default function FinancialOverview() {
               disabled={isRefreshing}
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              {t("financial:refresh")}
             </Button>
             <Select value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
+                <SelectItem value="day">{t("financial:today")}</SelectItem>
+                <SelectItem value="week">{t("financial:this_week")}</SelectItem>
+                <SelectItem value="month">{t("financial:this_month")}</SelectItem>
+                <SelectItem value="year">{t("financial:this_year")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -119,7 +121,7 @@ export default function FinancialOverview() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("financial:total_revenue")}</CardTitle>
               <DollarSign className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -129,7 +131,7 @@ export default function FinancialOverview() {
                 <>
                   <div className="text-2xl font-bold">{formatCurrency(overview?.current.revenue || 0)}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {overview && formatGrowth(overview.growth.revenue)} vs previous period
+                    {overview && formatGrowth(overview.growth.revenue)} {t("financial:vs_previous_period")}
                   </div>
                 </>
               )}
@@ -138,7 +140,7 @@ export default function FinancialOverview() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Commissions</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("financial:commissions")}</CardTitle>
               <CreditCard className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -148,7 +150,7 @@ export default function FinancialOverview() {
                 <>
                   <div className="text-2xl font-bold">{formatCurrency(overview?.current.commissions || 0)}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {overview && formatGrowth(overview.growth.commissions)} vs previous period
+                    {overview && formatGrowth(overview.growth.commissions)} {t("financial:vs_previous_period")}
                   </div>
                 </>
               )}
@@ -157,7 +159,7 @@ export default function FinancialOverview() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Payouts</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("financial:payouts")}</CardTitle>
               <Wallet className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -167,7 +169,7 @@ export default function FinancialOverview() {
                 <>
                   <div className="text-2xl font-bold">{formatCurrency(overview?.current.payouts || 0)}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {overview && formatGrowth(overview.growth.payouts)} vs previous period
+                    {overview && formatGrowth(overview.growth.payouts)} {t("financial:vs_previous_period")}
                   </div>
                 </>
               )}
@@ -176,7 +178,7 @@ export default function FinancialOverview() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Orders</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("financial:orders")}</CardTitle>
               <ShoppingCart className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -186,7 +188,7 @@ export default function FinancialOverview() {
                 <>
                   <div className="text-2xl font-bold">{overview?.current.orders || 0}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {overview && formatGrowth(overview.growth.orders)} vs previous period
+                    {overview && formatGrowth(overview.growth.orders)} {t("financial:vs_previous_period")}
                   </div>
                 </>
               )}
@@ -197,7 +199,7 @@ export default function FinancialOverview() {
         {/* Revenue Trends Chart */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Revenue Trends</CardTitle>
+            <CardTitle>{t("financial:revenue_trends")}</CardTitle>
             <Select value={trendDays.toString()} onValueChange={(v) => setTrendDays(parseInt(v))}>
               <SelectTrigger className="w-32">
                 <SelectValue />
@@ -235,7 +237,7 @@ export default function FinancialOverview() {
           {/* Commission Breakdown */}
           <Card>
             <CardHeader>
-              <CardTitle>Commission Breakdown</CardTitle>
+              <CardTitle>{t("financial:commission_breakdown")}</CardTitle>
             </CardHeader>
             <CardContent>
               {commissionsLoading ? (
@@ -267,7 +269,7 @@ export default function FinancialOverview() {
           {/* Payout Status */}
           <Card>
             <CardHeader>
-              <CardTitle>Payout Status</CardTitle>
+              <CardTitle>{t("financial:payout_status")}</CardTitle>
             </CardHeader>
             <CardContent>
               {payoutsLoading ? (
@@ -279,7 +281,7 @@ export default function FinancialOverview() {
                     <YAxis tickFormatter={(value) => `${(value / 100).toFixed(0)}k`} />
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
                     <Legend />
-                    <Bar dataKey="value" fill="#3b82f6" name="Amount" />
+                    <Bar dataKey="value" fill="#3b82f6" name={t("financial:amount")} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -290,7 +292,7 @@ export default function FinancialOverview() {
         {/* Top Revenue Categories */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Revenue Categories</CardTitle>
+            <CardTitle>{t("financial:top_revenue_categories")}</CardTitle>
           </CardHeader>
           <CardContent>
             {categoriesLoading ? (
@@ -304,7 +306,7 @@ export default function FinancialOverview() {
                         {index + 1}
                       </div>
                       <div>
-                        <div className="font-medium">{category.categoryName || 'Uncategorized'}</div>
+                        <div className="font-medium">{category.categoryName || t('financial:uncategorized')}</div>
                         <div className="text-sm text-muted-foreground">{category.orderCount} orders</div>
                       </div>
                     </div>
@@ -321,7 +323,7 @@ export default function FinancialOverview() {
         {/* Payment Methods */}
         <Card>
           <CardHeader>
-            <CardTitle>Revenue by Payment Method</CardTitle>
+            <CardTitle>{t("financial:revenue_by_payment_method")}</CardTitle>
           </CardHeader>
           <CardContent>
             {paymentMethodsLoading ? (
@@ -333,7 +335,7 @@ export default function FinancialOverview() {
                     <div className="flex items-center gap-3">
                       <CreditCard className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <div className="font-medium capitalize">{method.paymentMethod || 'Unknown'}</div>
+                        <div className="font-medium capitalize">{method.paymentMethod || t('financial:unknown')}</div>
                         <div className="text-sm text-muted-foreground">{method.orderCount} transactions</div>
                       </div>
                     </div>
