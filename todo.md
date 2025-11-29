@@ -1102,3 +1102,12 @@
 - [x] Test pages in English
 - [ ] Test French language switching
 - [ ] Save checkpoint
+
+### Phase 2.7: Translate Payment & Payout Pages (COMPLETED)
+- [x] Payment Transactions page: Add i18n keys (27 keys)
+- [x] Payout Management page: Add i18n keys (24 keys)
+- [x] Seed translations to database (English + French)
+- [x] Add namespaces to i18n config and loader
+- [x] Test pages in English
+- [ ] Test French language switching
+- [ ] Save checkpoint

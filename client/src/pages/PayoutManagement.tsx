@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ import { Wallet, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-reac
 import { toast } from "sonner";
 
 export default function PayoutManagement() {
+  const { t } = useTranslation();
   const [selectedPayouts, setSelectedPayouts] = useState<number[]>([]);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
@@ -95,14 +97,14 @@ export default function PayoutManagement() {
 
   const stats = [
     {
-      title: "Pending Payouts",
+      title: t("payout:pending_payouts"),
       value: payouts?.length || 0,
       icon: Clock,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
     },
     {
-      title: "Total Pending Amount",
+      title: t("payout:total_pending_amount"),
       value: formatCurrency(
         payouts?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0
       ),
@@ -111,14 +113,14 @@ export default function PayoutManagement() {
       bgColor: "bg-blue-100",
     },
     {
-      title: "Selected Payouts",
+      title: t("payout:selected_payouts"),
       value: selectedPayouts.length,
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-100",
     },
     {
-      title: "Selected Amount",
+      title: t("payout:selected_amount"),
       value: formatCurrency(totalSelectedAmount),
       icon: Wallet,
       color: "text-purple-600",
@@ -140,9 +142,9 @@ export default function PayoutManagement() {
     <div className="container py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Payout Management</h1>
+          <h1 className="text-3xl font-bold">{t("payout:title")}</h1>
           <p className="text-muted-foreground mt-2">
-            Process pending seller payouts with batch operations
+            {t("payout:description")}
           </p>
         </div>
         <Button
@@ -150,7 +152,7 @@ export default function PayoutManagement() {
           disabled={selectedPayouts.length === 0 || processPayouts.isPending}
           size="lg"
         >
-          {processPayouts.isPending ? "Processing..." : `Process ${selectedPayouts.length} Payout(s)`}
+          {processPayouts.isPending ? t("payout:processing") : t("payout:process_payouts", { count: selectedPayouts.length })}
         </Button>
       </div>
 
@@ -177,17 +179,17 @@ export default function PayoutManagement() {
       {/* Payouts Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Pending Payouts</CardTitle>
+          <CardTitle>{t("payout:pending_payouts")}</CardTitle>
           <CardDescription>
-            Select payouts to process in batch. Funds will be transferred to seller accounts.
+            {t("payout:table_description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!payouts || payouts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <CheckCircle className="h-12 w-12 text-green-600 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">All Caught Up!</h3>
-              <p className="text-muted-foreground">No pending payouts at the moment.</p>
+              <h3 className="text-lg font-semibold mb-2">{t("payout:all_caught_up")}</h3>
+              <p className="text-muted-foreground">{t("payout:no_pending")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -202,11 +204,11 @@ export default function PayoutManagement() {
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead>Seller ID</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>{t("payout:seller_id")}</TableHead>
+                    <TableHead>{t("payout:period")}</TableHead>
+                    <TableHead className="text-right">{t("payout:amount")}</TableHead>
+                    <TableHead>{t("payout:status")}</TableHead>
+                    <TableHead>{t("payout:created")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -264,28 +266,26 @@ export default function PayoutManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
-              Confirm Payout Processing
+              {t("payout:confirm_processing")}
             </DialogTitle>
             <DialogDescription>
-              You are about to process {selectedPayouts.length} payout(s) totaling{" "}
-              <span className="font-semibold">{formatCurrency(totalSelectedAmount)}</span>.
-              This action cannot be undone.
+              {t("payout:confirm_description", { count: selectedPayouts.length, amount: formatCurrency(totalSelectedAmount) })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Number of Payouts:</span>
+                <span className="text-muted-foreground">{t("payout:number_of_payouts")}</span>
                 <span className="font-semibold">{selectedPayouts.length}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total Amount:</span>
+                <span className="text-muted-foreground">{t("payout:total_amount")}</span>
                 <span className="font-semibold">{formatCurrency(totalSelectedAmount)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Payment Method:</span>
-                <span className="font-semibold">Bank Transfer</span>
+                <span className="text-muted-foreground">{t("payout:payment_method")}</span>
+                <span className="font-semibold">{t("payout:bank_transfer")}</span>
               </div>
             </div>
           </div>
@@ -296,13 +296,13 @@ export default function PayoutManagement() {
               onClick={() => setConfirmDialogOpen(false)}
               disabled={processPayouts.isPending}
             >
-              Cancel
+              {t("payout:cancel")}
             </Button>
             <Button
               onClick={confirmProcessPayouts}
               disabled={processPayouts.isPending}
             >
-              {processPayouts.isPending ? "Processing..." : "Confirm & Process"}
+              {processPayouts.isPending ? t("payout:processing") : t("payout:confirm_and_process")}
             </Button>
           </DialogFooter>
         </DialogContent>

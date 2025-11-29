@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,7 @@ import {
 import { CreditCard, Smartphone, Wallet, DollarSign, Filter, Search } from "lucide-react";
 
 export default function PaymentTransactions() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [providerFilter, setProviderFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -66,11 +68,11 @@ export default function PaymentTransactions() {
   const getProviderLabel = (provider: string) => {
     switch (provider) {
       case "mtn_money":
-        return "MTN Money";
+        return t("payment:mtn_money");
       case "orange_money":
-        return "Orange Money";
+        return t("payment:orange_money");
       case "cash":
-        return "Cash";
+        return t("payment:cash");
       default:
         return provider;
     }
@@ -79,13 +81,13 @@ export default function PaymentTransactions() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge variant="default" className="bg-green-600">Completed</Badge>;
+        return <Badge variant="default" className="bg-green-600">{t("payment:completed")}</Badge>;
       case "pending":
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary">{t("payment:pending")}</Badge>;
       case "failed":
-        return <Badge variant="destructive">Failed</Badge>;
+        return <Badge variant="destructive">{t("payment:failed")}</Badge>;
       case "refunded":
-        return <Badge variant="outline">Refunded</Badge>;
+        return <Badge variant="outline">{t("payment:refunded")}</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -107,28 +109,28 @@ export default function PaymentTransactions() {
   // Calculate stats
   const stats = [
     {
-      title: "Total Transactions",
+      title: t("payment:total_transactions"),
       value: transactions?.length || 0,
       icon: CreditCard,
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
     {
-      title: "MTN Money",
+      title: t("payment:mtn_money"),
       value: transactions?.filter((t: any) => t.provider === "mtn_money").length || 0,
       icon: Smartphone,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
     },
     {
-      title: "Orange Money",
+      title: t("payment:orange_money"),
       value: transactions?.filter((t: any) => t.provider === "orange_money").length || 0,
       icon: Smartphone,
       color: "text-orange-600",
       bgColor: "bg-orange-100",
     },
     {
-      title: "Total Volume",
+      title: t("payment:total_volume"),
       value: formatCurrency(
         transactions?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0
       ),
@@ -151,9 +153,9 @@ export default function PaymentTransactions() {
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Payment Transactions</h1>
+        <h1 className="text-3xl font-bold">{t("payment:title")}</h1>
         <p className="text-muted-foreground mt-2">
-          View and filter MTN Money, Orange Money, and cash transactions
+          {t("payment:description")}
         </p>
       </div>
 
@@ -182,17 +184,17 @@ export default function PaymentTransactions() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filters
+            {t("payment:filters")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
+              <label className="text-sm font-medium">{t("payment:search")}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Transaction ID or phone..."
+                  placeholder={t("payment:search_placeholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -201,13 +203,13 @@ export default function PaymentTransactions() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Payment Provider</label>
+              <label className="text-sm font-medium">{t("payment:payment_provider")}</label>
               <Select value={providerFilter} onValueChange={setProviderFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All providers" />
+                  <SelectValue placeholder={t("payment:all_providers")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Providers</SelectItem>
+                  <SelectItem value="all">{t("payment:all_providers")}</SelectItem>
                   <SelectItem value="mtn_money">MTN Money</SelectItem>
                   <SelectItem value="orange_money">Orange Money</SelectItem>
                   <SelectItem value="cash">Cash</SelectItem>
@@ -216,13 +218,13 @@ export default function PaymentTransactions() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">{t("payment:status")}</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
+                  <SelectValue placeholder={t("payment:all_statuses")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="all">{t("payment:all_statuses")}</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
@@ -243,7 +245,7 @@ export default function PaymentTransactions() {
                   setStatusFilter("all");
                 }}
               >
-                Clear Filters
+                {t("payment:clear_filters")}
               </Button>
               <p className="text-sm text-muted-foreground">
                 Showing {filteredTransactions?.length || 0} of {transactions?.length || 0}{" "}
@@ -257,27 +259,27 @@ export default function PaymentTransactions() {
       {/* Transactions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>Recent payment transactions across all providers</CardDescription>
+          <CardTitle>{t("payment:transaction_history")}</CardTitle>
+          <CardDescription>{t("payment:transaction_history_description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Transaction ID</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Phone Number</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>{t("payment:transaction_id")}</TableHead>
+                  <TableHead>{t("payment:provider")}</TableHead>
+                  <TableHead>{t("payment:phone_number")}</TableHead>
+                  <TableHead className="text-right">{t("payment:amount")}</TableHead>
+                  <TableHead>{t("payment:status")}</TableHead>
+                  <TableHead>{t("payment:date")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {!filteredTransactions || filteredTransactions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No transactions found
+                      {t("payment:no_transactions")}
                     </TableCell>
                   </TableRow>
                 ) : (
