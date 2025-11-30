@@ -1,4 +1,6 @@
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "react-i18next";
+import { useI18nLoader } from "@/hooks/useI18nLoader";
 import * as React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,8 @@ import {
 } from "recharts";
 
 export default function MobileMoneyAnalytics() {
+  const { t } = useTranslation("mobileMoney");
+  useI18nLoader(["mobileMoney"]);
   const { data: analytics, isLoading } = trpc.financial.getMobileMoneyAnalytics.useQuery();
   const [dateRange, setDateRange] = React.useState<{ from: Date; to: Date }>({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
@@ -181,7 +185,7 @@ export default function MobileMoneyAnalytics() {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Loading mobile money analytics...</p>
+          <p className="text-muted-foreground">{t("loading")}</p>
         </div>
       </div>
     );
@@ -191,9 +195,9 @@ export default function MobileMoneyAnalytics() {
     <div className="container py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Mobile Money Analytics</h1>
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground mt-2">
-            Track MTN Money and Orange Money performance, transaction success rates, and trends
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -207,7 +211,7 @@ export default function MobileMoneyAnalytics() {
             <PopoverContent className="w-auto p-4" align="end">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">From Date</label>
+                  <label className="text-sm font-medium">{t("fromDate")}</label>
                   <input
                     type="date"
                     value={dateRange.from.toISOString().split('T')[0]}
@@ -216,7 +220,7 @@ export default function MobileMoneyAnalytics() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">To Date</label>
+                  <label className="text-sm font-medium">{t("toDate")}</label>
                   <input
                     type="date"
                     value={dateRange.to.toISOString().split('T')[0]}
@@ -225,7 +229,7 @@ export default function MobileMoneyAnalytics() {
                   />
                 </div>
                 <Button onClick={() => setShowDatePicker(false)} className="w-full">
-                  Apply
+                  {t("apply")}
                 </Button>
               </div>
             </PopoverContent>
@@ -236,7 +240,7 @@ export default function MobileMoneyAnalytics() {
             className="gap-2"
           >
             <Download className="h-4 w-4" />
-            Export to CSV
+            {t("exportCSV")}
           </Button>
         </div>
       </div>

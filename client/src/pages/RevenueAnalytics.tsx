@@ -1,4 +1,6 @@
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "react-i18next";
+import { useI18nLoader } from "@/hooks/useI18nLoader";
 import {
   Card,
   CardContent,
@@ -24,6 +26,8 @@ import {
 } from "recharts";
 
 export default function RevenueAnalytics() {
+  const { t } = useTranslation("revenue");
+  useI18nLoader(["revenue"]);
   const { data: analytics, isLoading } = trpc.financial.getRevenueAnalytics.useQuery();
 
   const formatCurrency = (cents: number) => {
@@ -50,7 +54,7 @@ export default function RevenueAnalytics() {
 
   const stats = [
     {
-      title: "Total Revenue",
+      title: t("stats.totalRevenue"),
       value: formatCurrency(1250000000),
       change: "+15.3%",
       icon: DollarSign,
@@ -58,7 +62,7 @@ export default function RevenueAnalytics() {
       bgColor: "bg-green-100",
     },
     {
-      title: "Commission Earned",
+      title: t("stats.commissionEarned"),
       value: formatCurrency(187500000),
       change: "+12.8%",
       icon: Percent,
@@ -66,7 +70,7 @@ export default function RevenueAnalytics() {
       bgColor: "bg-blue-100",
     },
     {
-      title: "Growth Rate",
+      title: t("stats.growthRate"),
       value: "8.5%",
       change: "+2.1%",
       icon: TrendingUp,
@@ -74,7 +78,7 @@ export default function RevenueAnalytics() {
       bgColor: "bg-purple-100",
     },
     {
-      title: "This Month",
+      title: t("stats.thisMonth"),
       value: formatCurrency(125000000),
       change: "+18.2%",
       icon: Calendar,
@@ -87,7 +91,7 @@ export default function RevenueAnalytics() {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Loading revenue analytics...</p>
+          <p className="text-muted-foreground">{t("loading")}</p>
         </div>
       </div>
     );
@@ -96,9 +100,9 @@ export default function RevenueAnalytics() {
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Revenue Analytics</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-2">
-          Track revenue performance, growth trends, and commission earnings
+          {t("subtitle")}
         </p>
       </div>
 
@@ -116,7 +120,7 @@ export default function RevenueAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-green-600 mt-1">{stat.change} from last month</p>
+                <p className="text-xs text-green-600 mt-1">{stat.change} {t("stats.fromLastMonth")}</p>
               </CardContent>
             </Card>
           );
@@ -126,8 +130,8 @@ export default function RevenueAnalytics() {
       {/* Monthly Revenue Trend */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Monthly Revenue Trend</CardTitle>
-          <CardDescription>Revenue and commission earnings over the last 6 months</CardDescription>
+          <CardTitle>{t("charts.monthlyTrend.title")}</CardTitle>
+          <CardDescription>{t("charts.monthlyTrend.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={350}>
@@ -145,14 +149,14 @@ export default function RevenueAnalytics() {
                 dataKey="revenue"
                 stroke="#10b981"
                 strokeWidth={2}
-                name="Total Revenue"
+                name={t("charts.monthlyTrend.totalRevenue")}
               />
               <Line
                 type="monotone"
                 dataKey="commission"
                 stroke="#3b82f6"
                 strokeWidth={2}
-                name="Commission Earned"
+                name={t("charts.monthlyTrend.commissionEarned")}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -163,8 +167,8 @@ export default function RevenueAnalytics() {
         {/* Revenue by Category */}
         <Card>
           <CardHeader>
-            <CardTitle>Revenue by Category</CardTitle>
-            <CardDescription>Distribution of revenue across product categories</CardDescription>
+            <CardTitle>{t("charts.revenueByCategory.title")}</CardTitle>
+            <CardDescription>{t("charts.revenueByCategory.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -192,8 +196,8 @@ export default function RevenueAnalytics() {
         {/* Top Categories by Revenue */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Categories</CardTitle>
-            <CardDescription>Revenue comparison across product categories</CardDescription>
+            <CardTitle>{t("charts.topCategories.title")}</CardTitle>
+            <CardDescription>{t("charts.topCategories.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

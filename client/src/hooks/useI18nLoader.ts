@@ -13,14 +13,27 @@ export function useI18nLoader(namespaces?: string[]) {
   // Default to all core namespaces if none specified
   const namespacesToLoad = namespaces || [
     "orders", "users", "riders", "products", "sellers", 
-    "dashboard", "financial", "commission", "payment", "payout"
+    "dashboard", "financial", "commission", "payment", "payout",
+    "leaderboard", "quality", "revenue", "mobileMoney"
   ];
   
-  // Dynamically create queries for each namespace
-  const queries = namespacesToLoad.flatMap(ns => [
-    trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: ns }),
-    trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: ns }),
-  ]);
+  // Load English translations for all namespaces
+  const enQueries = namespacesToLoad.map(ns => ({
+    namespace: ns,
+    query: trpc.i18n.getTranslations.useQuery(
+      { languageCode: "en", namespace: ns },
+      { staleTime: 5 * 60 * 1000 } // Cache for 5 minutes
+    )
+  }));
+  
+  // Load French translations for all namespaces
+  const frQueries = namespacesToLoad.map(ns => ({
+    namespace: ns,
+    query: trpc.i18n.getTranslations.useQuery(
+      { languageCode: "fr", namespace: ns },
+      { staleTime: 5 * 60 * 1000 } // Cache for 5 minutes
+    )
+  }));
 
   // Add translations to i18next when data is loaded
   useEffect(() => {
@@ -36,14 +49,28 @@ export function useI18nLoader(namespaces?: string[]) {
       console.log(`[i18n] Loaded ${data.length} translations for ${lang}/${ns}`);
     };
 
-    // Process all loaded queries
-    queries.forEach((query, index) => {
+    // Process English translations
+    enQueries.forEach(({ namespace, query }) => {
       if (query.data) {
-        const nsIndex = Math.floor(index / 2);
-        const lang = index % 2 === 0 ? "en" : "fr";
-        const ns = namespacesToLoad[nsIndex];
-        addTranslations(lang, ns, query.data);
+        addTranslations("en", namespace, query.data);
       }
     });
-  }, [i18n, ...queries.map(q => q.data)]);
+
+    // Process French translations
+    frQueries.forEach(({ namespace, query }) => {
+      if (query.data) {
+        addTranslations("fr", namespace, query.data);
+      }
+    });
+  }, [
+    i18n,
+    ...enQueries.map(q => q.query.data),
+    ...frQueries.map(q => q.query.data)
+  ]);
+  
+  // Return loading state
+  const isLoading = enQueries.some(q => q.query.isLoading) || frQueries.some(q => q.query.isLoading);
+  const hasError = enQueries.some(q => q.query.isError) || frQueries.some(q => q.query.isError);
+  
+  return { isLoading, hasError };
 }

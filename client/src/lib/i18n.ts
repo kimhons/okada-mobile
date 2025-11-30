@@ -121,7 +121,7 @@ i18n
     },
     fallbackLng: "en",
     defaultNS: "common",
-    ns: ["common", "dashboard", "orders", "users", "riders", "products", "sellers", "financial", "commission", "payment", "payout", "leaderboard", "quality"],
+    ns: ["common", "dashboard", "orders", "users", "riders", "products", "sellers", "financial", "commission", "payment", "payout", "leaderboard", "quality", "revenue", "mobileMoney"],
     interpolation: {
       escapeValue: false, // React already escapes values
     },
