@@ -4,50 +4,23 @@ import { trpc } from "@/lib/trpc";
 
 /**
  * Hook to load translations from database into i18next
- * Call this once in App.tsx to populate all namespaces
+ * @param namespaces - Array of namespaces to load (e.g., ['orders', 'users'])
+ * If not provided, loads all core namespaces
  */
-export function useI18nLoader() {
+export function useI18nLoader(namespaces?: string[]) {
   const { i18n } = useTranslation();
   
-  // Load Orders namespace translations
-  const { data: ordersEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "orders" });
-  const { data: ordersFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "orders" });
+  // Default to all core namespaces if none specified
+  const namespacesToLoad = namespaces || [
+    "orders", "users", "riders", "products", "sellers", 
+    "dashboard", "financial", "commission", "payment", "payout"
+  ];
   
-  // Load Users namespace translations
-  const { data: usersEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "users" });
-  const { data: usersFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "users" });
-  
-  // Load Riders namespace translations
-  const { data: ridersEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "riders" });
-  const { data: ridersFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "riders" });
-  
-  // Load Products namespace translations
-  const { data: productsEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "products" });
-  const { data: productsFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "products" });
-  
-  // Load Sellers namespace translations
-  const { data: sellersEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "sellers" });
-  const { data: sellersFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "sellers" });
-  
-  // Load Dashboard namespace translations
-  const { data: dashboardEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "dashboard" });
-  const { data: dashboardFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "dashboard" });
-  
-  // Load Financial namespace translations
-  const { data: financialEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "financial" });
-  const { data: financialFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "financial" });
-  
-  // Load Commission namespace translations
-  const { data: commissionEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "commission" });
-  const { data: commissionFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "commission" });
-  
-  // Load Payment namespace translations
-  const { data: paymentEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "payment" });
-  const { data: paymentFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "payment" });
-  
-  // Load Payout namespace translations
-  const { data: payoutEn } = trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: "payout" });
-  const { data: payoutFr } = trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: "payout" });
+  // Dynamically create queries for each namespace
+  const queries = namespacesToLoad.flatMap(ns => [
+    trpc.i18n.getTranslations.useQuery({ languageCode: "en", namespace: ns }),
+    trpc.i18n.getTranslations.useQuery({ languageCode: "fr", namespace: ns }),
+  ]);
 
   // Add translations to i18next when data is loaded
   useEffect(() => {
@@ -63,25 +36,14 @@ export function useI18nLoader() {
       console.log(`[i18n] Loaded ${data.length} translations for ${lang}/${ns}`);
     };
 
-    if (ordersEn) addTranslations("en", "orders", ordersEn);
-    if (ordersFr) addTranslations("fr", "orders", ordersFr);
-    if (usersEn) addTranslations("en", "users", usersEn);
-    if (usersFr) addTranslations("fr", "users", usersFr);
-    if (ridersEn) addTranslations("en", "riders", ridersEn);
-    if (ridersFr) addTranslations("fr", "riders", ridersFr);
-    if (productsEn) addTranslations("en", "products", productsEn);
-    if (productsFr) addTranslations("fr", "products", productsFr);
-    if (sellersEn) addTranslations("en", "sellers", sellersEn);
-    if (sellersFr) addTranslations("fr", "sellers", sellersFr);
-    if (dashboardEn) addTranslations("en", "dashboard", dashboardEn);
-    if (dashboardFr) addTranslations("fr", "dashboard", dashboardFr);
-    if (financialEn) addTranslations("en", "financial", financialEn);
-    if (financialFr) addTranslations("fr", "financial", financialFr);
-    if (commissionEn) addTranslations("en", "commission", commissionEn);
-    if (commissionFr) addTranslations("fr", "commission", commissionFr);
-    if (paymentEn) addTranslations("en", "payment", paymentEn);
-    if (paymentFr) addTranslations("fr", "payment", paymentFr);
-    if (payoutEn) addTranslations("en", "payout", payoutEn);
-    if (payoutFr) addTranslations("fr", "payout", payoutFr);
-  }, [i18n, ordersEn, ordersFr, usersEn, usersFr, ridersEn, ridersFr, productsEn, productsFr, sellersEn, sellersFr, dashboardEn, dashboardFr, financialEn, financialFr, commissionEn, commissionFr, paymentEn, paymentFr, payoutEn, payoutFr]);
+    // Process all loaded queries
+    queries.forEach((query, index) => {
+      if (query.data) {
+        const nsIndex = Math.floor(index / 2);
+        const lang = index % 2 === 0 ? "en" : "fr";
+        const ns = namespacesToLoad[nsIndex];
+        addTranslations(lang, ns, query.data);
+      }
+    });
+  }, [i18n, ...queries.map(q => q.data)]);
 }

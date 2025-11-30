@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
+import { useI18nLoader } from "@/hooks/useI18nLoader";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +24,9 @@ import { CheckCircle, XCircle, Image as ImageIcon, MapPin, User } from "lucide-r
 import { toast } from "sonner";
 
 export default function QualityVerification() {
+  const { t } = useTranslation('quality');
+  useI18nLoader(['quality']);
+  
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -29,25 +34,25 @@ export default function QualityVerification() {
   const { data: pendingPhotos, isLoading, refetch } = trpc.qualityVerification.getPendingPhotos.useQuery();
   const approvePhoto = trpc.qualityVerification.approvePhoto.useMutation({
     onSuccess: () => {
-      toast.success("Photo approved successfully");
+      toast.success(t('toast.approveSuccess'));
       refetch();
       setSelectedPhoto(null);
     },
     onError: (error) => {
-      toast.error(`Failed to approve photo: ${error.message}`);
+      toast.error(t('toast.approveError', { error: error.message }));
     },
   });
 
   const rejectPhoto = trpc.qualityVerification.rejectPhoto.useMutation({
     onSuccess: () => {
-      toast.success("Photo rejected");
+      toast.success(t('toast.rejectSuccess'));
       refetch();
       setSelectedPhoto(null);
       setShowRejectDialog(false);
       setRejectionReason("");
     },
     onError: (error) => {
-      toast.error(`Failed to reject photo: ${error.message}`);
+      toast.error(t('toast.rejectError', { error: error.message }));
     },
   });
 
@@ -57,7 +62,7 @@ export default function QualityVerification() {
 
   const handleReject = () => {
     if (!selectedPhoto || !rejectionReason.trim()) {
-      toast.error("Please provide a rejection reason");
+      toast.error(t('toast.reasonRequired'));
       return;
     }
     rejectPhoto.mutate({
@@ -70,7 +75,7 @@ export default function QualityVerification() {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Loading quality verification photos...</p>
+          <p className="text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -79,9 +84,9 @@ export default function QualityVerification() {
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Quality Verification Review</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="text-muted-foreground mt-2">
-          Review and approve delivery quality photos submitted by riders
+          {t('subtitle')}
         </p>
       </div>
 
@@ -89,9 +94,9 @@ export default function QualityVerification() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">No pending photos to review</p>
+            <p className="text-lg font-medium">{t('empty.title')}</p>
             <p className="text-sm text-muted-foreground">
-              All quality verification photos have been reviewed
+              {t('empty.message')}
             </p>
           </CardContent>
         </Card>
@@ -110,7 +115,7 @@ export default function QualityVerification() {
                       </div>
                     </CardDescription>
                   </div>
-                  <Badge variant="secondary">Pending</Badge>
+                  <Badge variant="secondary">{t('card.pending')}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -120,7 +125,7 @@ export default function QualityVerification() {
                 >
                   <img
                     src={photo.photoUrl}
-                    alt="Quality verification photo"
+                    alt={t('card.photoAlt')}
                     className="w-full h-full object-cover hover:scale-105 transition-transform"
                   />
                 </div>
@@ -129,19 +134,19 @@ export default function QualityVerification() {
                   <div className="flex items-start gap-2">
                     <User className="h-4 w-4 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="font-medium">Customer</p>
+                      <p className="font-medium">{t('card.customer')}</p>
                       <p className="text-muted-foreground">{photo.customerName}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="font-medium">Delivery Address</p>
+                      <p className="font-medium">{t('card.deliveryAddress')}</p>
                       <p className="text-muted-foreground text-xs">{photo.deliveryAddress}</p>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Uploaded: {new Date(photo.createdAt).toLocaleString()}
+                    {t('card.uploaded')}: {new Date(photo.createdAt).toLocaleString()}
                   </div>
                 </div>
 
@@ -153,7 +158,7 @@ export default function QualityVerification() {
                     disabled={approvePhoto.isPending}
                   >
                     <CheckCircle className="h-4 w-4 mr-1" />
-                    Approve
+                    {t('card.approve')}
                   </Button>
                   <Button
                     size="sm"
@@ -166,7 +171,7 @@ export default function QualityVerification() {
                     disabled={rejectPhoto.isPending}
                   >
                     <XCircle className="h-4 w-4 mr-1" />
-                    Reject
+                    {t('card.reject')}
                   </Button>
                 </div>
               </CardContent>
@@ -180,34 +185,34 @@ export default function QualityVerification() {
         <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Quality Verification Photo</DialogTitle>
+              <DialogTitle>{t('dialog.title')}</DialogTitle>
               <DialogDescription>
-                Order {selectedPhoto.orderNumber} - {selectedPhoto.riderName}
+                {t('dialog.description', { orderNumber: selectedPhoto.orderNumber, riderName: selectedPhoto.riderName })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
                 <img
                   src={selectedPhoto.photoUrl}
-                  alt="Quality verification photo"
+                  alt={t('card.photoAlt')}
                   className="w-full h-full object-contain"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="font-medium">Customer</p>
+                  <p className="font-medium">{t('dialog.customer')}</p>
                   <p className="text-muted-foreground">{selectedPhoto.customerName}</p>
                 </div>
                 <div>
-                  <p className="font-medium">Rider</p>
+                  <p className="font-medium">{t('dialog.rider')}</p>
                   <p className="text-muted-foreground">{selectedPhoto.riderName}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="font-medium">Delivery Address</p>
+                  <p className="font-medium">{t('dialog.deliveryAddress')}</p>
                   <p className="text-muted-foreground">{selectedPhoto.deliveryAddress}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="font-medium">Uploaded</p>
+                  <p className="font-medium">{t('dialog.uploaded')}</p>
                   <p className="text-muted-foreground">
                     {new Date(selectedPhoto.createdAt).toLocaleString()}
                   </p>
@@ -216,7 +221,7 @@ export default function QualityVerification() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedPhoto(null)}>
-                Close
+                {t('dialog.close')}
               </Button>
               <Button
                 variant="destructive"
@@ -225,14 +230,14 @@ export default function QualityVerification() {
                 }}
               >
                 <XCircle className="h-4 w-4 mr-2" />
-                Reject
+                {t('dialog.reject')}
               </Button>
               <Button
                 onClick={() => handleApprove(selectedPhoto.id)}
                 disabled={approvePhoto.isPending}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Approve
+                {t('dialog.approve')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -243,14 +248,14 @@ export default function QualityVerification() {
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Quality Photo</DialogTitle>
+            <DialogTitle>{t('reject.title')}</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting this photo. This will be sent to the rider.
+              {t('reject.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Textarea
-              placeholder="Enter rejection reason..."
+              placeholder={t('reject.placeholder')}
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               rows={4}
@@ -264,14 +269,14 @@ export default function QualityVerification() {
                 setRejectionReason("");
               }}
             >
-              Cancel
+              {t('reject.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleReject}
               disabled={rejectPhoto.isPending || !rejectionReason.trim()}
             >
-              Reject Photo
+              {t('reject.submit')}
             </Button>
           </DialogFooter>
         </DialogContent>

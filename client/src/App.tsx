@@ -122,6 +122,7 @@ function Router() {
       <Route path="/rider-availability" component={() => <DashboardLayout><RiderAvailabilityCalendar /></DashboardLayout>} />
       <Route path="/rider-earnings" component={() => <DashboardLayout><RiderEarningsBreakdown /></DashboardLayout>} />
       <Route path="/badges" component={() => <DashboardLayout><BadgeShowcase /></DashboardLayout>} />
+      <Route path="/rider-leaderboard" component={() => <DashboardLayout><RiderLeaderboard /></DashboardLayout>} />
       <Route path="/geo-analytics" component={() => <DashboardLayout><GeoAnalytics /></DashboardLayout>} />
       <Route path="/referral-program" component={() => <DashboardLayout><ReferralProgram /></DashboardLayout>} />
       <Route path="/advanced-reporting" component={() => <DashboardLayout><AdvancedReporting /></DashboardLayout>} />

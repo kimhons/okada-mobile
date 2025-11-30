@@ -1109,5 +1109,45 @@
 - [x] Seed translations to database (English + French)
 - [x] Add namespaces to i18n config and loader
 - [x] Test pages in English
-- [ ] Test French language switching
-- [ ] Save checkpoint
+- [x] Save checkpoint
+
+### Phase 2.8: Test French Language Switching (COMPLETED)
+- [x] Test Dashboard page in French
+- [x] Test Orders page in French
+- [x] Test Users page in French
+- [x] Test Riders page in French
+- [x] Test Products page in French
+- [x] Test Sellers page in French
+- [x] Test Financial Overview page in French
+- [x] Test Commission Settings page in French
+- [x] Test Payment Transactions page in French
+- [x] Test Payout Management page in French
+- [x] Document test results (see docs/FRENCH_TRANSLATION_TEST_RESULTS.md)
+- [x] All 10 pages display correctly in French - 100% pass rate
+
+### Phase 2.9: Translate Rider Leaderboard & Quality Verification (COMPLETED)
+- [x] Analyze Rider Leaderboard page for translation keys (38 keys identified)
+- [x] Add i18n keys to Rider Leaderboard page
+- [x] Analyze Quality Verification page for translation keys (32 keys identified)
+- [x] Add i18n keys to Quality Verification page
+- [x] Create seed data for both pages (English + French)
+- [x] Seed translations to database (146 total translations)
+- [x] Update i18n config and loader with new namespaces
+- [x] Add initial translations to i18n config for immediate display
+- [x] Add route for Rider Leaderboard in App.tsx
+- [x] Test pages in English and French (basic translations working)
+
+### Phase 2.10: Write Vitest Tests for i18n System (COMPLETED)
+- [x] Write comprehensive i18n test suite (31 tests)
+- [x] Test i18n configuration and initialization
+- [x] Test language switching functionality (EN↔FR)
+- [x] Test common namespace translations
+- [x] Test dashboard namespace translations
+- [x] Test leaderboard namespace translations (NEW)
+- [x] Test quality namespace translations (NEW)
+- [x] Test fallback behavior for missing keys/namespaces
+- [x] Test interpolation and pluralization
+- [x] Test namespace loading and resource bundle management
+- [x] Test language detection and localStorage caching
+- [x] Run all tests and verify 100% pass rate ✅ (31/31 passed)
+- [x] Save final checkpoint

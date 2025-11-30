@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
+import { useI18nLoader } from "@/hooks/useI18nLoader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,6 +33,9 @@ const statusColors = {
 };
 
 export default function RiderLeaderboard() {
+  const { t } = useTranslation('leaderboard');
+  useI18nLoader(['leaderboard']);
+  
   const [period, setPeriod] = useState<Period>('week');
   const [category, setCategory] = useState<Category>('overall');
   const [tier, setTier] = useState<Tier>('all');
@@ -121,11 +126,11 @@ export default function RiderLeaderboard() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Trophy className="h-8 w-8 text-yellow-500" />
-            Rider Performance Leaderboard
+            {t('title')}
           </h1>
-          <p className="text-muted-foreground mt-1">Track and celebrate top-performing riders</p>
+          <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Last updated: {formatTime(lastUpdated)} • Auto-refreshes every 30s
+            {t('lastUpdated')}: {formatTime(lastUpdated)} • {t('autoRefresh')}
           </p>
         </div>
         <Button
@@ -135,7 +140,7 @@ export default function RiderLeaderboard() {
           disabled={isRefreshing}
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
+          {t('refresh')}
         </Button>
       </div>
 
@@ -143,45 +148,45 @@ export default function RiderLeaderboard() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Riders</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('stats.totalRiders')}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{leaderboardData.stats.totalRiders}</div>
-              <p className="text-xs text-muted-foreground">Active in {getPeriodLabel(period).toLowerCase()}</p>
+              <p className="text-xs text-muted-foreground">{t('stats.activeIn', { period: getPeriodLabel(period).toLowerCase() })}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Deliveries</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('stats.totalDeliveries')}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{leaderboardData.stats.totalDeliveries.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Completed {getPeriodLabel(period).toLowerCase()}</p>
+              <p className="text-xs text-muted-foreground">{t('stats.completed', { period: getPeriodLabel(period).toLowerCase() })}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Performance</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('stats.avgPerformance')}</CardTitle>
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{leaderboardData.stats.avgPerformanceScore}</div>
-              <p className="text-xs text-muted-foreground">Out of 100 points</p>
+              <p className="text-xs text-muted-foreground">{t('stats.outOf100')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('stats.totalEarnings')}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(leaderboardData.stats.totalEarnings)} FCFA</div>
-              <p className="text-xs text-muted-foreground">Earned {getPeriodLabel(period).toLowerCase()}</p>
+              <p className="text-xs text-muted-foreground">{t('stats.earned', { period: getPeriodLabel(period).toLowerCase() })}</p>
             </CardContent>
           </Card>
         </div>
@@ -190,17 +195,17 @@ export default function RiderLeaderboard() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <CardTitle>Leaderboard</CardTitle>
+            <CardTitle>{t('leaderboard.title')}</CardTitle>
             <div className="flex gap-2 flex-wrap">
               <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">{t('period.today')}</SelectItem>
+                  <SelectItem value="week">{t('period.week')}</SelectItem>
+                  <SelectItem value="month">{t('period.month')}</SelectItem>
+                  <SelectItem value="all">{t('period.all')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -209,11 +214,11 @@ export default function RiderLeaderboard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="overall">Overall Performance</SelectItem>
-                  <SelectItem value="earnings">Top Earners</SelectItem>
-                  <SelectItem value="deliveries">Delivery Champions</SelectItem>
-                  <SelectItem value="rating">Customer Favorites</SelectItem>
-                  <SelectItem value="speed">Speed Masters</SelectItem>
+                  <SelectItem value="overall">{t('category.overall')}</SelectItem>
+                  <SelectItem value="earnings">{t('category.earnings')}</SelectItem>
+                  <SelectItem value="deliveries">{t('category.deliveries')}</SelectItem>
+                  <SelectItem value="rating">{t('category.rating')}</SelectItem>
+                  <SelectItem value="speed">{t('category.speed')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -222,12 +227,12 @@ export default function RiderLeaderboard() {
                   <SelectValue placeholder="All Tiers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Tiers</SelectItem>
-                  <SelectItem value="platinum">🏆 Platinum</SelectItem>
-                  <SelectItem value="gold">🥇 Gold</SelectItem>
-                  <SelectItem value="silver">🥈 Silver</SelectItem>
-                  <SelectItem value="bronze">🥉 Bronze</SelectItem>
-                  <SelectItem value="rookie">🔰 Rookie</SelectItem>
+                  <SelectItem value="all">{t('tier.all')}</SelectItem>
+                  <SelectItem value="platinum">🏆 {t('tier.platinum')}</SelectItem>
+                  <SelectItem value="gold">🥇 {t('tier.gold')}</SelectItem>
+                  <SelectItem value="silver">🥈 {t('tier.silver')}</SelectItem>
+                  <SelectItem value="bronze">🥉 {t('tier.bronze')}</SelectItem>
+                  <SelectItem value="rookie">🔰 {t('tier.rookie')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -238,7 +243,7 @@ export default function RiderLeaderboard() {
                 className="gap-2"
               >
                 <GitCompare className="h-4 w-4" />
-                Compare ({selectedForComparison.length}/2)
+                {t('compare.button', { count: selectedForComparison.length })}
               </Button>
             </div>
           </div>
@@ -255,16 +260,16 @@ export default function RiderLeaderboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50px]">Compare</TableHead>
-                    <TableHead className="w-[60px]">Rank</TableHead>
-                    <TableHead>Rider</TableHead>
-                    <TableHead>Tier</TableHead>
-                    <TableHead className="text-right">Score</TableHead>
-                    <TableHead className="text-right">Deliveries</TableHead>
-                    <TableHead className="text-right">Rating</TableHead>
-                    <TableHead className="text-right">On-Time</TableHead>
-                    <TableHead className="text-right">Earnings</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="w-[50px]">{t('table.compare')}</TableHead>
+                    <TableHead className="w-[60px]">{t('table.rank')}</TableHead>
+                    <TableHead>{t('table.rider')}</TableHead>
+                    <TableHead>{t('table.tier')}</TableHead>
+                    <TableHead className="text-right">{t('table.score')}</TableHead>
+                    <TableHead className="text-right">{t('table.deliveries')}</TableHead>
+                    <TableHead className="text-right">{t('table.rating')}</TableHead>
+                    <TableHead className="text-right">{t('table.onTime')}</TableHead>
+                    <TableHead className="text-right">{t('table.earnings')}</TableHead>
+                    <TableHead className="text-center">{t('table.status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -296,7 +301,7 @@ export default function RiderLeaderboard() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="font-bold text-lg">{rider.performanceScore}</div>
-                          <div className="text-xs text-muted-foreground">/ 100</div>
+                          <div className="text-xs text-muted-foreground">{t('table.scoreMax')}</div>
                         </TableCell>
                         <TableCell className="text-right font-medium">{rider.deliveries}</TableCell>
                         <TableCell className="text-right">
@@ -325,7 +330,7 @@ export default function RiderLeaderboard() {
               </Table>
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">No riders found for {getPeriodLabel(period).toLowerCase()}</div>
+            <div className="text-center py-12 text-muted-foreground">{t('empty', { period: getPeriodLabel(period).toLowerCase() })}</div>
           )}
         </CardContent>
       </Card>

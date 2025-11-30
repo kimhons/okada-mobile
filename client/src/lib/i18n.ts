@@ -51,6 +51,18 @@ i18n
           view_analytics: "View Analytics",
           view_analytics_description: "Track performance metrics and insights",
         },
+        leaderboard: {
+          title: "Rider Performance Leaderboard",
+          subtitle: "Track and celebrate top-performing riders",
+          lastUpdated: "Last updated",
+          autoRefresh: "Auto-refreshes every 30s",
+          refresh: "Refresh",
+        },
+        quality: {
+          title: "Quality Verification Review",
+          subtitle: "Review and approve delivery quality photos submitted by riders",
+          loading: "Loading quality verification photos...",
+        },
       },
       fr: {
         common: {
@@ -93,11 +105,23 @@ i18n
           view_analytics: "Voir les analyses",
           view_analytics_description: "Suivre les métriques de performance et les insights",
         },
+        leaderboard: {
+          title: "Classement des Performances des Livreurs",
+          subtitle: "Suivre et célébrer les meilleurs livreurs",
+          lastUpdated: "Dernière mise à jour",
+          autoRefresh: "Actualisation automatique toutes les 30s",
+          refresh: "Actualiser",
+        },
+        quality: {
+          title: "Vérification de la Qualité",
+          subtitle: "Examiner et approuver les photos de qualité de livraison soumises par les livreurs",
+          loading: "Chargement des photos de vérification de qualité...",
+        },
       },
     },
     fallbackLng: "en",
     defaultNS: "common",
-    ns: ["common", "dashboard", "orders", "users", "riders", "products", "sellers", "financial", "commission", "payment", "payout"],
+    ns: ["common", "dashboard", "orders", "users", "riders", "products", "sellers", "financial", "commission", "payment", "payout", "leaderboard", "quality"],
     interpolation: {
       escapeValue: false, // React already escapes values
     },
