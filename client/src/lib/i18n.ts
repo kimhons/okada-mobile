@@ -51,6 +51,15 @@ i18n
           view_analytics: "View Analytics",
           view_analytics_description: "Track performance metrics and insights",
         },
+        orders: {
+          status_delivered: "Delivered",
+          status_in_transit: "In Transit",
+          status_quality_verification: "Quality Verification",
+          status_confirmed: "Confirmed",
+          status_pending: "Pending",
+          status_cancelled: "Cancelled",
+          status_processing: "Processing",
+        },
         leaderboard: {
           title: "Rider Performance Leaderboard",
           subtitle: "Track and celebrate top-performing riders",
@@ -104,6 +113,15 @@ i18n
           approve_riders_description: "Examiner et approuver les candidatures de livreurs en attente",
           view_analytics: "Voir les analyses",
           view_analytics_description: "Suivre les métriques de performance et les insights",
+        },
+        orders: {
+          status_delivered: "Livré",
+          status_in_transit: "En cours de livraison",
+          status_quality_verification: "Vérification qualité",
+          status_confirmed: "Confirmé",
+          status_pending: "En attente",
+          status_cancelled: "Annulé",
+          status_processing: "En traitement",
         },
         leaderboard: {
           title: "Classement des Performances des Livreurs",

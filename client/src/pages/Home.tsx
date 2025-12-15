@@ -54,7 +54,7 @@ export default function Home() {
   };
 
   const getStatusLabel = (status: string) => {
-    return t(`orders.status_${status}`);
+    return t(`orders:status_${status}`);
   };
 
   return (
