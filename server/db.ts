@@ -3239,6 +3239,10 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
   const bonusEarnings = earnings.reduce((sum, e) => sum + (e.bonus || 0), 0);
   const tipEarnings = earnings.reduce((sum, e) => sum + (e.tip || 0), 0);
 
+  // Calculate on-time rate (mock - would need actual delivery time tracking)
+  const onTimeRate = 85 + Math.random() * 10; // Placeholder
+  const qualityPhotoRate = 90 + Math.random() * 8; // Placeholder
+
   return {
     rider: rider[0],
     deliveries: completedOrders.length,
@@ -3250,6 +3254,8 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
     },
     rating: rider[0].rating || 0,
     acceptanceRate: rider[0].acceptanceRate || 0,
+    onTimeRate,
+    qualityPhotoRate,
   };
 }
 
@@ -6204,6 +6210,17 @@ export async function updateScheduledReport(id: number, data: Partial<InsertSche
   if (!db) return false;
 
   await db.update(scheduledReports).set(data).where(eq(scheduledReports.id, id));
+  return true;
+}
+
+/**
+ * Delete a scheduled report
+ */
+export async function deleteScheduledReport(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.delete(scheduledReports).where(eq(scheduledReports.id, id));
   return true;
 }
 

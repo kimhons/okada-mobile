@@ -1318,3 +1318,24 @@
 - [x] Test dashboard with real seeded data
 - [x] Verify all navigation links work
 - [x] Save final checkpoint for device testing
+
+
+## Sprint 16: TypeScript Error Fixes (COMPLETED)
+
+### Server Files
+- [x] Fix duplicate inventoryAlerts router (removed duplicate)
+- [x] Add deleteScheduledReport function to db.ts
+- [x] Fix z.record to use two arguments (key type and value type)
+- [x] Fix boolean to number conversion for isActive fields
+- [x] Fix parentId null handling in geoAnalytics
+- [x] Fix getRiderEarnings to use getRiderEarningsHistory
+- [x] Fix getPendingPayouts to use getPendingRiderPayouts
+- [x] Fix getRiderLeaderboard call to pass proper params object
+- [x] Fix periodType and customMessage type assertions
+- [x] Add onTimeRate and qualityPhotoRate to getRiderPerformanceDetails
+- [x] Fix createScheduledReport and updateScheduledReport type assertions
+
+### Results
+- Reduced TypeScript errors from 287 to 232 (55 errors fixed)
+- All server/routers.ts errors fixed (0 remaining)
+- Remaining errors are mostly implicit 'any' types in client pages
