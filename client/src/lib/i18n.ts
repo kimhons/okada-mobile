@@ -50,6 +50,8 @@ i18n
           approve_riders_description: "Review and approve pending rider applications",
           view_analytics: "View Analytics",
           view_analytics_description: "Track performance metrics and insights",
+          refresh: "Refresh",
+          refreshing: "Refreshing...",
         },
         orders: {
           status_delivered: "Delivered",

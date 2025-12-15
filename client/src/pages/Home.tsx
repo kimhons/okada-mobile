@@ -1,15 +1,31 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShoppingBag, Users, Bike, TrendingUp, Package, DollarSign, Loader2 } from "lucide-react";
+import { ShoppingBag, Users, Bike, TrendingUp, Package, DollarSign, Loader2, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const { t } = useTranslation();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const utils = trpc.useUtils();
   
-  // Fetch real dashboard stats from database
-  const { data: stats, isLoading: statsLoading } = trpc.dashboard.stats.useQuery();
-  const { data: recentOrders, isLoading: ordersLoading } = trpc.dashboard.recentOrders.useQuery({ limit: 5 });
+  // Fetch real dashboard stats from database with auto-refresh every 30 seconds
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.dashboard.stats.useQuery(undefined, {
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
+  const { data: recentOrders, isLoading: ordersLoading, refetch: refetchOrders } = trpc.dashboard.recentOrders.useQuery({ limit: 5 }, {
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
+
+  // Manual refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchStats(), refetchOrders()]);
+    setIsRefreshing(false);
+  };
 
   // Format currency in FCFA
   const formatCurrency = (amount: number) => {
@@ -72,11 +88,23 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">{t("dashboard:title")}</h1>
-        <p className="text-muted-foreground mt-1">
-          {t("dashboard:welcome_message")}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">{t("dashboard:title")}</h1>
+          <p className="text-muted-foreground mt-1">
+            {t("dashboard:welcome_message")}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? t("dashboard:refreshing") : t("dashboard:refresh")}
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -178,33 +206,39 @@ export default function Home() {
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              {t("dashboard:manage_products")}
-            </CardTitle>
-            <CardDescription>{t("dashboard:manage_products_description")}</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bike className="h-5 w-5 text-primary" />
-              {t("dashboard:approve_riders")}
-            </CardTitle>
-            <CardDescription>{t("dashboard:approve_riders_description")}</CardDescription>
-          </CardHeader>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              {t("dashboard:view_analytics")}
-            </CardTitle>
-            <CardDescription>{t("dashboard:view_analytics_description")}</CardDescription>
-          </CardHeader>
-        </Card>
+        <Link href="/products">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                {t("dashboard:manage_products")}
+              </CardTitle>
+              <CardDescription>{t("dashboard:manage_products_description")}</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+        <Link href="/riders">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bike className="h-5 w-5 text-primary" />
+                {t("dashboard:approve_riders")}
+              </CardTitle>
+              <CardDescription>{t("dashboard:approve_riders_description")}</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+        <Link href="/analytics">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                {t("dashboard:view_analytics")}
+              </CardTitle>
+              <CardDescription>{t("dashboard:view_analytics_description")}</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
       </div>
     </div>
   );
