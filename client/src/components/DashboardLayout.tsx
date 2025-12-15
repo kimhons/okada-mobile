@@ -64,7 +64,7 @@ const menuItems = [
   { icon: Mail, label: "Email Templates", path: "/email-templates" },
   { icon: Settings, label: "Notification Preferences", path: "/notification-preferences" },
   { icon: Percent, label: "Coupon Management", path: "/coupon-management" },
-  { icon: Megaphone, label: "Promotional Campaigns", path: "/promotional-campaigns" },
+  { icon: Megaphone, label: "Promotional Campaigns", path: "/campaigns" },
   { icon: Award, label: "Loyalty Program", path: "/loyalty-program" },
   { icon: TrendingUp, label: "Revenue Analytics Dashboard", path: "/revenue-analytics-dashboard" },
   { icon: Wallet, label: "Payout Management New", path: "/payout-management-new" },

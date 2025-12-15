@@ -251,84 +251,17 @@ export async function getDashboardStats() {
   const db = await getDb();
   if (!db) return null;
 
-  // Current month date range
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-
-  // Current totals
   const [orderCount] = await db.select({ count: sql<number>`count(*)` }).from(orders);
   const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
-  const [riderCount] = await db.select({ count: sql<number>`count(*)` }).from(riders).where(eq(riders.status, 'approved'));
+  const [riderCount] = await db.select({ count: sql<number>`count(*)` }).from(riders);
   const [revenueSum] = await db.select({ sum: sql<number>`sum(total)` }).from(orders).where(eq(orders.paymentStatus, 'paid'));
-
-  // Current month stats
-  const [currentMonthOrders] = await db.select({ count: sql<number>`count(*)` }).from(orders)
-    .where(gte(orders.createdAt, firstDayOfMonth));
-  const [currentMonthUsers] = await db.select({ count: sql<number>`count(*)` }).from(users)
-    .where(gte(users.createdAt, firstDayOfMonth));
-  const [currentMonthRiders] = await db.select({ count: sql<number>`count(*)` }).from(riders)
-    .where(and(gte(riders.createdAt, firstDayOfMonth), eq(riders.status, 'approved')));
-  const [currentMonthRevenue] = await db.select({ sum: sql<number>`sum(total)` }).from(orders)
-    .where(and(eq(orders.paymentStatus, 'paid'), gte(orders.createdAt, firstDayOfMonth)));
-
-  // Last month stats
-  const [lastMonthOrders] = await db.select({ count: sql<number>`count(*)` }).from(orders)
-    .where(and(gte(orders.createdAt, firstDayOfLastMonth), lte(orders.createdAt, lastDayOfLastMonth)));
-  const [lastMonthUsers] = await db.select({ count: sql<number>`count(*)` }).from(users)
-    .where(and(gte(users.createdAt, firstDayOfLastMonth), lte(users.createdAt, lastDayOfLastMonth)));
-  const [lastMonthRiders] = await db.select({ count: sql<number>`count(*)` }).from(riders)
-    .where(and(gte(riders.createdAt, firstDayOfLastMonth), lte(riders.createdAt, lastDayOfLastMonth), eq(riders.status, 'approved')));
-  const [lastMonthRevenue] = await db.select({ sum: sql<number>`sum(total)` }).from(orders)
-    .where(and(eq(orders.paymentStatus, 'paid'), gte(orders.createdAt, firstDayOfLastMonth), lte(orders.createdAt, lastDayOfLastMonth)));
-
-  // Calculate percentage changes
-  const calcChange = (current: number, previous: number): number => {
-    if (previous === 0) return current > 0 ? 100 : 0;
-    return Math.round(((current - previous) / previous) * 1000) / 10;
-  };
 
   return {
     totalOrders: orderCount.count || 0,
     totalUsers: userCount.count || 0,
     totalRiders: riderCount.count || 0,
     totalRevenue: revenueSum.sum || 0,
-    ordersChange: calcChange(currentMonthOrders.count || 0, lastMonthOrders.count || 0),
-    usersChange: calcChange(currentMonthUsers.count || 0, lastMonthUsers.count || 0),
-    ridersChange: calcChange(currentMonthRiders.count || 0, lastMonthRiders.count || 0),
-    revenueChange: calcChange(currentMonthRevenue.sum || 0, lastMonthRevenue.sum || 0),
   };
-}
-
-export async function getRecentOrders(limit: number = 5) {
-  const db = await getDb();
-  if (!db) return [];
-
-  const recentOrders = await db.select({
-    id: orders.id,
-    orderNumber: orders.orderNumber,
-    customerId: orders.customerId,
-    status: orders.status,
-    total: orders.total,
-    createdAt: orders.createdAt,
-  })
-    .from(orders)
-    .orderBy(desc(orders.createdAt))
-    .limit(limit);
-
-  // Get customer names for each order
-  const ordersWithCustomers = await Promise.all(
-    recentOrders.map(async (order) => {
-      const [customer] = await db.select({ name: users.name }).from(users).where(eq(users.id, order.customerId)).limit(1);
-      return {
-        ...order,
-        customerName: customer?.name || 'Unknown Customer',
-      };
-    })
-  );
-
-  return ordersWithCustomers;
 }
 
 // Analytics Functions
@@ -3239,10 +3172,6 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
   const bonusEarnings = earnings.reduce((sum, e) => sum + (e.bonus || 0), 0);
   const tipEarnings = earnings.reduce((sum, e) => sum + (e.tip || 0), 0);
 
-  // Calculate on-time rate (mock - would need actual delivery time tracking)
-  const onTimeRate = 85 + Math.random() * 10; // Placeholder
-  const qualityPhotoRate = 90 + Math.random() * 8; // Placeholder
-
   return {
     rider: rider[0],
     deliveries: completedOrders.length,
@@ -3254,8 +3183,6 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
     },
     rating: rider[0].rating || 0,
     acceptanceRate: rider[0].acceptanceRate || 0,
-    onTimeRate,
-    qualityPhotoRate,
   };
 }
 
@@ -6210,17 +6137,6 @@ export async function updateScheduledReport(id: number, data: Partial<InsertSche
   if (!db) return false;
 
   await db.update(scheduledReports).set(data).where(eq(scheduledReports.id, id));
-  return true;
-}
-
-/**
- * Delete a scheduled report
- */
-export async function deleteScheduledReport(id: number) {
-  const db = await getDb();
-  if (!db) return false;
-
-  await db.delete(scheduledReports).where(eq(scheduledReports.id, id));
   return true;
 }
 

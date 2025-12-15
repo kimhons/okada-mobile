@@ -50,8 +50,6 @@ i18n
           approve_riders_description: "Review and approve pending rider applications",
           view_analytics: "View Analytics",
           view_analytics_description: "Track performance metrics and insights",
-          refresh: "Refresh",
-          refreshing: "Refreshing...",
         },
         orders: {
           status_delivered: "Delivered",
@@ -118,12 +116,12 @@ i18n
         },
         orders: {
           status_delivered: "Livré",
-          status_in_transit: "En cours de livraison",
+          status_in_transit: "En transit",
           status_quality_verification: "Vérification qualité",
           status_confirmed: "Confirmé",
           status_pending: "En attente",
           status_cancelled: "Annulé",
-          status_processing: "En traitement",
+          status_processing: "En cours",
         },
         leaderboard: {
           title: "Classement des Performances des Livreurs",
