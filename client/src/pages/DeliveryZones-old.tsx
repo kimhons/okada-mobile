@@ -34,20 +34,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Plus, Edit, Trash2, Clock } from "lucide-react";
+import { MapPin, Plus, Edit, Trash2, Clock, DollarSign } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
-import { useI18nLoader } from "@/hooks/useI18nLoader";
 
 export default function DeliveryZones() {
-  const { t } = useTranslation("zones");
-  useI18nLoader(["zones"]);
-
   const { data: zones, isLoading, refetch } = trpc.deliveryZones.list.useQuery();
   const createZone = trpc.deliveryZones.create.useMutation({
     onSuccess: () => {
-      toast.success(t("toast.createSuccess"));
+      toast.success("Delivery zone created successfully");
       refetch();
       setShowCreateDialog(false);
     },
@@ -57,7 +52,7 @@ export default function DeliveryZones() {
   });
   const updateZone = trpc.deliveryZones.update.useMutation({
     onSuccess: () => {
-      toast.success(t("toast.updateSuccess"));
+      toast.success("Delivery zone updated successfully");
       refetch();
       setShowEditDialog(false);
     },
@@ -67,7 +62,7 @@ export default function DeliveryZones() {
   });
   const deleteZone = trpc.deliveryZones.delete.useMutation({
     onSuccess: () => {
-      toast.success(t("toast.deleteSuccess"));
+      toast.success("Delivery zone deleted successfully");
       refetch();
     },
     onError: (error) => {
@@ -123,7 +118,7 @@ export default function DeliveryZones() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm(t("deleteConfirm"))) {
+    if (confirm("Are you sure you want to delete this delivery zone?")) {
       deleteZone.mutate({ id });
     }
   };
@@ -131,10 +126,10 @@ export default function DeliveryZones() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">{t("loading")}</div>
+        <div className="text-muted-foreground">Loading delivery zones...</div>
       </div>
     );
-  };
+  }
 
   const doualaZones = zones?.filter((z) => z.city === "douala") || [];
   const yaoundeZones = zones?.filter((z) => z.city === "yaounde") || [];
@@ -143,37 +138,37 @@ export default function DeliveryZones() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
+          <h1 className="text-3xl font-bold">Delivery Zones</h1>
           <p className="text-muted-foreground mt-2">
-            {t("subtitle")}
+            Configure delivery zones for Douala and Yaoundé with pricing tiers and time estimates
           </p>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              {t("addZone")}
+              Add Zone
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t("dialog.createTitle")}</DialogTitle>
+              <DialogTitle>Create Delivery Zone</DialogTitle>
               <DialogDescription>
-                {t("dialog.createDescription")}
+                Add a new delivery zone with pricing and time estimates
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">{t("dialog.zoneName")}</Label>
+                <Label htmlFor="name">Zone Name</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder={t("dialog.zoneNamePlaceholder")}
+                  placeholder="e.g., Akwa, Bonanjo"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="city">{t("dialog.city")}</Label>
+                <Label htmlFor="city">City</Label>
                 <Select
                   value={formData.city}
                   onValueChange={(value) => setFormData({ ...formData, city: value })}
@@ -182,13 +177,13 @@ export default function DeliveryZones() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="douala">{t("cities.douala")}</SelectItem>
-                    <SelectItem value="yaounde">{t("cities.yaounde")}</SelectItem>
+                    <SelectItem value="douala">Douala</SelectItem>
+                    <SelectItem value="yaounde">Yaoundé</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="baseFee">{t("dialog.baseFee")}</Label>
+                <Label htmlFor="baseFee">Base Fee (FCFA)</Label>
                 <Input
                   id="baseFee"
                   type="number"
@@ -198,7 +193,7 @@ export default function DeliveryZones() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="perKmFee">{t("dialog.perKmFee")}</Label>
+                <Label htmlFor="perKmFee">Per KM Fee (FCFA)</Label>
                 <Input
                   id="perKmFee"
                   type="number"
@@ -208,7 +203,7 @@ export default function DeliveryZones() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="estimatedMinutes">{t("dialog.estimatedTime")}</Label>
+                <Label htmlFor="estimatedMinutes">Estimated Delivery Time (minutes)</Label>
                 <Input
                   id="estimatedMinutes"
                   type="number"
@@ -220,9 +215,9 @@ export default function DeliveryZones() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                {t("dialog.cancel")}
+                Cancel
               </Button>
-              <Button onClick={handleCreate}>{t("dialog.create")}</Button>
+              <Button onClick={handleCreate}>Create Zone</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -233,26 +228,26 @@ export default function DeliveryZones() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              {t("cards.doualaZones")}
+              Douala Zones
             </CardTitle>
             <CardDescription>
-              {doualaZones.length} {t("cards.zonesConfigured")}
+              {doualaZones.length} delivery zones configured
             </CardDescription>
           </CardHeader>
           <CardContent>
             {doualaZones.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {t("cards.noZonesDouala")}
+                No delivery zones configured for Douala
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("table.zone")}</TableHead>
-                    <TableHead>{t("table.pricing")}</TableHead>
-                    <TableHead>{t("table.time")}</TableHead>
-                    <TableHead>{t("table.status")}</TableHead>
-                    <TableHead>{t("table.actions")}</TableHead>
+                    <TableHead>Zone</TableHead>
+                    <TableHead>Pricing</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -261,21 +256,21 @@ export default function DeliveryZones() {
                       <TableCell className="font-medium">{zone.name}</TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>{formatCurrency(zone.baseFee)} {t("table.base")}</div>
+                          <div>{formatCurrency(zone.baseFee)} base</div>
                           <div className="text-muted-foreground">
-                            +{formatCurrency(zone.perKmFee)}{t("table.perKm")}
+                            +{formatCurrency(zone.perKmFee)}/km
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Clock className="h-3 w-3" />
-                          {zone.estimatedMinutes} {t("table.min")}
+                          {zone.estimatedMinutes} min
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={zone.isActive ? "default" : "secondary"}>
-                          {zone.isActive ? t("table.active") : t("table.inactive")}
+                          {zone.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -308,26 +303,26 @@ export default function DeliveryZones() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              {t("cards.yaoundeZones")}
+              Yaoundé Zones
             </CardTitle>
             <CardDescription>
-              {yaoundeZones.length} {t("cards.zonesConfigured")}
+              {yaoundeZones.length} delivery zones configured
             </CardDescription>
           </CardHeader>
           <CardContent>
             {yaoundeZones.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {t("cards.noZonesYaounde")}
+                No delivery zones configured for Yaoundé
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("table.zone")}</TableHead>
-                    <TableHead>{t("table.pricing")}</TableHead>
-                    <TableHead>{t("table.time")}</TableHead>
-                    <TableHead>{t("table.status")}</TableHead>
-                    <TableHead>{t("table.actions")}</TableHead>
+                    <TableHead>Zone</TableHead>
+                    <TableHead>Pricing</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -336,21 +331,21 @@ export default function DeliveryZones() {
                       <TableCell className="font-medium">{zone.name}</TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>{formatCurrency(zone.baseFee)} {t("table.base")}</div>
+                          <div>{formatCurrency(zone.baseFee)} base</div>
                           <div className="text-muted-foreground">
-                            +{formatCurrency(zone.perKmFee)}{t("table.perKm")}
+                            +{formatCurrency(zone.perKmFee)}/km
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Clock className="h-3 w-3" />
-                          {zone.estimatedMinutes} {t("table.min")}
+                          {zone.estimatedMinutes} min
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={zone.isActive ? "default" : "secondary"}>
-                          {zone.isActive ? t("table.active") : t("table.inactive")}
+                          {zone.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -380,27 +375,25 @@ export default function DeliveryZones() {
         </Card>
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("dialog.editTitle")}</DialogTitle>
+            <DialogTitle>Edit Delivery Zone</DialogTitle>
             <DialogDescription>
-              {t("dialog.editDescription")}
+              Update zone pricing and time estimates
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">{t("dialog.zoneName")}</Label>
+              <Label htmlFor="edit-name">Zone Name</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder={t("dialog.zoneNamePlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-city">{t("dialog.city")}</Label>
+              <Label htmlFor="edit-city">City</Label>
               <Select
                 value={formData.city}
                 onValueChange={(value) => setFormData({ ...formData, city: value })}
@@ -409,50 +402,48 @@ export default function DeliveryZones() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="douala">{t("cities.douala")}</SelectItem>
-                  <SelectItem value="yaounde">{t("cities.yaounde")}</SelectItem>
+                  <SelectItem value="douala">Douala</SelectItem>
+                  <SelectItem value="yaounde">Yaoundé</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-baseFee">{t("dialog.baseFee")}</Label>
+              <Label htmlFor="edit-baseFee">Base Fee (FCFA)</Label>
               <Input
                 id="edit-baseFee"
                 type="number"
                 value={formData.baseFee}
                 onChange={(e) => setFormData({ ...formData, baseFee: parseFloat(e.target.value) })}
-                placeholder="500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-perKmFee">{t("dialog.perKmFee")}</Label>
+              <Label htmlFor="edit-perKmFee">Per KM Fee (FCFA)</Label>
               <Input
                 id="edit-perKmFee"
                 type="number"
                 value={formData.perKmFee}
                 onChange={(e) => setFormData({ ...formData, perKmFee: parseFloat(e.target.value) })}
-                placeholder="100"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-estimatedMinutes">{t("dialog.estimatedTime")}</Label>
+              <Label htmlFor="edit-estimatedMinutes">Estimated Delivery Time (minutes)</Label>
               <Input
                 id="edit-estimatedMinutes"
                 type="number"
                 value={formData.estimatedMinutes}
                 onChange={(e) => setFormData({ ...formData, estimatedMinutes: parseInt(e.target.value) })}
-                placeholder="30"
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              {t("dialog.cancel")}
+              Cancel
             </Button>
-            <Button onClick={handleUpdate}>{t("dialog.update")}</Button>
+            <Button onClick={handleUpdate}>Update Zone</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+

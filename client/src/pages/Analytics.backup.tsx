@@ -27,15 +27,10 @@ import {
 import { TrendingUp, DollarSign, Package, Users, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { exportAnalyticsToPDF } from "@/lib/exportUtils";
 import { toast } from "sonner";
-import { useTranslation } from "react-i18next";
-import { useI18nLoader } from "@/hooks/useI18nLoader";
 
 const COLORS = ["#2D8659", "#F4A460", "#4682B4", "#9370DB", "#FF6B6B", "#4ECDC4", "#FFD93D", "#95E1D3"];
 
 export default function Analytics() {
-  const { t } = useTranslation("analytics");
-  useI18nLoader(["analytics"]);
-
   const [revenuePeriod, setRevenuePeriod] = useState<"day" | "week" | "month">("day");
 
   const handleExportPDF = () => {
@@ -107,9 +102,9 @@ export default function Analytics() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{t("title")}</h1>
+          <h1 className="text-3xl font-bold text-foreground">Analytics & Reporting</h1>
           <p className="text-muted-foreground mt-1">
-            {t("subtitle")}
+            Track performance metrics and business insights
           </p>
         </div>
         <Button
@@ -117,7 +112,7 @@ export default function Analytics() {
           className="bg-[#2D8659] hover:bg-[#236B47]"
         >
           <FileText className="h-4 w-4 mr-2" />
-          {t("common.export")}
+          Export PDF Report
         </Button>
       </div>
 
@@ -125,7 +120,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.totalRevenue")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -133,14 +128,14 @@ export default function Analytics() {
               {formatCurrency(dashboardStats?.totalRevenue || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("stats.revenueGenerated")}
+              From {dashboardStats?.totalOrders || 0} paid orders
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.totalOrders")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -148,14 +143,14 @@ export default function Analytics() {
               {dashboardStats?.totalOrders.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("stats.ordersPlaced")}
+              All time orders
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.activeUsers")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -163,14 +158,14 @@ export default function Analytics() {
               {dashboardStats?.totalUsers.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("stats.registeredUsers")}
+              Registered customers
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.activeRiders")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Riders</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -178,7 +173,7 @@ export default function Analytics() {
               {dashboardStats?.totalRiders.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("stats.availableRiders")}
+              Available for delivery
             </p>
           </CardContent>
         </Card>
@@ -189,17 +184,17 @@ export default function Analytics() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{t("charts.orderTrends")}</CardTitle>
-              <CardDescription>{t("charts.orderTrendsDescription")}</CardDescription>
+              <CardTitle>Revenue Trends</CardTitle>
+              <CardDescription>Track revenue over time</CardDescription>
             </div>
             <Select value={revenuePeriod} onValueChange={(value: any) => setRevenuePeriod(value)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Select period" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">{t("period.today")}</SelectItem>
-                <SelectItem value="week">{t("period.week")}</SelectItem>
-                <SelectItem value="month">{t("period.month")}</SelectItem>
+                <SelectItem value="day">Daily</SelectItem>
+                <SelectItem value="week">Weekly</SelectItem>
+                <SelectItem value="month">Monthly</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -207,7 +202,7 @@ export default function Analytics() {
         <CardContent>
           {revenueLoading ? (
             <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              {t("loading")}
+              Loading revenue data...
             </div>
           ) : revenueChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -217,8 +212,8 @@ export default function Analytics() {
                 <YAxis tickFormatter={formatRevenue} stroke="#6b7280" />
                 <Tooltip
                   formatter={(value: any, name: string) => {
-                    if (name === "revenue") return [formatCurrency(value * 100), t("charts.revenue")];
-                    return [value, t("charts.orders")];
+                    if (name === "revenue") return [formatCurrency(value * 100), "Revenue"];
+                    return [value, "Orders"];
                   }}
                   contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
                 />
@@ -228,7 +223,7 @@ export default function Analytics() {
                   dataKey="revenue"
                   stroke="#2D8659"
                   strokeWidth={2}
-                  name={t("charts.revenue")}
+                  name="Revenue (FCFA)"
                   dot={{ fill: "#2D8659" }}
                 />
                 <Line
@@ -236,14 +231,14 @@ export default function Analytics() {
                   dataKey="orders"
                   stroke="#F4A460"
                   strokeWidth={2}
-                  name={t("charts.orders")}
+                  name="Orders"
                   dot={{ fill: "#F4A460" }}
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
             <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              {t("empty.noData")}
+              No revenue data available
             </div>
           )}
         </CardContent>
@@ -259,7 +254,7 @@ export default function Analytics() {
           <CardContent>
             {statusLoading ? (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                {t("loading")}
+                Loading status data...
               </div>
             ) : statusChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
@@ -283,7 +278,7 @@ export default function Analytics() {
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                {t("empty.noData")}
+                No order data available
               </div>
             )}
           </CardContent>
@@ -292,13 +287,13 @@ export default function Analytics() {
         {/* Top Riders */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("charts.riderPerformance")}</CardTitle>
-            <CardDescription>{t("charts.riderDescription")}</CardDescription>
+            <CardTitle>Top Performing Riders</CardTitle>
+            <CardDescription>Riders with highest earnings</CardDescription>
           </CardHeader>
           <CardContent>
             {ridersLoading ? (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                {t("loading")}
+                Loading rider data...
               </div>
             ) : ridersChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
@@ -309,7 +304,7 @@ export default function Analytics() {
                   <Tooltip
                     formatter={(value: any, name: string) => {
                       if (name === "earnings") return [formatCurrency(value * 100), "Earnings"];
-                      return [value, t("charts.deliveries")];
+                      return [value, "Deliveries"];
                     }}
                     contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}
                   />
@@ -319,7 +314,7 @@ export default function Analytics() {
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                {t("empty.noData")}
+                No rider data available
               </div>
             )}
           </CardContent>
@@ -335,7 +330,7 @@ export default function Analytics() {
         <CardContent>
           {ridersLoading ? (
             <div className="text-center py-8 text-muted-foreground">
-              {t("loading")}
+              Loading rider data...
             </div>
           ) : topRiders && topRiders.length > 0 ? (
             <div className="overflow-x-auto">
@@ -344,7 +339,7 @@ export default function Analytics() {
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 font-semibold text-foreground">Rank</th>
                     <th className="text-left py-3 px-4 font-semibold text-foreground">Rider Name</th>
-                    <th className="text-right py-3 px-4 font-semibold text-foreground">{t("charts.deliveries")}</th>
+                    <th className="text-right py-3 px-4 font-semibold text-foreground">Deliveries</th>
                     <th className="text-right py-3 px-4 font-semibold text-foreground">Total Earnings</th>
                     <th className="text-right py-3 px-4 font-semibold text-foreground">Avg per Delivery</th>
                   </tr>
@@ -370,7 +365,7 @@ export default function Analytics() {
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              {t("empty.noData")}
+              No rider data available
             </div>
           )}
         </CardContent>
@@ -378,3 +373,4 @@ export default function Analytics() {
     </div>
   );
 }
+

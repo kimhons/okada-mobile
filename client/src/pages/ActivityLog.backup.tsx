@@ -25,13 +25,8 @@ import {
 } from "@/components/ui/select";
 import { Activity, Search, Shield, User } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useI18nLoader } from "@/hooks/useI18nLoader";
 
 export default function ActivityLog() {
-  const { t } = useTranslation("activity");
-  useI18nLoader(["activity"]);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
 
@@ -74,48 +69,48 @@ export default function ActivityLog() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <h1 className="text-3xl font-bold">Activity Log</h1>
         <p className="text-muted-foreground mt-2">
-          {t("subtitle")}
+          Track all admin actions with timestamps for security auditing
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.totalActivities")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              {t("stats.allRecorded")}
+              All recorded actions
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.todaysActivities")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Today's Activities</CardTitle>
             <Shield className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.today}</div>
             <p className="text-xs text-muted-foreground">
-              {t("stats.performedToday")}
+              Actions performed today
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.activeAdmins")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Admins</CardTitle>
             <User className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.admins}</div>
             <p className="text-xs text-muted-foreground">
-              {t("stats.uniqueAdmins")}
+              Unique administrators
             </p>
           </CardContent>
         </Card>
@@ -131,7 +126,7 @@ export default function ActivityLog() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={t("filters.searchPlaceholder")}
+                placeholder="Search activities..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -139,14 +134,14 @@ export default function ActivityLog() {
             </div>
             <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={t("filters.filterByAction")} />
+                <SelectValue placeholder="Filter by action" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("filters.allActions")}</SelectItem>
-                <SelectItem value="create">{t("filters.createActions")}</SelectItem>
-                <SelectItem value="update">{t("filters.updateActions")}</SelectItem>
-                <SelectItem value="delete">{t("filters.deleteActions")}</SelectItem>
-                <SelectItem value="send">{t("filters.sendActions")}</SelectItem>
+                <SelectItem value="all">All Actions</SelectItem>
+                <SelectItem value="create">Create Actions</SelectItem>
+                <SelectItem value="update">Update Actions</SelectItem>
+                <SelectItem value="delete">Delete Actions</SelectItem>
+                <SelectItem value="send">Send Actions</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -154,18 +149,18 @@ export default function ActivityLog() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
-              {t("loading")}
+              Loading activity log...
             </div>
           ) : filteredActivities && filteredActivities.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("table.admin")}</TableHead>
-                  <TableHead>{t("table.action")}</TableHead>
-                  <TableHead>{t("table.entity")}</TableHead>
-                  <TableHead>{t("table.details")}</TableHead>
-                  <TableHead>{t("table.ipAddress")}</TableHead>
-                  <TableHead>{t("table.timestamp")}</TableHead>
+                  <TableHead>Admin</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Entity</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead>IP Address</TableHead>
+                  <TableHead>Timestamp</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -207,7 +202,7 @@ export default function ActivityLog() {
             </Table>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              {t("empty.noActivities")}
+              No activities found
             </div>
           )}
         </CardContent>
@@ -215,3 +210,4 @@ export default function ActivityLog() {
     </div>
   );
 }
+

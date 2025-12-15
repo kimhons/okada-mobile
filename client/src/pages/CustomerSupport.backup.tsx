@@ -27,13 +27,8 @@ import {
 } from "@/components/ui/select";
 import { MessageSquare, AlertCircle, CheckCircle, Clock, Search, Filter } from "lucide-react";
 import { useLocation } from "wouter";
-import { useTranslation } from "react-i18next";
-import { useI18nLoader } from "@/hooks/useI18nLoader";
 
 export default function CustomerSupport() {
-  const { t } = useTranslation("support");
-  useI18nLoader(["support"]);
-
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -54,13 +49,13 @@ export default function CustomerSupport() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "open":
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">{t("filters.open")}</Badge>;
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Open</Badge>;
       case "in_progress":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">{t("filters.inProgress")}</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">In Progress</Badge>;
       case "resolved":
-        return <Badge variant="default" className="bg-green-600">{t("filters.resolved")}</Badge>;
+        return <Badge variant="default" className="bg-green-600">Resolved</Badge>;
       case "closed":
-        return <Badge variant="outline">{t("filters.closed")}</Badge>;
+        return <Badge variant="outline">Closed</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -69,11 +64,11 @@ export default function CustomerSupport() {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "high":
-        return <Badge variant="destructive">{t("filters.high")}</Badge>;
+        return <Badge variant="destructive">High</Badge>;
       case "medium":
-        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">{t("filters.medium")}</Badge>;
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Medium</Badge>;
       case "low":
-        return <Badge variant="outline">{t("filters.low")}</Badge>;
+        return <Badge variant="outline">Low</Badge>;
       default:
         return <Badge>{priority}</Badge>;
     }
@@ -94,28 +89,28 @@ export default function CustomerSupport() {
 
   const stats = [
     {
-      title: t("stats.totalTickets"),
+      title: "Total Tickets",
       value: tickets?.length || 0,
       icon: MessageSquare,
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
     {
-      title: t("stats.openTickets"),
+      title: "Open Tickets",
       value: tickets?.filter((t: any) => t.status === "open").length || 0,
       icon: AlertCircle,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
     },
     {
-      title: t("stats.inProgress"),
+      title: "In Progress",
       value: tickets?.filter((t: any) => t.status === "in_progress").length || 0,
       icon: Clock,
       color: "text-orange-600",
       bgColor: "bg-orange-100",
     },
     {
-      title: t("stats.resolved"),
+      title: "Resolved",
       value: tickets?.filter((t: any) => t.status === "resolved").length || 0,
       icon: CheckCircle,
       color: "text-green-600",
@@ -127,7 +122,7 @@ export default function CustomerSupport() {
     return (
       <div className="container py-8">
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">{t("loading")}</p>
+          <p className="text-muted-foreground">Loading support tickets...</p>
         </div>
       </div>
     );
@@ -136,9 +131,9 @@ export default function CustomerSupport() {
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <h1 className="text-3xl font-bold">Customer Support</h1>
         <p className="text-muted-foreground mt-2">
-          {t("subtitle")}
+          Manage support tickets, track resolutions, and assist customers
         </p>
       </div>
 
@@ -177,7 +172,7 @@ export default function CustomerSupport() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder={t("filters.searchPlaceholder")}
+                  placeholder="Ticket ID or subject..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -189,14 +184,14 @@ export default function CustomerSupport() {
               <label className="text-sm font-medium">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("filters.allStatuses")} />
+                  <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t("filters.allStatuses")}</SelectItem>
-                  <SelectItem value="open">{t("filters.open")}</SelectItem>
-                  <SelectItem value="in_progress">{t("filters.inProgress")}</SelectItem>
-                  <SelectItem value="resolved">{t("filters.resolved")}</SelectItem>
-                  <SelectItem value="closed">{t("filters.closed")}</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -205,13 +200,13 @@ export default function CustomerSupport() {
               <label className="text-sm font-medium">Priority</label>
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("filters.allPriorities")} />
+                  <SelectValue placeholder="All priorities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t("filters.allPriorities")}</SelectItem>
-                  <SelectItem value="high">{t("filters.high")}</SelectItem>
-                  <SelectItem value="medium">{t("filters.medium")}</SelectItem>
-                  <SelectItem value="low">{t("filters.low")}</SelectItem>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -249,20 +244,20 @@ export default function CustomerSupport() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("table.ticketId")}</TableHead>
-                  <TableHead>{t("table.subject")}</TableHead>
-                  <TableHead>{t("table.customer")}</TableHead>
-                  <TableHead>{t("table.priority")}</TableHead>
-                  <TableHead>{t("table.status")}</TableHead>
-                  <TableHead>{t("table.created")}</TableHead>
-                  <TableHead>{t("table.actions")}</TableHead>
+                  <TableHead>Ticket ID</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {!filteredTickets || filteredTickets.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {t("empty.noTickets")}
+                      No tickets found
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -289,7 +284,7 @@ export default function CustomerSupport() {
                             setLocation(`/support/${ticket.id}`);
                           }}
                         >
-                          {t("table.view")}
+                          View
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -303,3 +298,4 @@ export default function CustomerSupport() {
     </div>
   );
 }
+

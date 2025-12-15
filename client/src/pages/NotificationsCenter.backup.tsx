@@ -30,18 +30,13 @@ import { Bell, Send, Users, History } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { useTranslation } from "react-i18next";
-import { useI18nLoader } from "@/hooks/useI18nLoader";
 
 export default function NotificationsCenter() {
-  const { t } = useTranslation("notifications");
-  useI18nLoader(["notifications"]);
-
   const [, setLocation] = useLocation();
   const { data: users } = trpc.users.list.useQuery();
   const sendBulk = trpc.notifications.sendBulk.useMutation({
     onSuccess: (data) => {
-      toast.success(t("toast.sendSuccess"));
+      toast.success(`Notification sent to ${data.count} users successfully`);
       setShowSendDialog(false);
       setFormData({
         title: "",
@@ -51,7 +46,7 @@ export default function NotificationsCenter() {
       });
     },
     onError: (error) => {
-      toast.error(t("toast.sendError"));
+      toast.error(error.message);
     },
   });
 
@@ -92,9 +87,9 @@ export default function NotificationsCenter() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
+          <h1 className="text-3xl font-bold">Notifications Center</h1>
           <p className="text-muted-foreground mt-2">
-            {t("subtitle")}
+            Compose and send push notifications to users
           </p>
         </div>
         <div className="flex gap-2">
@@ -110,24 +105,24 @@ export default function NotificationsCenter() {
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Send className="h-4 w-4" />
-                {t("compose")}
+                Send Notification
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>{t("dialog.composeTitle")}</DialogTitle>
+                <DialogTitle>Send Push Notification</DialogTitle>
                 <DialogDescription>
-                  {t("dialog.composeDescription")}
+                  Compose and send a notification to selected users
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">{t("dialog.notificationTitle")}</Label>
+                  <Label htmlFor="title">Notification Title</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder={t("dialog.titlePlaceholder")}
+                    placeholder="e.g., New Promotion Available"
                     maxLength={100}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -135,12 +130,12 @@ export default function NotificationsCenter() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="message">{t("dialog.message")}</Label>
+                  <Label htmlFor="message">Message</Label>
                   <Textarea
                     id="message"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder={t("dialog.messagePlaceholder")}
+                    placeholder="Enter your notification message here..."
                     rows={5}
                     maxLength={500}
                   />
@@ -167,7 +162,7 @@ export default function NotificationsCenter() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="audience">{t("dialog.targetAudience")}</Label>
+                    <Label htmlFor="audience">Target Audience</Label>
                     <Select
                       value={formData.targetAudience}
                       onValueChange={(value: any) => setFormData({ ...formData, targetAudience: value })}
@@ -176,7 +171,7 @@ export default function NotificationsCenter() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">{t("dialog.allUsers")}</SelectItem>
+                        <SelectItem value="all">All Users</SelectItem>
                         <SelectItem value="specific">Specific Users</SelectItem>
                       </SelectContent>
                     </Select>
@@ -193,10 +188,10 @@ export default function NotificationsCenter() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowSendDialog(false)}>
-                  {t("dialog.cancel")}
+                  Cancel
                 </Button>
                 <Button onClick={handleSend} disabled={sendBulk.isPending}>
-                  {sendBulk.isPending ? "Sending..." : t("dialog.send")}
+                  {sendBulk.isPending ? "Sending..." : "Send Notification"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -242,7 +237,7 @@ export default function NotificationsCenter() {
               className="w-full"
               onClick={() => setShowSendDialog(true)}
             >
-              {t("compose")}
+              Compose Notification
             </Button>
           </CardContent>
         </Card>
@@ -327,3 +322,4 @@ export default function NotificationsCenter() {
     </div>
   );
 }
+
