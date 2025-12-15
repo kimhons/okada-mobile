@@ -1282,3 +1282,20 @@
 - [ ] Save final checkpoint
 
 **Expected Outcome**: 100% i18n coverage across all 20 admin pages
+
+
+## Sprint 14: Real-Time Dashboard Statistics (COMPLETED)
+
+### Backend
+- [x] Create getDashboardStats procedure (total orders, users, riders, revenue)
+- [x] Create getRecentOrders procedure with real database data
+- [x] Add month-over-month comparison calculations
+
+### Frontend
+- [x] Update Home.tsx to use tRPC queries instead of mock data
+- [x] Add loading states for dashboard cards
+- [x] Add error handling for failed data fetches
+
+### Testing
+- [x] Verify real-time data displays correctly
+- [x] Test dashboard performance with database queries

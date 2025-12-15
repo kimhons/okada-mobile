@@ -55,6 +55,11 @@ export const appRouter = router({
     stats: protectedProcedure.query(async () => {
       return await db.getDashboardStats();
     }),
+    recentOrders: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getRecentOrders(input?.limit || 5);
+      }),
   }),
 
   analytics: router({
