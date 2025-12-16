@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { ShoppingBag, Users, Bike, TrendingUp, Package, DollarSign, AlertCircle } from "lucide-react";
+import { ShoppingBag, Users, Bike, TrendingUp, Package, DollarSign, AlertCircle, ChevronRight } from "lucide-react";
+import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 
 export default function Home() {
@@ -130,9 +131,10 @@ export default function Home() {
               ))
             ) : recentOrders && recentOrders.length > 0 ? (
               recentOrders.map((order) => (
-                <div
+                <Link
                   key={order.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                  href={`/orders?search=${order.id}`}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -154,8 +156,9 @@ export default function Home() {
                     <p className="font-semibold text-foreground min-w-[100px] text-right">
                       {order.amount}
                     </p>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               // Empty state
