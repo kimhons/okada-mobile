@@ -59,6 +59,9 @@ i18n
           status_pending: "Pending",
           status_cancelled: "Cancelled",
           status_processing: "Processing",
+          status_rider_assigned: "Rider Assigned",
+          status_waiting_approval: "Waiting Approval",
+          status_rejected: "Rejected",
         },
         leaderboard: {
           title: "Rider Performance Leaderboard",
@@ -122,6 +125,9 @@ i18n
           status_pending: "En attente",
           status_cancelled: "Annulé",
           status_processing: "En cours",
+          status_rider_assigned: "Livreur assigné",
+          status_waiting_approval: "En attente d'approbation",
+          status_rejected: "Rejeté",
         },
         leaderboard: {
           title: "Classement des Performances des Livreurs",
@@ -150,3 +156,4 @@ i18n
   });
 
 export default i18n;
+

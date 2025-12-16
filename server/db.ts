@@ -264,6 +264,46 @@ export async function getDashboardStats() {
   };
 }
 
+// Get recent orders for dashboard
+export async function getRecentOrders(limit: number = 5) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const recentOrders = await db
+    .select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      customerId: orders.customerId,
+      status: orders.status,
+      total: orders.total,
+      createdAt: orders.createdAt,
+    })
+    .from(orders)
+    .orderBy(sql`${orders.createdAt} DESC`)
+    .limit(limit);
+
+  // Get customer names for each order
+  const ordersWithCustomers = await Promise.all(
+    recentOrders.map(async (order) => {
+      const [customer] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, order.customerId))
+        .limit(1);
+      
+      return {
+        id: order.orderNumber,
+        customer: customer?.name || 'Unknown Customer',
+        status: order.status,
+        amount: `${(order.total / 100).toLocaleString()} FCFA`,
+        createdAt: order.createdAt,
+      };
+    })
+  );
+
+  return ordersWithCustomers;
+}
+
 // Analytics Functions
 
 export async function getRevenueByPeriod(period: 'day' | 'week' | 'month') {
