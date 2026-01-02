@@ -119,7 +119,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const rider = await db.getRiderById(input.id);
-        const earnings = await db.getRiderEarnings(input.id);
+        const earnings = await db.getRiderEarningsHistory(input.id);
         const deliveries = await db.getRiderDeliveries(input.id);
         return { rider, earnings, deliveries };
       }),
@@ -540,7 +540,7 @@ export const appRouter = router({
     }),
 
     getPendingPayouts: protectedProcedure.query(async () => {
-      return await db.getPendingPayouts();
+      return await db.getPendingRiderPayouts();
     }),
 
     processPayouts: protectedProcedure
@@ -1364,7 +1364,7 @@ export const appRouter = router({
       .input(z.object({
         reportId: z.number(),
         name: z.string(),
-        frequency: z.enum(["daily", "weekly", "monthly"]),
+        frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
         dayOfWeek: z.number().optional(),
         dayOfMonth: z.number().optional(),
         time: z.string(),
@@ -1374,7 +1374,15 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         await db.createScheduledReport({
-          ...input,
+          reportId: input.reportId,
+          name: input.name,
+          frequency: input.frequency,
+          scheduleTime: input.time,
+          dayOfWeek: input.dayOfWeek ?? null,
+          dayOfMonth: input.dayOfMonth ?? null,
+          recipients: input.recipients,
+          format: input.format,
+          isActive: input.isActive ? 1 : 0,
           createdBy: ctx.user.id,
         });
         
@@ -1395,7 +1403,7 @@ export const appRouter = router({
         id: z.number(),
         reportId: z.number().optional(),
         name: z.string().optional(),
-        frequency: z.enum(["daily", "weekly", "monthly"]).optional(),
+        frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]).optional(),
         dayOfWeek: z.number().optional(),
         dayOfMonth: z.number().optional(),
         time: z.string().optional(),
@@ -1404,8 +1412,11 @@ export const appRouter = router({
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, ...rest } = input;
-        await db.updateScheduledReport(id, rest);
+        const { id, time, isActive, ...rest } = input;
+        const updateData: any = { ...rest };
+        if (time !== undefined) updateData.scheduleTime = time;
+        if (isActive !== undefined) updateData.isActive = isActive ? 1 : 0;
+        await db.updateScheduledReport(id, updateData);
         
         // Log activity
         await db.logActivity({
@@ -3309,16 +3320,14 @@ export const appRouter = router({
 
         await db.createScheduledReport({
           name: input.name,
-          description: input.description || null,
-          reportType: input.reportType,
-          periodType: input.periodType,
-          frequency: input.frequency,
+          reportId: 1, // Default report ID
+          frequency: input.frequency as "daily" | "weekly" | "monthly" | "quarterly",
+          scheduleTime: input.time,
           dayOfWeek: input.dayOfWeek ?? null,
           dayOfMonth: input.dayOfMonth ?? null,
-          time: input.time,
           recipients: input.recipients,
-          customMessage: input.customMessage || null,
-          isActive: input.isActive,
+          message: input.customMessage || null,
+          isActive: input.isActive ? 1 : 0,
           nextRunAt,
           createdBy: ctx.user.id,
         });
@@ -3391,7 +3400,7 @@ export const appRouter = router({
         isActive: z.boolean(),
       }))
       .mutation(async ({ input, ctx }) => {
-        await db.updateScheduledReport(input.id, { isActive: input.isActive });
+        await db.updateScheduledReport(input.id, { isActive: input.isActive ? 1 : 0 });
 
         await db.logActivity({
           adminId: ctx.user.id,
@@ -3484,7 +3493,7 @@ export const appRouter = router({
           return { currentStart, currentEnd, previousStart, previousEnd };
         };
 
-        const { currentStart, currentEnd, previousStart, previousEnd } = getPeriodDates(report.periodType);
+        const { currentStart, currentEnd, previousStart, previousEnd } = getPeriodDates(report.frequency as "week" | "month" | "quarter" | "year");
 
         const currentTransactions = await db.getAllTransactions({ startDate: currentStart, endDate: currentEnd });
         const previousTransactions = await db.getAllTransactions({ startDate: previousStart, endDate: previousEnd });
@@ -3558,13 +3567,13 @@ export const appRouter = router({
     <div style="padding: 30px;">
       <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151;">Hello,</p>
       
-      ${report.customMessage ? `
+      ${report.message ? `
       <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
-        <p style="margin: 0; color: #065f46; font-size: 14px;">${report.customMessage}</p>
+        <p style="margin: 0; color: #065f46; font-size: 14px;">${report.message}</p>
       </div>
       ` : ''}
 
-      <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 20px;">${getPeriodLabel(report.periodType)} Comparison</h2>
+      <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 20px;">${getPeriodLabel(report.frequency as "week" | "month" | "quarter" | "year")} Comparison</h2>
 
       <!-- Metrics Cards -->
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px;">
@@ -3678,9 +3687,9 @@ export const appRouter = router({
 
         return {
           reportName: report.name,
-          periodType: report.periodType,
+          periodType: report.frequency,
           recipients: report.recipients,
-          subject: `Transaction Analytics Report - ${getPeriodLabel(report.periodType)}`,
+          subject: `Transaction Analytics Report - ${getPeriodLabel(report.frequency as "week" | "month" | "quarter" | "year")}`,
           html: emailHtml,
         };
       }),
@@ -3887,10 +3896,10 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         productId: z.number(),
-        lowStockThreshold: z.number().optional(),
-        criticalStockThreshold: z.number().optional(),
+        lowStockThreshold: z.number(),
+        criticalStockThreshold: z.number(),
         overstockThreshold: z.number().optional(),
-        autoReorder: z.number().optional(),
+        autoReorder: z.boolean().optional(),
         reorderQuantity: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -4051,69 +4060,6 @@ export const appRouter = router({
     getRevenueByPaymentMethod: protectedProcedure
       .query(async () => {
         return await db.getRevenueByPaymentMethod();
-      }),
-  }),
-
-  // Inventory Alerts Router
-  inventoryAlerts: router({
-    getAlerts: protectedProcedure
-      .input(z.object({
-        severity: z.enum(['critical', 'warning', 'info']).optional(),
-        status: z.enum(['active', 'resolved', 'dismissed']).optional(),
-        alertType: z.enum(['low_stock', 'out_of_stock', 'overstocked']).optional(),
-      }))
-      .query(async ({ input }) => {
-        return await db.getInventoryAlerts(input);
-      }),
-
-    resolveAlert: protectedProcedure
-      .input(z.object({
-        alertId: z.number(),
-        notes: z.string().optional(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const result = await db.resolveInventoryAlert(input.alertId, ctx.user.id, input.notes);
-        
-        await db.logActivity({
-          adminId: ctx.user.id,
-          adminName: ctx.user.name || "Unknown",
-          action: "resolve_inventory_alert",
-          entityType: "inventory_alert",
-          entityId: input.alertId,
-          details: `Resolved inventory alert`,
-        });
-
-        return result;
-      }),
-
-    updateThreshold: protectedProcedure
-      .input(z.object({
-        productId: z.number(),
-        lowStockThreshold: z.number(),
-        criticalStockThreshold: z.number(),
-        overstockThreshold: z.number().optional(),
-        autoReorder: z.boolean().optional(),
-        reorderQuantity: z.number().optional(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const result = await db.updateInventoryThreshold(input.productId, input);
-        
-        await db.logActivity({
-          adminId: ctx.user.id,
-          adminName: ctx.user.name || "Unknown",
-          action: "update_inventory_threshold",
-          entityType: "product",
-          entityId: input.productId,
-          details: `Updated inventory thresholds`,
-        });
-
-        return result;
-      }),
-
-    getThreshold: protectedProcedure
-      .input(z.object({ productId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getInventoryThreshold(input.productId);
       }),
   }),
 
@@ -4358,10 +4304,20 @@ export const appRouter = router({
   riderLeaderboard: router({
     getLeaderboard: protectedProcedure
       .input(z.object({
-        period: z.enum(['day', 'week', 'month', 'all']).optional(),
+        period: z.enum(['today', 'week', 'month', 'all']).default('week'),
+        category: z.enum(['overall', 'earnings', 'deliveries', 'rating', 'speed']).default('overall'),
+        tier: z.enum(['platinum', 'gold', 'silver', 'bronze', 'rookie', 'all']).optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getRiderLeaderboard(input.period);
+        return await db.getRiderLeaderboard({
+          period: input.period,
+          category: input.category,
+          tier: input.tier,
+          limit: input.limit,
+          offset: input.offset,
+        });
       }),
 
     getAchievements: protectedProcedure
@@ -4618,7 +4574,7 @@ export const appRouter = router({
     getRegions: protectedProcedure
       .input(z.object({
         regionType: z.string().optional(),
-        parentId: z.number().optional().nullable(),
+        parentId: z.number().optional(),
       }))
       .query(async ({ input }) => {
         return await db.getGeoRegions(input);
@@ -4864,18 +4820,18 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const result = await db.redeemLoyaltyReward(input.userId, input.rewardId);
         
-        if (result.success) {
+        if (result && result.success) {
           await db.logActivity({
             adminId: ctx.user.id,
             adminName: ctx.user.name || "Unknown",
             action: "redeem_loyalty_reward",
             entityType: "loyalty",
-            entityId: result.redemptionId || 0,
+            entityId: result.redemptionId ?? 0,
             details: `User ${input.userId} redeemed reward ${input.rewardId}`,
           });
         }
 
-        return result;
+        return result ?? { success: false, message: "Failed to redeem reward" };
       }),
 
     getTransactions: protectedProcedure
@@ -5619,7 +5575,7 @@ export const appRouter = router({
       .input(z.object({
         templateId: z.string(),
         customName: z.string().optional(),
-        customFilters: z.record(z.any()).optional(),
+        customFilters: z.record(z.string(), z.any()).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const { getTemplateById } = require("./reportTemplates");
@@ -5632,13 +5588,13 @@ export const appRouter = router({
         // Create a custom report from the template
         const reportData = {
           name: input.customName || template.name,
-          description: template.description,
-          reportType: template.reportType,
+          description: template.description || null,
+          reportType: template.reportType as "orders" | "revenue" | "riders" | "users" | "products" | "incidents" | "feedback" | "training" | "custom",
           filters: JSON.stringify(input.customFilters || template.filters),
           metrics: JSON.stringify(template.metrics),
-          groupBy: template.groupBy,
-          sortBy: template.sortBy,
-          sortOrder: template.sortOrder,
+          groupBy: template.groupBy || null,
+          sortBy: template.sortBy || null,
+          sortOrder: (template.sortOrder || "desc") as "asc" | "desc",
           createdBy: ctx.user.id,
           isPublic: 0,
         };

@@ -6181,6 +6181,17 @@ export async function updateScheduledReport(id: number, data: Partial<InsertSche
 }
 
 /**
+ * Delete a scheduled report
+ */
+export async function deleteScheduledReport(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.delete(scheduledReports).where(eq(scheduledReports.id, id));
+  return true;
+}
+
+/**
  * Execute report and save to history
  */
 export async function executeReport(

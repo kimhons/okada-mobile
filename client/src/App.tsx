@@ -68,6 +68,11 @@ import ShiftScheduling from "./pages/ShiftScheduling";
 import RiderAvailabilityCalendar from "./pages/RiderAvailabilityCalendar";
 import RiderEarningsBreakdown from "./pages/RiderEarningsBreakdown";
 import BadgeShowcase from "./pages/BadgeShowcase";
+import TaxCompliance from "./pages/TaxCompliance";
+import SecurityMonitoring from "./pages/SecurityMonitoring";
+import SystemHealth from "./pages/SystemHealth";
+import ABTesting from "./pages/ABTesting";
+import SEOManagement from "./pages/SEOManagement";
 
 
 function Router() {
@@ -133,6 +138,11 @@ function Router() {
       <Route path="/incidents" component={IncidentManagement} />
       <Route path="/feedback-analysis" component={CustomerFeedbackAnalysis} />
       <Route path="/rider-training" component={RiderTrainingTracker} />
+      <Route path="/tax-compliance" component={() => <DashboardLayout><TaxCompliance /></DashboardLayout>} />
+      <Route path="/security-monitoring" component={() => <DashboardLayout><SecurityMonitoring /></DashboardLayout>} />
+      <Route path="/system-health" component={() => <DashboardLayout><SystemHealth /></DashboardLayout>} />
+      <Route path="/ab-testing" component={() => <DashboardLayout><ABTesting /></DashboardLayout>} />
+      <Route path="/seo-management" component={() => <DashboardLayout><SEOManagement /></DashboardLayout>} />
       <Route path="/shift-scheduling" component={ShiftScheduling} />
       <Route path="/rider-availability" component={RiderAvailabilityCalendar} />
 
