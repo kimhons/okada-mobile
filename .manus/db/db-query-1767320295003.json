@@ -1,0 +1,9 @@
+{
+  "query": "-- Notifications table indexes\nCREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(userId);\nCREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(isRead);\nCREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(createdAt);\n\n-- Users table indexes\nCREATE INDEX IF NOT EXISTS idx_users_role ON users(role);\nCREATE INDEX IF NOT EXISTS idx_users_created_at ON users(createdAt);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute -- Notifications table indexes\nCREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(userId);\nCREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(isRead);\nCREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(createdAt);\n\n-- Users table indexes\nCREATE INDEX IF NOT EXISTS idx_users_role ON users(role);\nCREATE INDEX IF NOT EXISTS idx_users_created_at ON users(createdAt);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1079
+}

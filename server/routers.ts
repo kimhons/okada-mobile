@@ -4091,6 +4091,17 @@ export const appRouter = router({
           details: `Approved verification request`,
         });
 
+        // Send notification to user
+        if (result && result.userId) {
+          const { sendVerificationNotification } = await import("./notificationService");
+          await sendVerificationNotification(result.userId, "approved", {
+            email: result.email,
+            phone: result.phone,
+            name: result.userName,
+            verificationType: result.userType,
+          });
+        }
+
         return result;
       }),
 
@@ -4111,6 +4122,18 @@ export const appRouter = router({
           entityId: input.requestId,
           details: `Rejected verification request: ${input.rejectionReason}`,
         });
+
+        // Send notification to user
+        if (result && result.userId) {
+          const { sendVerificationNotification } = await import("./notificationService");
+          await sendVerificationNotification(result.userId, "rejected", {
+            email: result.email,
+            phone: result.phone,
+            name: result.userName,
+            verificationType: result.userType,
+            reason: input.rejectionReason,
+          });
+        }
 
         return result;
       }),
@@ -4801,6 +4824,22 @@ export const appRouter = router({
           details: `Added ${input.points} points to user ${input.userId}`,
         });
 
+        // Send notification to user about earned points
+        if (result && input.points > 0) {
+          const user = await db.getUser(String(input.userId));
+          if (user) {
+            const { sendLoyaltyNotification } = await import("./notificationService");
+            const loyaltyInfo = await db.getUserLoyaltyInfo(input.userId);
+            await sendLoyaltyNotification(input.userId, "points_earned", {
+              email: user.email || undefined,
+              name: user.name || undefined,
+              points: input.points,
+              totalPoints: loyaltyInfo?.currentPoints || input.points,
+              tier: loyaltyInfo?.tierName || "Bronze",
+            });
+          }
+        }
+
         return result;
       }),
 
@@ -4829,6 +4868,18 @@ export const appRouter = router({
             entityId: result.redemptionId ?? 0,
             details: `User ${input.userId} redeemed reward ${input.rewardId}`,
           });
+
+          // Send notification about reward redemption
+          const user = await db.getUser(String(input.userId));
+          if (user && result.rewardName) {
+            const { sendLoyaltyNotification } = await import("./notificationService");
+            await sendLoyaltyNotification(input.userId, "reward_available", {
+              email: user.email || undefined,
+              name: user.name || undefined,
+              rewardName: result.rewardName,
+              rewardValue: result.rewardValue || "Special Reward",
+            });
+          }
         }
 
         return result ?? { success: false, message: "Failed to redeem reward" };

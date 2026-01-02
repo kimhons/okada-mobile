@@ -1,0 +1,9 @@
+{
+  "query": "-- Riders table indexes\nCREATE INDEX IF NOT EXISTS idx_riders_status ON riders(status);\nCREATE INDEX IF NOT EXISTS idx_riders_created_at ON riders(createdAt);\nCREATE INDEX IF NOT EXISTS idx_riders_rating ON riders(rating);\n\n-- Rider earnings table indexes\nCREATE INDEX IF NOT EXISTS idx_rider_earnings_rider_id ON riderEarnings(riderId);\nCREATE INDEX IF NOT EXISTS idx_rider_earnings_created_at ON riderEarnings(createdAt);\nCREATE INDEX IF NOT EXISTS idx_rider_earnings_status ON riderEarnings(status);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute -- Riders table indexes\nCREATE INDEX IF NOT EXISTS idx_riders_status ON riders(status);\nCREATE INDEX IF NOT EXISTS idx_riders_created_at ON riders(createdAt);\nCREATE INDEX IF NOT EXISTS idx_riders_rating ON riders(rating);\n\n-- Rider earnings table indexes\nCREATE INDEX IF NOT EXISTS idx_rider_earnings_rider_id ON riderEarnings(riderId);\nCREATE INDEX IF NOT EXISTS idx_rider_earnings_created_at ON riderEarnings(createdAt);\nCREATE INDEX IF NOT EXISTS idx_rider_earnings_status ON riderEarnings(status);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2728
+}

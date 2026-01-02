@@ -1,0 +1,9 @@
+{
+  "query": "-- Orders table indexes\nCREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);\nCREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customerId);\nCREATE INDEX IF NOT EXISTS idx_orders_rider_id ON orders(riderId);\nCREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(createdAt);\nCREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(paymentStatus);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute -- Orders table indexes\nCREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);\nCREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customerId);\nCREATE INDEX IF NOT EXISTS idx_orders_rider_id ON orders(riderId);\nCREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(createdAt);\nCREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(paymentStatus);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3050
+}

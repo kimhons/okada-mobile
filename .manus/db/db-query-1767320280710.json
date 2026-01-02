@@ -1,0 +1,9 @@
+{
+  "query": "-- Quality photos table indexes\nCREATE INDEX IF NOT EXISTS idx_quality_photos_order_id ON qualityPhotos(orderId);\nCREATE INDEX IF NOT EXISTS idx_quality_photos_approval_status ON qualityPhotos(approvalStatus);\nCREATE INDEX IF NOT EXISTS idx_quality_photos_uploaded_by ON qualityPhotos(uploadedBy);\n\n-- Order items table indexes\nCREATE INDEX IF NOT EXISTS idx_order_items_order_id ON orderItems(orderId);\nCREATE INDEX IF NOT EXISTS idx_order_items_product_id ON orderItems(productId);\n\n-- Products table indexes\nCREATE INDEX IF NOT EXISTS idx_products_category_id ON products(categoryId);\nCREATE INDEX IF NOT EXISTS idx_products_seller_id ON products(sellerId);\nCREATE INDEX IF NOT EXISTS idx_products_is_active ON products(isActive);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute -- Quality photos table indexes\nCREATE INDEX IF NOT EXISTS idx_quality_photos_order_id ON qualityPhotos(orderId);\nCREATE INDEX IF NOT EXISTS idx_quality_photos_approval_status ON qualityPhotos(approvalStatus);\nCREATE INDEX IF NOT EXISTS idx_quality_photos_uploaded_by ON qualityPhotos(uploadedBy);\n\n-- Order items table indexes\nCREATE INDEX IF NOT EXISTS idx_order_items_order_id ON orderItems(orderId);\nCREATE INDEX IF NOT EXISTS idx_order_items_product_id ON orderItems(productId);\n\n-- Products table indexes\nCREATE INDEX IF NOT EXISTS idx_products_category_id ON products(categoryId);\nCREATE INDEX IF NOT EXISTS idx_products_seller_id ON products(sellerId);\nCREATE INDEX IF NOT EXISTS idx_products_is_active ON products(isActive);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3636
+}

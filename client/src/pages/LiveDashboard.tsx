@@ -2,29 +2,63 @@ import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, Users, Package, CheckCircle, TrendingUp } from "lucide-react";
+import { Activity, Users, Package, CheckCircle, TrendingUp, Wifi, WifiOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { toast } from "sonner";
 
 export default function LiveDashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  
+  // WebSocket connection for real-time updates
+  const { 
+    isConnected, 
+    getAllRiderLocations, 
+    getOnlineRiderCount,
+    lastOrderUpdate,
+    lastDeliveryComplete 
+  } = useWebSocket();
 
   const { data: stats, isLoading: statsLoading } = trpc.liveDashboard.getStats.useQuery();
   const { data: activeRiders, isLoading: ridersLoading } = trpc.liveDashboard.getActiveRiders.useQuery();
   const { data: events, isLoading: eventsLoading } = trpc.liveDashboard.getEvents.useQuery({ limit: 20 });
 
   const utils = trpc.useUtils();
+  
+  // Real-time rider locations from WebSocket
+  const wsRiderLocations = getAllRiderLocations();
+  const wsOnlineCount = getOnlineRiderCount();
 
-  // Auto-refresh every 10 seconds
+  // Show toast notifications for real-time events
+  useEffect(() => {
+    if (lastOrderUpdate) {
+      toast.info(`Order #${lastOrderUpdate.orderId} status: ${lastOrderUpdate.status}`);
+      utils.liveDashboard.getStats.invalidate();
+      utils.liveDashboard.getEvents.invalidate();
+    }
+  }, [lastOrderUpdate]);
+
+  useEffect(() => {
+    if (lastDeliveryComplete) {
+      toast.success(`Delivery completed for order #${lastDeliveryComplete.orderId}`);
+      utils.liveDashboard.getStats.invalidate();
+      utils.liveDashboard.getEvents.invalidate();
+    }
+  }, [lastDeliveryComplete]);
+
+  // Auto-refresh every 10 seconds (fallback when WebSocket is not connected)
   useEffect(() => {
     const interval = setInterval(() => {
-      utils.liveDashboard.getStats.invalidate();
-      utils.liveDashboard.getActiveRiders.invalidate();
-      utils.liveDashboard.getEvents.invalidate();
+      if (!isConnected) {
+        utils.liveDashboard.getStats.invalidate();
+        utils.liveDashboard.getActiveRiders.invalidate();
+        utils.liveDashboard.getEvents.invalidate();
+      }
       setLastUpdate(new Date());
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [utils]);
+  }, [utils, isConnected]);
 
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
@@ -89,10 +123,16 @@ export default function LiveDashboard() {
             Real-time operations monitoring • Last updated: {lastUpdate.toLocaleTimeString()}
           </p>
         </div>
-        <Badge className="bg-green-600 animate-pulse">
-          <span className="h-2 w-2 rounded-full bg-white mr-2" />
-          LIVE
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge className={isConnected ? "bg-green-600" : "bg-yellow-600"}>
+            {isConnected ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
+            {isConnected ? "WebSocket Connected" : "Polling Mode"}
+          </Badge>
+          <Badge className="bg-green-600 animate-pulse">
+            <span className="h-2 w-2 rounded-full bg-white mr-2" />
+            LIVE
+          </Badge>
+        </div>
       </div>
 
       {/* Stats Cards */}
