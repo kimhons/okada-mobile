@@ -100,7 +100,7 @@ function Router() {
       <Route path="/notifications-center" component={() => <DashboardLayout><NotificationsCenter /></DashboardLayout>} />
       <Route path="/notification-history" component={() => <DashboardLayout><NotificationHistory /></DashboardLayout>} />
       <Route path="/activity-log" component={() => <DashboardLayout><ActivityLog /></DashboardLayout>} />
-      <Route path="/campaigns" component={() => <DashboardLayout><PromotionalCampaigns /></DashboardLayout>} />
+      <Route path="/promotional-campaigns" component={() => <DashboardLayout><PromotionalCampaigns /></DashboardLayout>} />
       <Route path="/admin-users" component={() => <DashboardLayout><AdminUsers /></DashboardLayout>} />
       <Route path="/audit-trail" component={() => <DashboardLayout><AuditTrail /></DashboardLayout>} />
       <Route path="/backup-restore" component={() => <DashboardLayout><BackupRestore /></DashboardLayout>} />

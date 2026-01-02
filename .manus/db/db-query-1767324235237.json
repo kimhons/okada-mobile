@@ -1,0 +1,426 @@
+{
+  "query": "SELECT id, name FROM promotionalCampaigns ORDER BY id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT id, name FROM promotionalCampaigns ORDER BY id",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Campaign 1763950754380"
+    },
+    {
+      "id": "2",
+      "name": "Campaign 1 1763950754458"
+    },
+    {
+      "id": "3",
+      "name": "Update Campaign 1763950754526"
+    },
+    {
+      "id": "4",
+      "name": "Delete Campaign 1763950754585"
+    },
+    {
+      "id": "5",
+      "name": "Active Campaign 1763950754637"
+    },
+    {
+      "id": "6",
+      "name": "Discount Campaign 1763950754811"
+    },
+    {
+      "id": "7",
+      "name": "Campaign 1763950781990"
+    },
+    {
+      "id": "8",
+      "name": "Campaign 1 1763950782032"
+    },
+    {
+      "id": "9",
+      "name": "Update Campaign 1763950782080"
+    },
+    {
+      "id": "10",
+      "name": "Delete Campaign 1763950782120"
+    },
+    {
+      "id": "11",
+      "name": "Active Campaign 1763950782159"
+    },
+    {
+      "id": "12",
+      "name": "Discount Campaign 1763950782215"
+    },
+    {
+      "id": "13",
+      "name": "Campaign 1763950803283"
+    },
+    {
+      "id": "14",
+      "name": "Campaign 1 1763950803324"
+    },
+    {
+      "id": "15",
+      "name": "Update Campaign 1763950803374"
+    },
+    {
+      "id": "16",
+      "name": "Delete Campaign 1763950803421"
+    },
+    {
+      "id": "17",
+      "name": "Active Campaign 1763950803466"
+    },
+    {
+      "id": "18",
+      "name": "Discount Campaign 1763950803519"
+    },
+    {
+      "id": "19",
+      "name": "Campaign 1763950819332"
+    },
+    {
+      "id": "20",
+      "name": "Campaign 1 1763950819381"
+    },
+    {
+      "id": "21",
+      "name": "Update Campaign 1763950819431"
+    },
+    {
+      "id": "22",
+      "name": "Delete Campaign 1763950819470"
+    },
+    {
+      "id": "23",
+      "name": "Active Campaign 1763950819509"
+    },
+    {
+      "id": "24",
+      "name": "Discount Campaign 1763950819550"
+    },
+    {
+      "id": "25",
+      "name": "Campaign 1763950854861"
+    },
+    {
+      "id": "26",
+      "name": "Campaign 1 1763950854908"
+    },
+    {
+      "id": "27",
+      "name": "Update Campaign 1763950854957"
+    },
+    {
+      "id": "28",
+      "name": "Delete Campaign 1763950855010"
+    },
+    {
+      "id": "29",
+      "name": "Active Campaign 1763950855070"
+    },
+    {
+      "id": "30",
+      "name": "Discount Campaign 1763950855136"
+    },
+    {
+      "id": "31",
+      "name": "Campaign 1763950890298"
+    },
+    {
+      "id": "32",
+      "name": "Campaign 1 1763950890358"
+    },
+    {
+      "id": "33",
+      "name": "Update Campaign 1763950890435"
+    },
+    {
+      "id": "34",
+      "name": "Delete Campaign 1763950890493"
+    },
+    {
+      "id": "35",
+      "name": "Active Campaign 1763950890551"
+    },
+    {
+      "id": "36",
+      "name": "Discount Campaign 1763950890611"
+    },
+    {
+      "id": "37",
+      "name": "Campaign 1763950901235"
+    },
+    {
+      "id": "38",
+      "name": "Campaign 1 1763950901274"
+    },
+    {
+      "id": "39",
+      "name": "Update Campaign 1763950901326"
+    },
+    {
+      "id": "40",
+      "name": "Delete Campaign 1763950901367"
+    },
+    {
+      "id": "41",
+      "name": "Active Campaign 1763950901412"
+    },
+    {
+      "id": "42",
+      "name": "Discount Campaign 1763950901504"
+    },
+    {
+      "id": "43",
+      "name": "Campaign 1763950911113"
+    },
+    {
+      "id": "44",
+      "name": "Campaign 1 1763950911152"
+    },
+    {
+      "id": "45",
+      "name": "Update Campaign 1763950911202"
+    },
+    {
+      "id": "46",
+      "name": "Delete Campaign 1763950911242"
+    },
+    {
+      "id": "47",
+      "name": "Active Campaign 1763950911295"
+    },
+    {
+      "id": "48",
+      "name": "Discount Campaign 1763950911342"
+    },
+    {
+      "id": "49",
+      "name": "Campaign 1763950920698"
+    },
+    {
+      "id": "50",
+      "name": "Campaign 1 1763950920740"
+    },
+    {
+      "id": "51",
+      "name": "Update Campaign 1763950920792"
+    },
+    {
+      "id": "52",
+      "name": "Delete Campaign 1763950920838"
+    },
+    {
+      "id": "53",
+      "name": "Active Campaign 1763950920904"
+    },
+    {
+      "id": "54",
+      "name": "Discount Campaign 1763950920951"
+    },
+    {
+      "id": "55",
+      "name": "Campaign 1763951023248"
+    },
+    {
+      "id": "56",
+      "name": "Campaign 1 1763951023293"
+    },
+    {
+      "id": "57",
+      "name": "Update Campaign 1763951023344"
+    },
+    {
+      "id": "59",
+      "name": "Active Campaign 1763951023478"
+    },
+    {
+      "id": "60",
+      "name": "Discount Campaign 1763951023530"
+    },
+    {
+      "id": "30001",
+      "name": "Campaign 1764039882184"
+    },
+    {
+      "id": "30002",
+      "name": "Campaign 1 1764039882238"
+    },
+    {
+      "id": "30003",
+      "name": "Update Campaign 1764039882290"
+    },
+    {
+      "id": "30005",
+      "name": "Active Campaign 1764039882429"
+    },
+    {
+      "id": "30006",
+      "name": "Discount Campaign 1764039882480"
+    },
+    {
+      "id": "30007",
+      "name": "Campaign 1764039913050"
+    },
+    {
+      "id": "30008",
+      "name": "Campaign 1 1764039913095"
+    },
+    {
+      "id": "30009",
+      "name": "Update Campaign 1764039913146"
+    },
+    {
+      "id": "30011",
+      "name": "Active Campaign 1764039913281"
+    },
+    {
+      "id": "30012",
+      "name": "Discount Campaign 1764039913332"
+    },
+    {
+      "id": "60001",
+      "name": "Campaign 1764216584157"
+    },
+    {
+      "id": "60002",
+      "name": "Campaign 1 1764216584212"
+    },
+    {
+      "id": "60003",
+      "name": "Update Campaign 1764216584266"
+    },
+    {
+      "id": "60005",
+      "name": "Active Campaign 1764216584414"
+    },
+    {
+      "id": "60006",
+      "name": "Discount Campaign 1764216584470"
+    },
+    {
+      "id": "60007",
+      "name": "Campaign 1764216638237"
+    },
+    {
+      "id": "60008",
+      "name": "Campaign 1 1764216638299"
+    },
+    {
+      "id": "60009",
+      "name": "Update Campaign 1764216638371"
+    },
+    {
+      "id": "60011",
+      "name": "Active Campaign 1764216638518"
+    },
+    {
+      "id": "60012",
+      "name": "Discount Campaign 1764216638573"
+    },
+    {
+      "id": "90001",
+      "name": "Campaign 1765833614435"
+    },
+    {
+      "id": "90002",
+      "name": "Campaign 1 1765833614553"
+    },
+    {
+      "id": "90003",
+      "name": "Update Campaign 1765833614638"
+    },
+    {
+      "id": "90005",
+      "name": "Active Campaign 1765833614879"
+    },
+    {
+      "id": "90006",
+      "name": "Discount Campaign 1765833614973"
+    },
+    {
+      "id": "120001",
+      "name": "Campaign 1765836440151"
+    },
+    {
+      "id": "120002",
+      "name": "Campaign 1 1765836440246"
+    },
+    {
+      "id": "120003",
+      "name": "Update Campaign 1765836440324"
+    },
+    {
+      "id": "120005",
+      "name": "Active Campaign 1765836440543"
+    },
+    {
+      "id": "120006",
+      "name": "Discount Campaign 1765836440643"
+    },
+    {
+      "id": "120007",
+      "name": "Campaign 1765836468211"
+    },
+    {
+      "id": "120008",
+      "name": "Campaign 1 1765836468267"
+    },
+    {
+      "id": "120009",
+      "name": "Update Campaign 1765836468335"
+    },
+    {
+      "id": "120011",
+      "name": "Active Campaign 1765836468537"
+    },
+    {
+      "id": "120012",
+      "name": "Discount Campaign 1765836468602"
+    },
+    {
+      "id": "150001",
+      "name": "Campaign 1765837313883"
+    },
+    {
+      "id": "150002",
+      "name": "Campaign 1 1765837313953"
+    },
+    {
+      "id": "150003",
+      "name": "Update Campaign 1765837314020"
+    },
+    {
+      "id": "150005",
+      "name": "Active Campaign 1765837314202"
+    },
+    {
+      "id": "150006",
+      "name": "Discount Campaign 1765837314285"
+    },
+    {
+      "id": "150007",
+      "name": "Campaign 1765839315494"
+    },
+    {
+      "id": "150008",
+      "name": "Campaign 1 1765839315561"
+    },
+    {
+      "id": "150009",
+      "name": "Update Campaign 1765839315637"
+    },
+    {
+      "id": "150011",
+      "name": "Active Campaign 1765839315862"
+    },
+    {
+      "id": "150012",
+      "name": "Discount Campaign 1765839315934"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tCampaign 1763950754380\n2\tCampaign 1 1763950754458\n3\tUpdate Campaign 1763950754526\n4\tDelete Campaign 1763950754585\n5\tActive Campaign 1763950754637\n6\tDiscount Campaign 1763950754811\n7\tCampaign 1763950781990\n8\tCampaign 1 1763950782032\n9\tUpdate Campaign 1763950782080\n10\tDelete Campaign 1763950782120\n11\tActive Campaign 1763950782159\n12\tDiscount Campaign 1763950782215\n13\tCampaign 1763950803283\n14\tCampaign 1 1763950803324\n15\tUpdate Campaign 1763950803374\n16\tDelete Campaign 1763950803421\n17\tActive Campaign 1763950803466\n18\tDiscount Campaign 1763950803519\n19\tCampaign 1763950819332\n20\tCampaign 1 1763950819381\n21\tUpdate Campaign 1763950819431\n22\tDelete Campaign 1763950819470\n23\tActive Campaign 1763950819509\n24\tDiscount Campaign 1763950819550\n25\tCampaign 1763950854861\n26\tCampaign 1 1763950854908\n27\tUpdate Campaign 1763950854957\n28\tDelete Campaign 1763950855010\n29\tActive Campaign 1763950855070\n30\tDiscount Campaign 1763950855136\n31\tCampaign 1763950890298\n32\tCampaign 1 1763950890358\n33\tUpdate Campaign 1763950890435\n34\tDelete Campaign 1763950890493\n35\tActive Campaign 1763950890551\n36\tDiscount Campaign 1763950890611\n37\tCampaign 1763950901235\n38\tCampaign 1 1763950901274\n39\tUpdate Campaign 1763950901326\n40\tDelete Campaign 1763950901367\n41\tActive Campaign 1763950901412\n42\tDiscount Campaign 1763950901504\n43\tCampaign 1763950911113\n44\tCampaign 1 1763950911152\n45\tUpdate Campaign 1763950911202\n46\tDelete Campaign 1763950911242\n47\tActive Campaign 1763950911295\n48\tDiscount Campaign 1763950911342\n49\tCampaign 1763950920698\n50\tCampaign 1 1763950920740\n51\tUpdate Campaign 1763950920792\n52\tDelete Campaign 1763950920838\n53\tActive Campaign 1763950920904\n54\tDiscount Campaign 1763950920951\n55\tCampaign 1763951023248\n56\tCampaign 1 1763951023293\n57\tUpdate Campaign 1763951023344\n59\tActive Campaign 1763951023478\n60\tDiscount Campaign 1763951023530\n30001\tCampaign 1764039882184\n30002\tCampaign 1 1764039882238\n30003\tUpdate Campaign 1764039882290\n30005\tActive Campaign 1764039882429\n30006\tDiscount Campaign 1764039882480\n30007\tCampaign 1764039913050\n30008\tCampaign 1 1764039913095\n30009\tUpdate Campaign 1764039913146\n30011\tActive Campaign 1764039913281\n30012\tDiscount Campaign 1764039913332\n60001\tCampaign 1764216584157\n60002\tCampaign 1 1764216584212\n60003\tUpdate Campaign 1764216584266\n60005\tActive Campaign 1764216584414\n60006\tDiscount Campaign 1764216584470\n60007\tCampaign 1764216638237\n60008\tCampaign 1 1764216638299\n60009\tUpdate Campaign 1764216638371\n60011\tActive Campaign 1764216638518\n60012\tDiscount Campaign 1764216638573\n90001\tCampaign 1765833614435\n90002\tCampaign 1 1765833614553\n90003\tUpdate Campaign 1765833614638\n90005\tActive Campaign 1765833614879\n90006\tDiscount Campaign 1765833614973\n120001\tCampaign 1765836440151\n120002\tCampaign 1 1765836440246\n120003\tUpdate Campaign 1765836440324\n120005\tActive Campaign 1765836440543\n120006\tDiscount Campaign 1765836440643\n120007\tCampaign 1765836468211\n120008\tCampaign 1 1765836468267\n120009\tUpdate Campaign 1765836468335\n120011\tActive Campaign 1765836468537\n120012\tDiscount Campaign 1765836468602\n150001\tCampaign 1765837313883\n150002\tCampaign 1 1765837313953\n150003\tUpdate Campaign 1765837314020\n150005\tActive Campaign 1765837314202\n150006\tDiscount Campaign 1765837314285\n150007\tCampaign 1765839315494\n150008\tCampaign 1 1765839315561\n150009\tUpdate Campaign 1765839315637\n150011\tActive Campaign 1765839315862\n150012\tDiscount Campaign 1765839315934\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}
