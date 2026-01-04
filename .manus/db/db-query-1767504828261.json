@@ -1,0 +1,70 @@
+{
+  "query": "SELECT o.id, o.orderNumber, o.customerId, u.name as customerName FROM orders o LEFT JOIN users u ON o.customerId = u.id LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT o.id, o.orderNumber, o.customerId, u.name as customerName FROM orders o LEFT JOIN users u ON o.customerId = u.id LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "orderNumber": "ORD-0001",
+      "customerId": "2370387",
+      "customerName": "NULL"
+    },
+    {
+      "id": "2",
+      "orderNumber": "ORD-0002",
+      "customerId": "2370388",
+      "customerName": "NULL"
+    },
+    {
+      "id": "3",
+      "orderNumber": "ORD-0003",
+      "customerId": "2370389",
+      "customerName": "NULL"
+    },
+    {
+      "id": "4",
+      "orderNumber": "ORD-0004",
+      "customerId": "2370390",
+      "customerName": "NULL"
+    },
+    {
+      "id": "5",
+      "orderNumber": "ORD-0005",
+      "customerId": "2370392",
+      "customerName": "NULL"
+    },
+    {
+      "id": "6",
+      "orderNumber": "ORD-0006",
+      "customerId": "2370393",
+      "customerName": "NULL"
+    },
+    {
+      "id": "7",
+      "orderNumber": "ORD-0007",
+      "customerId": "2370394",
+      "customerName": "NULL"
+    },
+    {
+      "id": "8",
+      "orderNumber": "ORD-0008",
+      "customerId": "2370395",
+      "customerName": "NULL"
+    },
+    {
+      "id": "9",
+      "orderNumber": "ORD-0009",
+      "customerId": "2370396",
+      "customerName": "NULL"
+    },
+    {
+      "id": "10",
+      "orderNumber": "ORD-0010",
+      "customerId": "2370397",
+      "customerName": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerId\tcustomerName\n1\tORD-0001\t2370387\tNULL\n2\tORD-0002\t2370388\tNULL\n3\tORD-0003\t2370389\tNULL\n4\tORD-0004\t2370390\tNULL\n5\tORD-0005\t2370392\tNULL\n6\tORD-0006\t2370393\tNULL\n7\tORD-0007\t2370394\tNULL\n8\tORD-0008\t2370395\tNULL\n9\tORD-0009\t2370396\tNULL\n10\tORD-0010\t2370397\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 117
+}

@@ -28,9 +28,9 @@ export default function AdvancedReporting() {
   const [format, setFormat] = useState<string>("pdf");
 
   // Queries
-  const { data: reports, isLoading: reportsLoading, refetch: refetchReports } = trpc.reports.getReports.useQuery();
-  const { data: scheduledReports, refetch: refetchScheduled } = trpc.reports.getScheduledReports.useQuery();
-  const { data: executionHistory } = trpc.reports.getExecutionHistory.useQuery();
+  const { data: reports, isLoading: reportsLoading, refetch: refetchReports } = trpc.reports.getAllReports.useQuery({});
+  const { data: scheduledReports, refetch: refetchScheduled } = trpc.reports.getAllScheduledReports.useQuery({});
+  const { data: executionHistory } = trpc.advancedReports.getExecutionHistory.useQuery({});
 
   // Mutations
   const createReport = trpc.reports.createReport.useMutation({
@@ -57,7 +57,7 @@ export default function AdvancedReporting() {
     },
   });
 
-  const executeReport = trpc.reports.executeReport.useMutation({
+  const executeReport = trpc.advancedReports.executeReport.useMutation({
     onSuccess: (data) => {
       toast.success(`Report executed successfully. ${data?.recordCount || 0} records generated.`);
       refetchReports();
@@ -122,9 +122,10 @@ export default function AdvancedReporting() {
     createScheduled.mutate({
       reportId: selectedReport,
       name: scheduleName,
-      frequency: frequency as any,
+      frequency: frequency as "daily" | "weekly" | "monthly" | "quarterly",
+      time: "09:00",
       recipients,
-      format: format as any,
+      format: format as "pdf" | "csv" | "excel",
     });
   };
 
@@ -473,7 +474,7 @@ export default function AdvancedReporting() {
                             </td>
                             <td className="p-4">{getStatusBadge(execution.status)}</td>
                             <td className="p-4">{execution.recordCount?.toLocaleString() || "-"}</td>
-                            <td className="p-4">{getFormatBadge(execution.format)}</td>
+                            <td className="p-4">{getFormatBadge(execution.format || "unknown")}</td>
                             <td className="p-4">{execution.duration ? `${execution.duration}s` : "-"}</td>
                             <td className="p-4">{new Date(execution.startedAt).toLocaleString()}</td>
                             <td className="p-4">

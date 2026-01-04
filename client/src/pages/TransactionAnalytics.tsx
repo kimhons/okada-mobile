@@ -20,7 +20,7 @@ export default function TransactionAnalytics() {
   const [emailRecipients, setEmailRecipients] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
 
-  const exportPDF = trpc.financial.exportPeriodComparisonPDF.useMutation({
+  const exportPDF = trpc.payoutsAndTransactions.exportPeriodComparisonPDF.useMutation({
     onSuccess: (data) => {
       // Convert HTML to PDF and download
       const blob = new Blob([data.html], { type: 'text/html' });
@@ -34,7 +34,7 @@ export default function TransactionAnalytics() {
       URL.revokeObjectURL(url);
       toast.success("Comparison report exported successfully");
     },
-    onError: (error) => {
+    onError: (error: { message: string }) => {
       toast.error(error.message || "Failed to export report");
     },
   });
@@ -43,14 +43,14 @@ export default function TransactionAnalytics() {
     exportPDF.mutate({ periodType });
   };
 
-  const emailReport = trpc.financial.emailPeriodComparisonReport.useMutation({
+  const emailReport = trpc.payoutsAndTransactions.emailPeriodComparisonReport.useMutation({
     onSuccess: (data) => {
       toast.success(`Report emailed successfully to ${data.recipientCount} recipient(s)`);
       setShowEmailDialog(false);
       setEmailRecipients("");
       setEmailMessage("");
     },
-    onError: (error) => {
+    onError: (error: { message: string }) => {
       toast.error(error.message || "Failed to email report");
     },
   });
@@ -68,19 +68,19 @@ export default function TransactionAnalytics() {
   };
 
   // Fetch period comparison data
-  const { data: comparisonData, isLoading: comparisonLoading } = trpc.financial.getTransactionPeriodComparison.useQuery({
+  const { data: comparisonData, isLoading: comparisonLoading } = trpc.payoutsAndTransactions.getTransactionPeriodComparison.useQuery({
     periodType,
   });
 
-  const { data: transactions = [], isLoading } = trpc.financial.getAllTransactions.useQuery({
+  const { data: transactions = [], isLoading } = trpc.payoutsAndTransactions.getAllTransactions.useQuery({
     startDate: startDate ? new Date(startDate) : undefined,
     endDate: endDate ? new Date(endDate) : undefined,
   });
 
   // Calculate analytics
   const totalTransactions = transactions.length;
-  const completedTransactions = transactions.filter(t => t.status === "completed");
-  const failedTransactions = transactions.filter(t => t.status === "failed");
+  const completedTransactions = transactions.filter((t: { status: string }) => t.status === "completed");
+  const failedTransactions = transactions.filter((t: { status: string }) => t.status === "failed");
   const successRate = totalTransactions > 0 
     ? ((completedTransactions.length / totalTransactions) * 100).toFixed(1)
     : "0";

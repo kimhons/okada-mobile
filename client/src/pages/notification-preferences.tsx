@@ -39,8 +39,8 @@ export default function NotificationPreferences() {
   const [riderUpdates, setRiderUpdates] = useState(true);
   const [paymentAlerts, setPaymentAlerts] = useState(true);
 
-  const { data: preferences, isLoading, refetch } = trpc.notifications.getAllNotificationPreferences.useQuery();
-  const updatePreferenceMutation = trpc.notifications.updateNotificationPreference.useMutation();
+  const { data: preferences, isLoading, refetch } = trpc.emailAndPushNotifications.getAllNotificationPreferences.useQuery();
+  const updatePreferenceMutation = trpc.emailAndPushNotifications.updateNotificationPreference.useMutation();
 
   const handleEdit = (preference: any) => {
     setSelectedPreference(preference);

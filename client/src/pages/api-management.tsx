@@ -118,7 +118,7 @@ export default function APIManagement() {
     toast.success(`${label} copied to clipboard`);
   };
 
-  const isExpired = (expiresAt: string | null) => {
+  const isExpired = (expiresAt: Date | string | null) => {
     if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
   };

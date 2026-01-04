@@ -69,7 +69,7 @@ export default function DataExport() {
   });
 
   const createExportMutation = trpc.reports.createExportHistory.useMutation();
-  const deleteExportMutation = trpc.reports.deleteExportHistory.useMutation();
+  // Note: deleteExportHistory is not implemented in the backend
 
   const handleCreate = () => {
     setExportType("");
@@ -115,16 +115,10 @@ export default function DataExport() {
 
   const confirmDelete = async () => {
     if (!selectedExport) return;
-
-    try {
-      await deleteExportMutation.mutateAsync({ id: selectedExport.id });
-      toast.success("Export deleted successfully");
-      setDeleteDialogOpen(false);
-      setSelectedExport(null);
-      refetch();
-    } catch (error) {
-      toast.error("Failed to delete export");
-    }
+    // Delete functionality not implemented in backend
+    toast.error("Delete functionality is not available");
+    setDeleteDialogOpen(false);
+    setSelectedExport(null);
   };
 
   const handleDownload = (exportItem: any) => {
@@ -488,9 +482,8 @@ export default function DataExport() {
             <Button
               variant="destructive"
               onClick={confirmDelete}
-              disabled={deleteExportMutation.isPending}
             >
-              {deleteExportMutation.isPending ? "Deleting..." : "Delete Export"}
+              Delete Export
             </Button>
           </DialogFooter>
         </DialogContent>

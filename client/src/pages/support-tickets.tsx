@@ -50,9 +50,9 @@ export default function SupportTickets() {
   const [priority, setPriority] = useState("");
   const [replyMessage, setReplyMessage] = useState("");
 
-  const { data: tickets, isLoading, refetch } = trpc.tickets.getAll.useQuery();
-  const updateTicketMutation = trpc.tickets.updateStatus.useMutation();
-  const addMessageMutation = trpc.tickets.addMessage.useMutation();
+  const { data: tickets, isLoading, refetch } = trpc.support.getAllTickets.useQuery();
+  const updateTicketMutation = trpc.support.updateStatus.useMutation();
+  const addMessageMutation = trpc.support.addMessage.useMutation();
 
   const handleView = async (ticket: any) => {
     setSelectedTicket(ticket);
@@ -72,15 +72,15 @@ export default function SupportTickets() {
 
     try {
       await updateTicketMutation.mutateAsync({
-        ticketId: selectedTicket.id,
-        status: status as any,
-        priority: priority as any,
+        id: selectedTicket.id,
+        status: status as "open" | "in_progress" | "resolved" | "closed",
       });
 
       // Add reply message if provided
       if (replyMessage.trim()) {
         await addMessageMutation.mutateAsync({
           ticketId: selectedTicket.id,
+          userId: 0,
           message: replyMessage,
           isStaff: true,
         });

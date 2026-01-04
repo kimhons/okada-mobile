@@ -1,0 +1,14 @@
+{
+  "query": "SELECT MIN(customerId), MAX(customerId) FROM orders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT MIN(customerId), MAX(customerId) FROM orders;",
+  "rows": [
+    {
+      "MIN(customerId)": "2370387",
+      "MAX(customerId)": "2370397"
+    }
+  ],
+  "messages": [],
+  "stdout": "MIN(customerId)\tMAX(customerId)\n2370387\t2370397\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

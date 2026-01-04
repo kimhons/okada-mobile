@@ -269,7 +269,7 @@ export default function ShiftScheduling() {
                 onUpdateStatus={(status) =>
                   updateShiftStatusMutation.mutate({ shiftId: shift.id, status })
                 }
-                onCancel={() => cancelShiftMutation.mutate({ shiftId: shift.id })}
+                onCancel={() => cancelShiftMutation.mutate({ shiftId: shift.id, reason: "Cancelled by admin" })}
               />
             ))
           ) : (

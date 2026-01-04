@@ -53,15 +53,15 @@ export default function HelpDocumentation() {
   const [tags, setTags] = useState("");
   const [isPublished, setIsPublished] = useState(true);
 
-  const { data: docs, isLoading, refetch } = trpc.support.getAllHelpDocs.useQuery({
+  const { data: docs, isLoading, refetch } = trpc.faqsAndHelpDocs.getAllHelpDocs.useQuery({
     category: categoryFilter || undefined,
     isPublished: publishedFilter ? publishedFilter === "published" : undefined,
     search: searchQuery || undefined,
   });
 
-  const createDocMutation = trpc.support.createHelpDoc.useMutation();
-  const updateDocMutation = trpc.support.updateHelpDoc.useMutation();
-  const deleteDocMutation = trpc.support.deleteHelpDoc.useMutation();
+  const createDocMutation = trpc.faqsAndHelpDocs.createHelpDoc.useMutation();
+  const updateDocMutation = trpc.faqsAndHelpDocs.updateHelpDoc.useMutation();
+  const deleteDocMutation = trpc.faqsAndHelpDocs.deleteHelpDoc.useMutation();
 
   const handleCreate = () => {
     setTitle("");
@@ -183,17 +183,17 @@ export default function HelpDocumentation() {
 
   // Stats
   const totalDocs = docs?.length || 0;
-  const publishedDocs = docs?.filter(d => d.isPublished).length || 0;
-  const totalViews = docs?.reduce((sum, d) => sum + (d.views || 0), 0) || 0;
+  const publishedDocs = docs?.filter((d: { isPublished: boolean }) => d.isPublished).length || 0;
+  const totalViews = docs?.reduce((sum: number, d: { views?: number }) => sum + (d.views || 0), 0) || 0;
   const avgHelpfulness = docs && docs.length > 0
-    ? Math.round((docs.reduce((sum, d) => {
+    ? Math.round((docs.reduce((sum: number, d: { helpful?: number; notHelpful?: number }) => {
         const total = (d.helpful || 0) + (d.notHelpful || 0);
         return sum + (total > 0 ? (d.helpful || 0) / total : 0);
       }, 0) / docs.length) * 100)
     : 0;
 
   // Get unique categories
-  const categories = Array.from(new Set(docs?.map(d => d.category).filter(Boolean)));
+  const categories = Array.from(new Set(docs?.map((d: { category?: string }) => d.category).filter(Boolean))) as string[];
 
   return (
     <DashboardLayout>
@@ -345,7 +345,7 @@ export default function HelpDocumentation() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {docs.map((doc) => (
+                    {docs.map((doc: { id: number; title: string; category?: string; tags?: string; isPublished: boolean; views?: number; helpful?: number; notHelpful?: number; updatedAt: Date }) => (
                       <TableRow key={doc.id}>
                         <TableCell className="font-medium max-w-md">
                           <div className="truncate">{doc.title}</div>
@@ -360,7 +360,7 @@ export default function HelpDocumentation() {
                         <TableCell>
                           {doc.tags ? (
                             <div className="flex flex-wrap gap-1">
-                              {doc.tags.split(",").slice(0, 2).map((tag, i) => (
+                              {doc.tags.split(",").slice(0, 2).map((tag: string, i: number) => (
                                 <Badge key={i} variant="secondary" className="text-xs">
                                   {tag.trim()}
                                 </Badge>

@@ -141,8 +141,8 @@ export default function LoyaltyProgram() {
   const handleUpdate = () => {
     if (!selectedProgram) return;
     updateMutation.mutate({
-      userId: selectedProgram.userId,
       ...formData,
+      userId: selectedProgram.userId,
     });
   };
 

@@ -74,7 +74,7 @@ export default function RiderAvailabilityCalendar() {
   // Fetch availability
   const { data: availability, isLoading, refetch } =
     trpc.riderAvailability.getAvailability.useQuery({
-      riderId: selectedRiderId === "all" ? undefined : parseInt(selectedRiderId),
+      riderId: selectedRiderId === "all" ? 0 : parseInt(selectedRiderId),
       startDate: startOfMonth,
       endDate: endOfMonth,
     });
@@ -147,8 +147,8 @@ export default function RiderAvailabilityCalendar() {
     selectedDates.forEach((date) => {
       setAvailabilityMutation.mutate({
         riderId: parseInt(selectedRiderId),
-        date,
-        status,
+        availabilityDate: date,
+        availabilityType: status as "available" | "unavailable" | "preferred" | "maybe",
       });
     });
   };

@@ -3212,6 +3212,17 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
   const bonusEarnings = earnings.reduce((sum, e) => sum + (e.bonus || 0), 0);
   const tipEarnings = earnings.reduce((sum, e) => sum + (e.tip || 0), 0);
 
+  // Calculate on-time rate from completed orders
+  const onTimeOrders = completedOrders.filter((o) => {
+    if (!o.deliveredAt || !o.estimatedDeliveryTime) return false;
+    return new Date(o.deliveredAt) <= new Date(o.estimatedDeliveryTime);
+  });
+  const onTimeRate = completedOrders.length > 0 ? (onTimeOrders.length / completedOrders.length) * 100 : 0;
+
+  // Calculate quality photo rate (orders with proof of delivery)
+  const ordersWithPhoto = completedOrders.filter((o) => o.proofOfDelivery);
+  const qualityPhotoRate = completedOrders.length > 0 ? (ordersWithPhoto.length / completedOrders.length) * 100 : 0;
+
   return {
     rider: rider[0],
     deliveries: completedOrders.length,
@@ -3223,6 +3234,8 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
     },
     rating: rider[0].rating || 0,
     acceptanceRate: rider[0].acceptanceRate || 0,
+    onTimeRate: Math.round(onTimeRate * 10) / 10,
+    qualityPhotoRate: Math.round(qualityPhotoRate * 10) / 10,
   };
 }
 
@@ -3999,6 +4012,20 @@ export async function approveVerification(requestId: number, reviewedBy: number,
 
   if (!request[0]) return null;
 
+  // Get user details based on userType
+  let userDetails: { email?: string | null; phone?: string | null; name?: string | null } = {};
+  if (request[0].userType === 'rider') {
+    const rider = await db.select().from(riders).where(eq(riders.id, request[0].userId)).limit(1);
+    if (rider[0]) {
+      userDetails = { email: rider[0].email, phone: rider[0].phone, name: rider[0].name };
+    }
+  } else {
+    const user = await db.select().from(users).where(eq(users.id, request[0].userId)).limit(1);
+    if (user[0]) {
+      userDetails = { email: user[0].email, phone: user[0].phone, name: user[0].name };
+    }
+  }
+
   await db
     .update(verificationRequests)
     .set({
@@ -4012,9 +4039,9 @@ export async function approveVerification(requestId: number, reviewedBy: number,
   return {
     success: true,
     userId: request[0].userId,
-    email: request[0].email,
-    phone: request[0].phone,
-    userName: request[0].userName,
+    email: userDetails.email || null,
+    phone: userDetails.phone || null,
+    userName: userDetails.name || null,
     userType: request[0].userType,
   };
 }
@@ -4035,6 +4062,20 @@ export async function rejectVerification(requestId: number, reviewedBy: number, 
 
   if (!request[0]) return null;
 
+  // Get user details based on userType
+  let userDetails: { email?: string | null; phone?: string | null; name?: string | null } = {};
+  if (request[0].userType === 'rider') {
+    const rider = await db.select().from(riders).where(eq(riders.id, request[0].userId)).limit(1);
+    if (rider[0]) {
+      userDetails = { email: rider[0].email, phone: rider[0].phone, name: rider[0].name };
+    }
+  } else {
+    const user = await db.select().from(users).where(eq(users.id, request[0].userId)).limit(1);
+    if (user[0]) {
+      userDetails = { email: user[0].email, phone: user[0].phone, name: user[0].name };
+    }
+  }
+
   await db
     .update(verificationRequests)
     .set({
@@ -4049,9 +4090,9 @@ export async function rejectVerification(requestId: number, reviewedBy: number, 
   return {
     success: true,
     userId: request[0].userId,
-    email: request[0].email,
-    phone: request[0].phone,
-    userName: request[0].userName,
+    email: userDetails.email || null,
+    phone: userDetails.phone || null,
+    userName: userDetails.name || null,
     userType: request[0].userType,
   };
 }

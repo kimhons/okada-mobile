@@ -24,12 +24,16 @@ const tierColors = {
   rookie: "bg-blue-100 text-blue-800 border-blue-300",
 };
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   available: "bg-green-500",
   en_route_pickup: "bg-blue-500",
   en_route_delivery: "bg-blue-500",
   idle: "bg-yellow-500",
   offline: "bg-gray-400",
+  pending: "bg-yellow-500",
+  approved: "bg-green-500",
+  rejected: "bg-red-500",
+  suspended: "bg-red-500",
 };
 
 export default function RiderLeaderboard() {
@@ -144,7 +148,7 @@ export default function RiderLeaderboard() {
         </Button>
       </div>
 
-      {!isLoading && leaderboardData && (
+      {!isLoading && leaderboardData && leaderboardData.stats && (
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT * FROM customerProfiles LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT * FROM customerProfiles LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'nuakqykderxrjaus4vq4c7.customerProfiles' doesn't exist"
+  ]
+}

@@ -65,14 +65,14 @@ export default function PushNotifications() {
   const [targetAudience, setTargetAudience] = useState("all");
   const [targetUserIds, setTargetUserIds] = useState("");
 
-  const { data: notifications, isLoading, refetch } = trpc.notifications.getAllPushNotifications.useQuery({
+  const { data: notifications, isLoading, refetch } = trpc.emailAndPushNotifications.getAllPushNotifications.useQuery({
     type: typeFilter || undefined,
     targetAudience: audienceFilter || undefined,
     status: statusFilter || undefined,
   });
 
-  const createNotificationMutation = trpc.notifications.createPushNotification.useMutation();
-  const deleteNotificationMutation = trpc.notifications.deletePushNotification.useMutation();
+  const createNotificationMutation = trpc.emailAndPushNotifications.createPushNotification.useMutation();
+  const deleteNotificationMutation = trpc.emailAndPushNotifications.deletePushNotification.useMutation();
 
   const handleCreate = () => {
     setTitle("");

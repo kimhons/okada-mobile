@@ -1,0 +1,50 @@
+{
+  "query": "SELECT o.customerId, COUNT(*) as count FROM orders o GROUP BY o.customerId ORDER BY count DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT o.customerId, COUNT(*) as count FROM orders o GROUP BY o.customerId ORDER BY count DESC LIMIT 10;",
+  "rows": [
+    {
+      "customerId": "2370387",
+      "count": "3"
+    },
+    {
+      "customerId": "2370389",
+      "count": "3"
+    },
+    {
+      "customerId": "2370390",
+      "count": "3"
+    },
+    {
+      "customerId": "2370388",
+      "count": "3"
+    },
+    {
+      "customerId": "2370392",
+      "count": "3"
+    },
+    {
+      "customerId": "2370395",
+      "count": "2"
+    },
+    {
+      "customerId": "2370396",
+      "count": "2"
+    },
+    {
+      "customerId": "2370393",
+      "count": "2"
+    },
+    {
+      "customerId": "2370397",
+      "count": "2"
+    },
+    {
+      "customerId": "2370394",
+      "count": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tcount\n2370387\t3\n2370389\t3\n2370390\t3\n2370388\t3\n2370392\t3\n2370395\t2\n2370396\t2\n2370393\t2\n2370397\t2\n2370394\t2\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

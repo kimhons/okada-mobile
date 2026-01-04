@@ -29,15 +29,15 @@ export default function AuditTrail() {
   const [entityTypeFilter, setEntityTypeFilter] = useState("all");
   const [adminFilter, setAdminFilter] = useState("all");
 
-  const { data: activities, isLoading } = trpc.activityLog.getAll.useQuery();
+  const { data: activities, isLoading } = trpc.activityLog.list.useQuery({});
   const { data: admins } = trpc.settings.getAllAdminUsers.useQuery();
 
   // Get unique action types and entity types
-  const actionTypes = Array.from(new Set(activities?.map(a => a.action) || []));
-  const entityTypes = Array.from(new Set(activities?.map(a => a.entityType) || []));
+  const actionTypes = Array.from(new Set(activities?.map((a: { action: string }) => a.action) || []));
+  const entityTypes = Array.from(new Set(activities?.map((a: { entityType: string | null }) => a.entityType).filter(Boolean) || [])) as string[];
 
   // Filter activities
-  const filteredActivities = activities?.filter(activity => {
+  const filteredActivities = activities?.filter((activity: { adminName: string; action: string; details?: string | null; entityType: string | null; adminId: number }) => {
     const matchesSearch = 
       searchQuery === "" ||
       activity.adminName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -62,8 +62,8 @@ export default function AuditTrail() {
 
   // Stats
   const totalLogs = activities?.length || 0;
-  const uniqueAdmins = new Set(activities?.map(a => a.adminId)).size;
-  const recentLogs = activities?.filter(a => {
+  const uniqueAdmins = new Set(activities?.map((a: { adminId: number }) => a.adminId)).size;
+  const recentLogs = activities?.filter((a: { createdAt: Date }) => {
     const logDate = new Date(a.createdAt);
     const dayAgo = new Date();
     dayAgo.setDate(dayAgo.getDate() - 1);

@@ -52,15 +52,15 @@ export default function FAQManagement() {
   const [order, setOrder] = useState(0);
   const [isPublished, setIsPublished] = useState(true);
 
-  const { data: faqs, isLoading, refetch } = trpc.support.getAllFaqs.useQuery({
+  const { data: faqs, isLoading, refetch } = trpc.faqsAndHelpDocs.getAllFaqs.useQuery({
     category: categoryFilter || undefined,
     isPublished: publishedFilter ? publishedFilter === "published" : undefined,
     search: searchQuery || undefined,
   });
 
-  const createFaqMutation = trpc.support.createFaq.useMutation();
-  const updateFaqMutation = trpc.support.updateFaq.useMutation();
-  const deleteFaqMutation = trpc.support.deleteFaq.useMutation();
+  const createFaqMutation = trpc.faqsAndHelpDocs.createFaq.useMutation();
+  const updateFaqMutation = trpc.faqsAndHelpDocs.updateFaq.useMutation();
+  const deleteFaqMutation = trpc.faqsAndHelpDocs.deleteFaq.useMutation();
 
   const handleCreate = () => {
     setQuestion("");
@@ -169,17 +169,17 @@ export default function FAQManagement() {
 
   // Stats
   const totalFaqs = faqs?.length || 0;
-  const publishedFaqs = faqs?.filter(f => f.isPublished).length || 0;
-  const totalViews = faqs?.reduce((sum, f) => sum + (f.views || 0), 0) || 0;
+  const publishedFaqs = faqs?.filter((f: { isPublished: boolean }) => f.isPublished).length || 0;
+  const totalViews = faqs?.reduce((sum: number, f: { views?: number }) => sum + (f.views || 0), 0) || 0;
   const avgHelpfulness = faqs && faqs.length > 0
-    ? Math.round((faqs.reduce((sum, f) => {
+    ? Math.round((faqs.reduce((sum: number, f: { helpful?: number; notHelpful?: number }) => {
         const total = (f.helpful || 0) + (f.notHelpful || 0);
         return sum + (total > 0 ? (f.helpful || 0) / total : 0);
       }, 0) / faqs.length) * 100)
     : 0;
 
   // Get unique categories
-  const categories = Array.from(new Set(faqs?.map(f => f.category).filter(Boolean)));
+  const categories = Array.from(new Set(faqs?.map((f: { category?: string }) => f.category).filter(Boolean))) as string[];
 
   return (
     <DashboardLayout>
@@ -330,7 +330,7 @@ export default function FAQManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {faqs.map((faq) => (
+                    {faqs.map((faq: { id: number; question: string; category?: string; isPublished: boolean; views?: number; helpful?: number; notHelpful?: number; updatedAt: Date }) => (
                       <TableRow key={faq.id}>
                         <TableCell className="font-medium max-w-md">
                           <div className="truncate">{faq.question}</div>

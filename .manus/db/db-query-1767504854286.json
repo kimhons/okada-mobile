@@ -1,0 +1,253 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "activity_log"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "apiKeys"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "backupLogs"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "campaign_usage"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "campaigns"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "categories"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "commissionSettings"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "contentModerationQueue"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "couponUsage"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "coupons"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "customReports"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "customerFeedback"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "deliveryZones"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "disputeMessages"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "disputes"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "emailTemplates"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "exportHistory"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "faqs"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "fraudAlerts"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "geoRegions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "geofenceAlerts"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "geofences"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "helpDocs"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "incidents"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "inventoryAlerts"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "inventoryThresholds"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "languages"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "liveDashboardEvents"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "loyaltyPointsTransactions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "loyaltyProgram"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "loyaltyRedemptions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "loyaltyRewards"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "loyaltyTiers"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "loyaltyTransactions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "mobileTrainingSync"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "notificationPreferences"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "notifications"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "orderItems"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "orders"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "paymentTransactions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "payment_gateway_config"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "payment_gateway_sync_log"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "payouts"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "platformStatistics"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "products"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "promotionalCampaigns"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "purchaseOrders"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "pushNotificationsLog"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "qualityPhotos"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "realtimeNotifications"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "referralRewards"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "referrals"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "regionalAnalytics"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "reportExecutionHistory"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "reports"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "revenueAnalytics"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderAchievements"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderAvailability"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderEarnings"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderEarningsTransactions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderLocations"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderPayouts"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderShifts"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riderTrainingProgress"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "riders"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "scheduledReports"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "sellerPayouts"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "sellers"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "shiftSwaps"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "suppliers"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "supportTicketMessages"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "supportTickets"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "systemSettings"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "trainingModules"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "trainingQuizQuestions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "transactions"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "translations"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "userLoyaltyPoints"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "users"
+    },
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7": "verificationRequests"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_nUAKQyKDeRXRJaus4VQ4c7\n__drizzle_migrations\nactivity_log\napiKeys\nbackupLogs\ncampaign_usage\ncampaigns\ncategories\ncommissionSettings\ncontentModerationQueue\ncouponUsage\ncoupons\ncustomReports\ncustomerFeedback\ndeliveryZones\ndisputeMessages\ndisputes\nemailTemplates\nexportHistory\nfaqs\nfraudAlerts\ngeoRegions\ngeofenceAlerts\ngeofences\nhelpDocs\nincidents\ninventoryAlerts\ninventoryThresholds\nlanguages\nliveDashboardEvents\nloyaltyPointsTransactions\nloyaltyProgram\nloyaltyRedemptions\nloyaltyRewards\nloyaltyTiers\nloyaltyTransactions\nmobileTrainingSync\nnotificationPreferences\nnotifications\norderItems\norders\npaymentTransactions\npayment_gateway_config\npayment_gateway_sync_log\npayouts\nplatformStatistics\nproducts\npromotionalCampaigns\npurchaseOrders\npushNotificationsLog\nqualityPhotos\nrealtimeNotifications\nreferralRewards\nreferrals\nregionalAnalytics\nreportExecutionHistory\nreports\nrevenueAnalytics\nriderAchievements\nriderAvailability\nriderEarnings\nriderEarningsTransactions\nriderLocations\nriderPayouts\nriderShifts\nriderTrainingProgress\nriders\nscheduledReports\nsellerPayouts\nsellers\nshiftSwaps\nsuppliers\nsupportTicketMessages\nsupportTickets\nsystemSettings\ntrainingModules\ntrainingQuizQuestions\ntransactions\ntranslations\nuserLoyaltyPoints\nusers\nverificationRequests\n",
+  "stderr": "",
+  "execution_time_ms": 71
+}

@@ -35,7 +35,7 @@ export default function TransactionHistory() {
   const [bulkAction, setBulkAction] = useState<string>("");
   const [isBulkActionDialogOpen, setIsBulkActionDialogOpen] = useState(false);
 
-  const exportCSV = trpc.financial.exportTransactionsCSV.useMutation({
+  const exportCSV = trpc.payoutsAndTransactions.exportTransactionsCSV.useMutation({
     onSuccess: (data) => {
       // Create a blob and download
       const blob = new Blob([data.content], { type: 'text/csv' });
@@ -54,15 +54,15 @@ export default function TransactionHistory() {
     },
   });
 
-  const exportExcel = trpc.financial.exportTransactionsExcel.useMutation({
+  const exportExcel = trpc.payoutsAndTransactions.exportTransactionsExcel.useMutation({
     onSuccess: (data) => {
       // For Excel, we'll use the same CSV format for now
       // In a real app, you'd use a library like xlsx to generate proper Excel files
       const headers = Object.keys(data.data[0] || {});
-      const rows = data.data.map(row => headers.map(h => row[h as keyof typeof row]));
+      const rows = data.data.map((row: Record<string, unknown>) => headers.map(h => row[h]));
       const csvContent = [
         headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ...rows.map((row: unknown[]) => row.map((cell: unknown) => `"${cell}"`).join(','))
       ].join('\n');
       
       const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel' });
@@ -105,7 +105,7 @@ export default function TransactionHistory() {
     });
   };
 
-  const bulkUpdateStatus = trpc.financial.bulkUpdateTransactionStatus.useMutation({
+  const bulkUpdateStatus = trpc.payoutsAndTransactions.bulkUpdateTransactionStatus.useMutation({
     onSuccess: (data) => {
       toast.success(`Updated ${data.count} transactions`);
       setSelectedIds([]);
@@ -117,7 +117,7 @@ export default function TransactionHistory() {
     },
   });
 
-  const bulkRefund = trpc.financial.bulkRefundTransactions.useMutation({
+  const bulkRefund = trpc.payoutsAndTransactions.bulkRefundTransactions.useMutation({
     onSuccess: (data) => {
       toast.success(`Created ${data.count} refund transactions`);
       setSelectedIds([]);
@@ -129,8 +129,8 @@ export default function TransactionHistory() {
     },
   });
 
-  const bulkReconcile = trpc.financial.bulkReconcileTransactions.useMutation({
-    onSuccess: (data) => {
+  const bulkReconcile = trpc.payoutsAndTransactions.bulkReconcileTransactions.useMutation({
+    onSuccess: (data: { count: number }) => {
       toast.success(`Reconciled ${data.count} transactions`);
       setSelectedIds([]);
       setIsBulkActionDialogOpen(false);
@@ -163,7 +163,7 @@ export default function TransactionHistory() {
     if (selectedIds.length === transactions.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(transactions.map(t => t.id));
+      setSelectedIds(transactions.map((t: { id: number }) => t.id));
     }
   };
 
@@ -175,7 +175,7 @@ export default function TransactionHistory() {
     }
   };
 
-  const generateReceipt = trpc.financial.generateTransactionReceipt.useMutation({
+  const generateReceipt = trpc.payoutsAndTransactions.generateTransactionReceipt.useMutation({
     onSuccess: (data) => {
       // Create a blob from HTML and open in new window for printing/saving as PDF
       const blob = new Blob([data.html], { type: 'text/html' });
@@ -199,7 +199,7 @@ export default function TransactionHistory() {
     }
   };
 
-  const { data: transactions = [], isLoading, refetch } = trpc.financial.getAllTransactions.useQuery({
+  const { data: transactions = [], isLoading, refetch } = trpc.payoutsAndTransactions.getAllTransactions.useQuery({
     type: typeFilter || undefined,
     status: statusFilter || undefined,
     search: searchQuery || undefined,
@@ -213,11 +213,11 @@ export default function TransactionHistory() {
 
   // Calculate stats
   const totalTransactions = transactions.length;
-  const completedTransactions = transactions.filter(t => t.status === "completed").length;
-  const pendingTransactions = transactions.filter(t => t.status === "pending").length;
+  const completedTransactions = transactions.filter((t: { status: string }) => t.status === "completed").length;
+  const pendingTransactions = transactions.filter((t: { status: string }) => t.status === "pending").length;
   const totalAmount = transactions
-    .filter(t => t.status === "completed")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter((t: { status: string }) => t.status === "completed")
+    .reduce((sum: number, t: { amount: number }) => sum + t.amount, 0);
 
   const formatCurrency = (amount: number) => {
     return `${(amount / 100).toLocaleString()} FCFA`;

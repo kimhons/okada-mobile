@@ -1,0 +1,13 @@
+{
+  "query": "SHOW TABLES LIKE '%customer%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SHOW TABLES LIKE '%customer%';",
+  "rows": [
+    {
+      "Tables_in_nUAKQyKDeRXRJaus4VQ4c7 (%customer%)": "customerFeedback"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_nUAKQyKDeRXRJaus4VQ4c7 (%customer%)\ncustomerFeedback\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}

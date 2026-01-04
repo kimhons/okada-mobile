@@ -63,7 +63,7 @@ export function BadgeShareDialog({
   };
 
   const handleShare = async (platform: string) => {
-    hapticFeedback.light();
+    hapticFeedback.tap();
 
     switch (platform) {
       case "facebook":

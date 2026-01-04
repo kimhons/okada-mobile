@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,18 +82,17 @@ export default function ScheduledReports() {
     { id: previewData?.id || 0 },
     {
       enabled: !!previewData?.id,
-      onSuccess: (data) => {
-        setPreviewData({ ...previewData, ...data });
-        setShowPreviewDialog(true);
-      },
-      onError: (error: any) => {
-        toast.error(error.message || "Failed to generate preview");
-        setPreviewData(null);
-      },
     }
   );
 
-  const sendNowMutation = trpc.financial.emailPeriodComparisonReport.useMutation({
+  // Handle preview data changes
+  useEffect(() => {
+    if (previewMutation.data && previewData?.id) {
+      setShowPreviewDialog(true);
+    }
+  }, [previewMutation.data, previewData?.id]);
+
+  const sendNowMutation = trpc.payoutsAndTransactions.emailPeriodComparisonReport.useMutation({
     onSuccess: () => {
       toast.success("Report sent successfully to all recipients");
       setShowSendConfirm(false);
@@ -101,7 +100,7 @@ export default function ScheduledReports() {
       setPreviewData(null);
       refetch();
     },
-    onError: (error) => {
+    onError: (error: { message: string }) => {
       toast.error(error.message || "Failed to send report");
     },
   });
@@ -402,14 +401,14 @@ export default function ScheduledReports() {
                       <Badge variant={report.isActive ? "default" : "secondary"}>
                         {report.isActive ? "Active" : "Inactive"}
                       </Badge>
-                      {report.lastRunStatus && (
-                        <Badge variant={report.lastRunStatus === "success" ? "default" : "destructive"}>
-                          Last: {report.lastRunStatus}
+                      {report.lastStatus && (
+                        <Badge variant={report.lastStatus === "success" ? "default" : "destructive"}>
+                          Last: {report.lastStatus}
                         </Badge>
                       )}
                     </div>
-                    {report.description && (
-                      <CardDescription>{report.description}</CardDescription>
+                    {report.message && (
+                      <CardDescription>{report.message}</CardDescription>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -424,7 +423,7 @@ export default function ScheduledReports() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleToggleActive(report.id, report.isActive)}
+                      onClick={() => handleToggleActive(report.id, !report.isActive)}
                       title={report.isActive ? "Pause" : "Resume"}
                     >
                       {report.isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -450,7 +449,7 @@ export default function ScheduledReports() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Period Type</div>
-                    <div className="font-medium">{getPeriodLabel(report.periodType)}</div>
+                    <div className="font-medium">{getPeriodLabel(report.format || "pdf")}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
@@ -466,7 +465,7 @@ export default function ScheduledReports() {
                       <Clock className="h-3 w-3" />
                       Time
                     </div>
-                    <div className="font-medium">{report.time}</div>
+                    <div className="font-medium">{report.scheduleTime || "09:00"}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
@@ -601,9 +600,9 @@ export default function ScheduledReports() {
                   const report = scheduledReports.find(r => r.id === previewData.id);
                   if (report) {
                     sendNowMutation.mutate({
-                      periodType: report.periodType,
+                      periodType: "month",
                       recipients: report.recipients,
-                      customMessage: report.customMessage || undefined,
+                      message: report.message || undefined,
                     });
                   }
                 }

@@ -72,15 +72,15 @@ export default function EmailTemplates() {
   const [category, setCategory] = useState("");
   const [isActive, setIsActive] = useState(true);
 
-  const { data: templates, isLoading, refetch } = trpc.notifications.getAllEmailTemplates.useQuery({
+  const { data: templates, isLoading, refetch } = trpc.emailAndPushNotifications.getAllEmailTemplates.useQuery({
     category: categoryFilter || undefined,
     isActive: statusFilter ? statusFilter === "active" : undefined,
     search: searchQuery || undefined,
   });
 
-  const createTemplateMutation = trpc.notifications.createEmailTemplate.useMutation();
-  const updateTemplateMutation = trpc.notifications.updateEmailTemplate.useMutation();
-  const deleteTemplateMutation = trpc.notifications.deleteEmailTemplate.useMutation();
+  const createTemplateMutation = trpc.emailAndPushNotifications.createEmailTemplate.useMutation();
+  const updateTemplateMutation = trpc.emailAndPushNotifications.updateEmailTemplate.useMutation();
+  const deleteTemplateMutation = trpc.emailAndPushNotifications.deleteEmailTemplate.useMutation();
 
   const handleCreate = () => {
     setName("");

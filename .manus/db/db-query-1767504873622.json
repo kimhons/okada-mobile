@@ -1,0 +1,14 @@
+{
+  "query": "SELECT MIN(id), MAX(id) FROM users;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT MIN(id), MAX(id) FROM users;",
+  "rows": [
+    {
+      "MIN(id)": "2550277",
+      "MAX(id)": "2550328"
+    }
+  ],
+  "messages": [],
+  "stdout": "MIN(id)\tMAX(id)\n2550277\t2550328\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

@@ -4095,9 +4095,9 @@ export const appRouter = router({
         if (result && result.userId) {
           const { sendVerificationNotification } = await import("./notificationService");
           await sendVerificationNotification(result.userId, "approved", {
-            email: result.email,
-            phone: result.phone,
-            name: result.userName,
+            email: result.email ?? undefined,
+            phone: result.phone ?? undefined,
+            name: result.userName ?? undefined,
             verificationType: result.userType,
           });
         }
@@ -4127,9 +4127,9 @@ export const appRouter = router({
         if (result && result.userId) {
           const { sendVerificationNotification } = await import("./notificationService");
           await sendVerificationNotification(result.userId, "rejected", {
-            email: result.email,
-            phone: result.phone,
-            name: result.userName,
+            email: result.email ?? undefined,
+            phone: result.phone ?? undefined,
+            name: result.userName ?? undefined,
             verificationType: result.userType,
             reason: input.rejectionReason,
           });

@@ -32,13 +32,13 @@ export default function SupportTicketDetail() {
 
   const { data: ticket, isLoading, refetch } = trpc.support.getTicketById.useQuery({ id: ticketId });
 
-  const updateStatus = trpc.support.updateTicketStatus.useMutation({
+  const updateStatus = trpc.support.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("Ticket status updated successfully");
       refetch();
       setNewStatus("");
     },
-    onError: (error) => {
+    onError: (error: { message: string }) => {
       toast.error(`Failed to update status: ${error.message}`);
     },
   });
@@ -59,7 +59,7 @@ export default function SupportTicketDetail() {
       toast.error("Please select a status");
       return;
     }
-    updateStatus.mutate({ id: ticketId, status: newStatus });
+    updateStatus.mutate({ id: ticketId, status: newStatus as "open" | "in_progress" | "resolved" | "closed" });
   };
 
   const handleSendMessage = () => {
@@ -67,7 +67,7 @@ export default function SupportTicketDetail() {
       toast.error("Please enter a message");
       return;
     }
-    addMessage.mutate({ ticketId, message: message.trim() });
+    addMessage.mutate({ ticketId, userId: 0, message: message.trim(), isStaff: true });
   };
 
   const formatDate = (date: Date) => {
