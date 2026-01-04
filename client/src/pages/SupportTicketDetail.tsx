@@ -43,7 +43,7 @@ export default function SupportTicketDetail() {
     },
   });
 
-  const addMessage = trpc.support.addTicketMessage.useMutation({
+  const addMessage = trpc.support.addMessage.useMutation({
     onSuccess: () => {
       toast.success("Message sent successfully");
       setMessage("");

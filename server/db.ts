@@ -3990,6 +3990,15 @@ export async function approveVerification(requestId: number, reviewedBy: number,
   const db = await getDb();
   if (!db) return null;
 
+  // Get the request details first for notification
+  const request = await db
+    .select()
+    .from(verificationRequests)
+    .where(eq(verificationRequests.id, requestId))
+    .limit(1);
+
+  if (!request[0]) return null;
+
   await db
     .update(verificationRequests)
     .set({
@@ -4000,7 +4009,14 @@ export async function approveVerification(requestId: number, reviewedBy: number,
     })
     .where(eq(verificationRequests.id, requestId));
 
-  return true;
+  return {
+    success: true,
+    userId: request[0].userId,
+    email: request[0].email,
+    phone: request[0].phone,
+    userName: request[0].userName,
+    userType: request[0].userType,
+  };
 }
 
 /**
@@ -4009,6 +4025,15 @@ export async function approveVerification(requestId: number, reviewedBy: number,
 export async function rejectVerification(requestId: number, reviewedBy: number, rejectionReason: string, notes?: string) {
   const db = await getDb();
   if (!db) return null;
+
+  // Get the request details first for notification
+  const request = await db
+    .select()
+    .from(verificationRequests)
+    .where(eq(verificationRequests.id, requestId))
+    .limit(1);
+
+  if (!request[0]) return null;
 
   await db
     .update(verificationRequests)
@@ -4021,7 +4046,14 @@ export async function rejectVerification(requestId: number, reviewedBy: number, 
     })
     .where(eq(verificationRequests.id, requestId));
 
-  return true;
+  return {
+    success: true,
+    userId: request[0].userId,
+    email: request[0].email,
+    phone: request[0].phone,
+    userName: request[0].userName,
+    userType: request[0].userType,
+  };
 }
 
 /**
@@ -5396,6 +5428,8 @@ export async function redeemLoyaltyReward(userId: number, rewardId: number) {
     redemptionId: redemption.insertId,
     redemptionCode,
     expiresAt,
+    rewardName: reward[0].name,
+    rewardValue: reward[0].value || reward[0].name,
   };
 }
 

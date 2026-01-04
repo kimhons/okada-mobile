@@ -44,7 +44,7 @@ export default function DeliveryZones() {
   const { t } = useTranslation("zones");
   useI18nLoader(["zones"]);
 
-  const { data: zones, isLoading, refetch } = trpc.deliveryZones.list.useQuery();
+  const { data: zones, isLoading, refetch } = trpc.deliveryZones.getAll.useQuery();
   const createZone = trpc.deliveryZones.create.useMutation({
     onSuccess: () => {
       toast.success(t("toast.createSuccess"));
@@ -270,7 +270,7 @@ export default function DeliveryZones() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Clock className="h-3 w-3" />
-                          {zone.estimatedMinutes} {t("table.min")}
+                          {zone.minDeliveryTime || '-'} {t("table.min")}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -345,7 +345,7 @@ export default function DeliveryZones() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Clock className="h-3 w-3" />
-                          {zone.estimatedMinutes} {t("table.min")}
+                          {zone.minDeliveryTime || '-'} {t("table.min")}
                         </div>
                       </TableCell>
                       <TableCell>

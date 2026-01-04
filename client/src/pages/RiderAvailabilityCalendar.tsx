@@ -362,7 +362,7 @@ export default function RiderAvailabilityCalendar() {
                       ${isToday ? "ring-2 ring-blue-400" : ""}
                       ${
                         availability
-                          ? AVAILABILITY_COLORS[availability.status as AvailabilityStatus]
+                          ? AVAILABILITY_COLORS[availability.availabilityType as AvailabilityStatus]
                           : "bg-muted hover:bg-accent"
                       }
                       ${!availability && isCurrentMonth ? "border border-border" : ""}

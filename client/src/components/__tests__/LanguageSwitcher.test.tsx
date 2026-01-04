@@ -13,11 +13,12 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "i18next";
 
 // Mock tRPC
+const mockGetLanguages = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     i18n: {
       getLanguages: {
-        useQuery: vi.fn(),
+        useQuery: mockGetLanguages,
       },
     },
   },

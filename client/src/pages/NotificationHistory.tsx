@@ -34,9 +34,7 @@ export default function NotificationHistory() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: notifications, isLoading } = trpc.notifications.list.useQuery({
-    limit: 100,
-  });
+  const { data: notifications, isLoading } = trpc.notifications.getNotifications.useQuery({});
 
   const filteredNotifications = notifications?.filter((notif) => {
     const matchesSearch = notif.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

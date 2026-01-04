@@ -319,8 +319,8 @@ export default function RiderLeaderboard() {
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <div className={`h-2 w-2 rounded-full ${statusColors[rider.currentStatus] || statusColors.offline}`} />
-                            <span className="text-xs text-muted-foreground capitalize">{rider.currentStatus?.replace('_', ' ') || 'offline'}</span>
+                            <div className={`h-2 w-2 rounded-full ${statusColors[rider.status] || statusColors.offline}`} />
+                            <span className="text-xs text-muted-foreground capitalize">{rider.status?.replace('_', ' ') || 'offline'}</span>
                           </div>
                         </TableCell>
                       </TableRow>

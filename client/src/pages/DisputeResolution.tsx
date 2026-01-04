@@ -441,7 +441,7 @@ export default function DisputeResolution() {
                   )}
                   <p className="text-sm mt-2">{disputeDetails.resolutionNotes}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Resolved: {new Date(disputeDetails.resolvedAt).toLocaleString()}
+                    Resolved: {disputeDetails.resolvedAt ? new Date(disputeDetails.resolvedAt).toLocaleString() : 'N/A'}
                   </p>
                 </div>
               )}

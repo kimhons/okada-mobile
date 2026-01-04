@@ -39,7 +39,7 @@ export default function NotificationsCenter() {
 
   const [, setLocation] = useLocation();
   const { data: users } = trpc.users.list.useQuery();
-  const sendBulk = trpc.notifications.sendBulk.useMutation({
+  const sendBulk = trpc.notificationManagement.sendBulk.useMutation({
     onSuccess: (data) => {
       toast.success(t("toast.sendSuccess"));
       setShowSendDialog(false);
