@@ -1,0 +1,110 @@
+{
+  "query": "SELECT id, name, email FROM users ORDER BY id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT id, name, email FROM users ORDER BY id LIMIT 20;",
+  "rows": [
+    {
+      "id": "2550603",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550604",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550605",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550606",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550607",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550608",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550609",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550610",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550611",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550612",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550613",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550614",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550615",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550616",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550617",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550618",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550619",
+      "name": "Test User",
+      "email": "test@example.com"
+    },
+    {
+      "id": "2550620",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550621",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    },
+    {
+      "id": "2550622",
+      "name": "Test Admin",
+      "email": "admin@test.com"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\n2550603\tTest Admin\tadmin@test.com\n2550604\tTest Admin\tadmin@test.com\n2550605\tTest Admin\tadmin@test.com\n2550606\tTest Admin\tadmin@test.com\n2550607\tTest Admin\tadmin@test.com\n2550608\tTest Admin\tadmin@test.com\n2550609\tTest Admin\tadmin@test.com\n2550610\tTest Admin\tadmin@test.com\n2550611\tTest Admin\tadmin@test.com\n2550612\tTest Admin\tadmin@test.com\n2550613\tTest Admin\tadmin@test.com\n2550614\tTest Admin\tadmin@test.com\n2550615\tTest Admin\tadmin@test.com\n2550616\tTest Admin\tadmin@test.com\n2550617\tTest Admin\tadmin@test.com\n2550618\tTest Admin\tadmin@test.com\n2550619\tTest User\ttest@example.com\n2550620\tTest Admin\tadmin@test.com\n2550621\tTest Admin\tadmin@test.com\n2550622\tTest Admin\tadmin@test.com\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

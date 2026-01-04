@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, orderNumber, customerId, deliveryAddress, status, createdAt FROM orders ORDER BY id DESC LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT id, orderNumber, customerId, deliveryAddress, status, createdAt FROM orders ORDER BY id DESC LIMIT 5",
+  "rows": [
+    {
+      "id": "30001",
+      "orderNumber": "ORD-MJZHJF8Q-HQ2E",
+      "customerId": "2370392",
+      "deliveryAddress": "123 Rue de la Joie, Douala, Cameroon",
+      "status": "pending",
+      "createdAt": "2026-01-04 08:44:10"
+    },
+    {
+      "id": "25",
+      "orderNumber": "ORD-0025",
+      "customerId": "2370392",
+      "deliveryAddress": "Mvan, Yaoundé",
+      "status": "pending",
+      "createdAt": "2025-12-15 22:19:16"
+    },
+    {
+      "id": "24",
+      "orderNumber": "ORD-0024",
+      "customerId": "2370390",
+      "deliveryAddress": "Bonanjo, Douala",
+      "status": "pending",
+      "createdAt": "2025-12-15 22:19:16"
+    },
+    {
+      "id": "23",
+      "orderNumber": "ORD-0023",
+      "customerId": "2370389",
+      "deliveryAddress": "Mvan, Yaoundé",
+      "status": "quality_verification",
+      "createdAt": "2025-12-15 22:19:16"
+    },
+    {
+      "id": "22",
+      "orderNumber": "ORD-0022",
+      "customerId": "2370388",
+      "deliveryAddress": "Deido, Douala",
+      "status": "delivered",
+      "createdAt": "2025-12-15 22:19:16"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerId\tdeliveryAddress\tstatus\tcreatedAt\n30001\tORD-MJZHJF8Q-HQ2E\t2370392\t123 Rue de la Joie, Douala, Cameroon\tpending\t2026-01-04 08:44:10\n25\tORD-0025\t2370392\tMvan, Yaoundé\tpending\t2025-12-15 22:19:16\n24\tORD-0024\t2370390\tBonanjo, Douala\tpending\t2025-12-15 22:19:16\n23\tORD-0023\t2370389\tMvan, Yaoundé\tquality_verification\t2025-12-15 22:19:16\n22\tORD-0022\t2370388\tDeido, Douala\tdelivered\t2025-12-15 22:19:16\n",
+  "stderr": "",
+  "execution_time_ms": 156
+}

@@ -1,0 +1,60 @@
+{
+  "query": "SELECT \n  o.customerId,\n  CASE WHEN u.id IS NOT NULL THEN 'EXISTS' ELSE 'MISSING' END as userStatus,\n  u.name as userName\nFROM (SELECT DISTINCT customerId FROM orders) o\nLEFT JOIN users u ON o.customerId = u.id\nORDER BY o.customerId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT \n  o.customerId,\n  CASE WHEN u.id IS NOT NULL THEN 'EXISTS' ELSE 'MISSING' END as userStatus,\n  u.name as userName\nFROM (SELECT DISTINCT customerId FROM orders) o\nLEFT JOIN users u ON o.customerId = u.id\nORDER BY o.customerId;",
+  "rows": [
+    {
+      "customerId": "2370387",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370388",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370389",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370390",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370392",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370393",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370394",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370395",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370396",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    },
+    {
+      "customerId": "2370397",
+      "userStatus": "MISSING",
+      "userName": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tuserStatus\tuserName\n2370387\tMISSING\tNULL\n2370388\tMISSING\tNULL\n2370389\tMISSING\tNULL\n2370390\tMISSING\tNULL\n2370392\tMISSING\tNULL\n2370393\tMISSING\tNULL\n2370394\tMISSING\tNULL\n2370395\tMISSING\tNULL\n2370396\tMISSING\tNULL\n2370397\tMISSING\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

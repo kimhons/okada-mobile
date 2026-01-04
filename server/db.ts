@@ -1572,7 +1572,8 @@ export async function getAllScheduledReports(filters?: {
   const conditions = [];
 
   if (filters?.reportType) {
-    conditions.push(eq(scheduledReports.reportType, filters.reportType));
+    // Note: reportType is stored via reportId reference, filter by name instead
+    conditions.push(eq(scheduledReports.name, filters.reportType));
   }
 
   if (filters?.frequency) {
@@ -1580,7 +1581,7 @@ export async function getAllScheduledReports(filters?: {
   }
 
   if (filters?.isActive !== undefined) {
-    conditions.push(eq(scheduledReports.isActive, filters.isActive));
+    conditions.push(eq(scheduledReports.isActive, filters.isActive ? 1 : 0));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -2843,7 +2844,12 @@ export async function getRiderLeaderboard(params: {
   const leaderboardData = await Promise.all(
     allRiders.map(async (rider) => {
       // Get orders for this rider in the period
-      let ordersQuery = db
+      const orderConditions = [eq(orders.riderId, rider.riderId)];
+      if (startDate) {
+        orderConditions.push(gte(orders.createdAt, startDate));
+      }
+
+      const riderOrders = await db
         .select({
           id: orders.id,
           status: orders.status,
@@ -2853,13 +2859,7 @@ export async function getRiderLeaderboard(params: {
           estimatedDeliveryTime: orders.estimatedDeliveryTime,
         })
         .from(orders)
-        .where(eq(orders.riderId, rider.riderId));
-
-      if (startDate) {
-        ordersQuery = ordersQuery.where(gte(orders.createdAt, startDate)) as any;
-      }
-
-      const riderOrders = await ordersQuery;
+        .where(and(...orderConditions));
       const completedOrders = riderOrders.filter((o) => o.status === 'delivered');
 
       // Calculate metrics
@@ -2875,7 +2875,7 @@ export async function getRiderLeaderboard(params: {
 
       // Get quality photo compliance
       const photosQuery = db
-        .select({ orderId: qualityPhotos.orderId, status: qualityPhotos.status })
+        .select({ orderId: qualityPhotos.orderId, approvalStatus: qualityPhotos.approvalStatus })
         .from(qualityPhotos)
         .where(
           inArray(
@@ -2902,20 +2902,19 @@ export async function getRiderLeaderboard(params: {
           : 0;
 
       // Get earnings from riderEarnings table
-      let earningsQuery = db
+      const earningsConditions = [eq(riderEarnings.riderId, rider.riderId)];
+      if (startDate) {
+        earningsConditions.push(gte(riderEarnings.createdAt, startDate));
+      }
+
+      const earnings = await db
         .select({
           amount: riderEarnings.amount,
           bonus: riderEarnings.bonus,
           tip: riderEarnings.tip,
         })
         .from(riderEarnings)
-        .where(eq(riderEarnings.riderId, rider.riderId));
-
-      if (startDate) {
-        earningsQuery = earningsQuery.where(gte(riderEarnings.createdAt, startDate)) as any;
-      }
-
-      const earnings = await earningsQuery;
+        .where(and(...earningsConditions));
       const periodEarnings = earnings.reduce(
         (sum, e) => sum + (e.amount || 0) + (e.bonus || 0) + (e.tip || 0),
         0
@@ -3150,7 +3149,7 @@ export async function get30DayTrend(riderId: number) {
   return trendData;
 }
 
-export async function getRiderPerformanceDetails(riderId: number, period: 'week' | 'month' | 'all') {
+export async function getRiderPerformanceDetails(riderId: number, period: 'today' | 'week' | 'month' | 'all') {
   const db = await getDb();
   if (!db) return null;
 
@@ -3163,6 +3162,10 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
   let startDate: Date | null = null;
 
   switch (period) {
+    case 'today':
+      startDate = new Date(now);
+      startDate.setHours(0, 0, 0, 0);
+      break;
     case 'week':
       const dayOfWeek = now.getDay();
       const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
@@ -3179,29 +3182,27 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
   }
 
   // Get orders
-  let ordersQuery = db
-    .select()
-    .from(orders)
-    .where(eq(orders.riderId, riderId));
-
+  const orderConditions = [eq(orders.riderId, riderId)];
   if (startDate) {
-    ordersQuery = ordersQuery.where(gte(orders.createdAt, startDate)) as any;
+    orderConditions.push(gte(orders.createdAt, startDate));
   }
 
-  const riderOrders = await ordersQuery;
+  const riderOrders = await db
+    .select()
+    .from(orders)
+    .where(and(...orderConditions));
   const completedOrders = riderOrders.filter((o) => o.status === 'delivered');
 
   // Get earnings
-  let earningsQuery = db
-    .select()
-    .from(riderEarnings)
-    .where(eq(riderEarnings.riderId, riderId));
-
+  const earningsConditions = [eq(riderEarnings.riderId, riderId)];
   if (startDate) {
-    earningsQuery = earningsQuery.where(gte(riderEarnings.createdAt, startDate)) as any;
+    earningsConditions.push(gte(riderEarnings.createdAt, startDate));
   }
 
-  const earnings = await earningsQuery;
+  const earnings = await db
+    .select()
+    .from(riderEarnings)
+    .where(and(...earningsConditions));
 
   // Calculate metrics
   const totalEarnings = earnings.reduce(
@@ -3214,13 +3215,13 @@ export async function getRiderPerformanceDetails(riderId: number, period: 'week'
 
   // Calculate on-time rate from completed orders
   const onTimeOrders = completedOrders.filter((o) => {
-    if (!o.deliveredAt || !o.estimatedDeliveryTime) return false;
-    return new Date(o.deliveredAt) <= new Date(o.estimatedDeliveryTime);
+    if (!o.actualDeliveryTime || !o.estimatedDeliveryTime) return false;
+    return new Date(o.actualDeliveryTime) <= new Date(o.estimatedDeliveryTime);
   });
   const onTimeRate = completedOrders.length > 0 ? (onTimeOrders.length / completedOrders.length) * 100 : 0;
 
-  // Calculate quality photo rate (orders with proof of delivery)
-  const ordersWithPhoto = completedOrders.filter((o) => o.proofOfDelivery);
+  // Calculate quality photo rate (orders with notes - as proxy for quality verification)
+  const ordersWithPhoto = completedOrders.filter((o) => o.notes);
   const qualityPhotoRate = completedOrders.length > 0 ? (ordersWithPhoto.length / completedOrders.length) * 100 : 0;
 
   return {
@@ -4517,13 +4518,13 @@ export async function getSystemSettings(category?: string) {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db.select().from(systemSettings);
+  const whereClause = category ? eq(systemSettings.category, category as any) : undefined;
 
-  if (category) {
-    query = query.where(eq(systemSettings.category, category as any));
-  }
-
-  const settings = await query.orderBy(systemSettings.category, systemSettings.settingKey);
+  const settings = await db
+    .select()
+    .from(systemSettings)
+    .where(whereClause)
+    .orderBy(systemSettings.category, systemSettings.settingKey);
   return settings;
 }
 
@@ -4604,7 +4605,20 @@ export async function getContentModerationQueue(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(contentModerationQueue.status, filters.status as any));
+  }
+  if (filters?.contentType) {
+    conditions.push(eq(contentModerationQueue.contentType, filters.contentType as any));
+  }
+  if (filters?.priority) {
+    conditions.push(eq(contentModerationQueue.priority, filters.priority as any));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const items = await db
     .select({
       id: contentModerationQueue.id,
       contentType: contentModerationQueue.contentType,
@@ -4623,27 +4637,12 @@ export async function getContentModerationQueue(filters?: {
       createdAt: contentModerationQueue.createdAt,
     })
     .from(contentModerationQueue)
-    .leftJoin(users, eq(users.id, contentModerationQueue.userId));
-
-  const conditions = [];
-  if (filters?.status) {
-    conditions.push(eq(contentModerationQueue.status, filters.status as any));
-  }
-  if (filters?.contentType) {
-    conditions.push(eq(contentModerationQueue.contentType, filters.contentType as any));
-  }
-  if (filters?.priority) {
-    conditions.push(eq(contentModerationQueue.priority, filters.priority as any));
-  }
-
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions));
-  }
-
-  const items = await query.orderBy(
-    desc(contentModerationQueue.priority),
-    desc(contentModerationQueue.createdAt)
-  );
+    .leftJoin(users, eq(users.id, contentModerationQueue.userId))
+    .where(whereClause)
+    .orderBy(
+      desc(contentModerationQueue.priority),
+      desc(contentModerationQueue.createdAt)
+    );
 
   return items;
 }
@@ -4714,7 +4713,20 @@ export async function getFraudAlerts(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(fraudAlerts.status, filters.status as any));
+  }
+  if (filters?.severity) {
+    conditions.push(eq(fraudAlerts.severity, filters.severity as any));
+  }
+  if (filters?.alertType) {
+    conditions.push(eq(fraudAlerts.alertType, filters.alertType as any));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const alerts = await db
     .select({
       id: fraudAlerts.id,
       alertType: fraudAlerts.alertType,
@@ -4735,28 +4747,13 @@ export async function getFraudAlerts(filters?: {
       createdAt: fraudAlerts.createdAt,
     })
     .from(fraudAlerts)
-    .leftJoin(users, eq(users.id, fraudAlerts.userId));
-
-  const conditions = [];
-  if (filters?.status) {
-    conditions.push(eq(fraudAlerts.status, filters.status as any));
-  }
-  if (filters?.severity) {
-    conditions.push(eq(fraudAlerts.severity, filters.severity as any));
-  }
-  if (filters?.alertType) {
-    conditions.push(eq(fraudAlerts.alertType, filters.alertType as any));
-  }
-
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions));
-  }
-
-  const alerts = await query.orderBy(
-    desc(fraudAlerts.severity),
-    desc(fraudAlerts.riskScore),
-    desc(fraudAlerts.createdAt)
-  );
+    .leftJoin(users, eq(users.id, fraudAlerts.userId))
+    .where(whereClause)
+    .orderBy(
+      desc(fraudAlerts.severity),
+      desc(fraudAlerts.riskScore),
+      desc(fraudAlerts.createdAt)
+    );
 
   return alerts;
 }
@@ -4841,7 +4838,6 @@ export async function getActiveRidersWithLocations() {
       riderId: riders.id,
       riderName: riders.name,
       riderPhone: riders.phone,
-      riderPhoto: riders.photo,
       latitude: riderLocations.latitude,
       longitude: riderLocations.longitude,
       lastUpdate: riderLocations.timestamp,
@@ -4863,7 +4859,7 @@ export async function getActiveRidersWithLocations() {
         sql`${orders.status} IN ('assigned', 'picked_up', 'in_transit')`
       )
     )
-    .where(eq(riders.status, "active"))
+    .where(eq(riders.status, "approved"))
     .groupBy(riders.id);
 
   return activeRiders;
@@ -4915,20 +4911,23 @@ export async function getGeoRegions(filters?: { regionType?: string; parentId?: 
   const db = await getDb();
   if (!db) return [];
 
-  let query = db.select().from(geoRegions).where(eq(geoRegions.isActive, 1));
+  const conditions = [eq(geoRegions.isActive, 1)];
 
   if (filters?.regionType) {
-    query = query.where(eq(geoRegions.regionType, filters.regionType as any));
+    conditions.push(eq(geoRegions.regionType, filters.regionType as any));
   }
   if (filters?.parentId !== undefined) {
     if (filters.parentId === null) {
-      query = query.where(sql`${geoRegions.parentId} IS NULL`);
+      conditions.push(sql`${geoRegions.parentId} IS NULL`);
     } else {
-      query = query.where(eq(geoRegions.parentId, filters.parentId));
+      conditions.push(eq(geoRegions.parentId, filters.parentId));
     }
   }
 
-  return await query;
+  return await db
+    .select()
+    .from(geoRegions)
+    .where(and(...conditions));
 }
 
 /**
@@ -5150,7 +5149,9 @@ export async function getReferralStats(userId?: number) {
   const db = await getDb();
   if (!db) return null;
 
-  let query = db
+  const whereClause = userId ? eq(referrals.referrerUserId, userId) : undefined;
+
+  const [stats] = await db
     .select({
       totalReferrals: sql<number>`COUNT(*)`,
       completedReferrals: sql<number>`COUNT(CASE WHEN ${referrals.status} = 'completed' THEN 1 END)`,
@@ -5158,13 +5159,9 @@ export async function getReferralStats(userId?: number) {
       totalRewards: sql<number>`SUM(CASE WHEN ${referrals.rewardStatus} = 'paid' THEN ${referrals.rewardAmount} ELSE 0 END)`,
       pendingRewards: sql<number>`SUM(CASE WHEN ${referrals.rewardStatus} = 'approved' THEN ${referrals.rewardAmount} ELSE 0 END)`,
     })
-    .from(referrals);
+    .from(referrals)
+    .where(whereClause);
 
-  if (userId) {
-    query = query.where(eq(referrals.referrerUserId, userId));
-  }
-
-  const [stats] = await query;
   return stats;
 }
 
@@ -5377,24 +5374,25 @@ export async function getLoyaltyRewardsCatalog(userId?: number) {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db
-    .select()
-    .from(loyaltyRewards)
-    .where(eq(loyaltyRewards.isActive, 1));
+  const conditions = [eq(loyaltyRewards.isActive, 1)];
 
   if (userId) {
     const userLoyalty = await getUserLoyaltyInfo(userId);
     if (userLoyalty?.currentTierId) {
-      query = query.where(
+      conditions.push(
         or(
           sql`${loyaltyRewards.minTierRequired} IS NULL`,
           sql`${loyaltyRewards.minTierRequired} <= ${userLoyalty.currentTierId}`
-        )
+        )!
       );
     }
   }
 
-  return await query.orderBy(loyaltyRewards.pointsCost);
+  return await db
+    .select()
+    .from(loyaltyRewards)
+    .where(and(...conditions))
+    .orderBy(loyaltyRewards.pointsCost);
 }
 
 /**
@@ -5423,7 +5421,7 @@ export async function redeemLoyaltyReward(userId: number, rewardId: number) {
   }
 
   // Check tier requirement
-  if (reward[0].minTierRequired && userLoyalty.currentTierId < reward[0].minTierRequired) {
+  if (reward[0].minTierRequired && (userLoyalty.currentTierId ?? 0) < reward[0].minTierRequired) {
     return { success: false, error: 'Tier requirement not met' };
   }
 
@@ -5470,7 +5468,7 @@ export async function redeemLoyaltyReward(userId: number, rewardId: number) {
     redemptionCode,
     expiresAt,
     rewardName: reward[0].name,
-    rewardValue: reward[0].value || reward[0].name,
+    rewardValue: reward[0].rewardValue || reward[0].name,
   };
 }
 
@@ -5555,25 +5553,30 @@ export async function getIncidents(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db.select().from(incidents);
+  const conditions = [];
 
   if (filters?.status) {
-    query = query.where(eq(incidents.status, filters.status as any));
+    conditions.push(eq(incidents.status, filters.status as any));
   }
   if (filters?.severity) {
-    query = query.where(eq(incidents.severity, filters.severity as any));
+    conditions.push(eq(incidents.severity, filters.severity as any));
   }
   if (filters?.incidentType) {
-    query = query.where(eq(incidents.incidentType, filters.incidentType as any));
+    conditions.push(eq(incidents.incidentType, filters.incidentType as any));
   }
   if (filters?.riderId) {
-    query = query.where(eq(incidents.riderId, filters.riderId));
+    conditions.push(eq(incidents.riderId, filters.riderId));
   }
   if (filters?.customerId) {
-    query = query.where(eq(incidents.customerId, filters.customerId));
+    conditions.push(eq(incidents.customerId, filters.customerId));
   }
 
-  return await query
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(incidents)
+    .where(whereClause)
     .orderBy(desc(incidents.createdAt))
     .limit(filters?.limit || 50);
 }
@@ -5681,25 +5684,30 @@ export async function getCustomerFeedback(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db.select().from(customerFeedback);
+  const conditions = [];
 
   if (filters?.status) {
-    query = query.where(eq(customerFeedback.status, filters.status as any));
+    conditions.push(eq(customerFeedback.status, filters.status as any));
   }
   if (filters?.sentiment) {
-    query = query.where(eq(customerFeedback.sentiment, filters.sentiment as any));
+    conditions.push(eq(customerFeedback.sentiment, filters.sentiment as any));
   }
   if (filters?.category) {
-    query = query.where(eq(customerFeedback.category, filters.category as any));
+    conditions.push(eq(customerFeedback.category, filters.category as any));
   }
   if (filters?.riderId) {
-    query = query.where(eq(customerFeedback.riderId, filters.riderId));
+    conditions.push(eq(customerFeedback.riderId, filters.riderId));
   }
   if (filters?.sellerId) {
-    query = query.where(eq(customerFeedback.sellerId, filters.sellerId));
+    conditions.push(eq(customerFeedback.sellerId, filters.sellerId));
   }
 
-  return await query
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(customerFeedback)
+    .where(whereClause)
     .orderBy(desc(customerFeedback.createdAt))
     .limit(filters?.limit || 50);
 }
@@ -5846,19 +5854,25 @@ export async function getTrainingModules(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db.select().from(trainingModules);
+  const conditions = [];
 
   if (filters?.category) {
-    query = query.where(eq(trainingModules.category, filters.category as any));
+    conditions.push(eq(trainingModules.category, filters.category as any));
   }
   if (filters?.isMandatory !== undefined) {
-    query = query.where(eq(trainingModules.isMandatory, filters.isMandatory ? 1 : 0));
+    conditions.push(eq(trainingModules.isMandatory, filters.isMandatory ? 1 : 0));
   }
   if (filters?.isActive !== undefined) {
-    query = query.where(eq(trainingModules.isActive, filters.isActive ? 1 : 0));
+    conditions.push(eq(trainingModules.isActive, filters.isActive ? 1 : 0));
   }
 
-  return await query.orderBy(trainingModules.order);
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select()
+    .from(trainingModules)
+    .where(whereClause)
+    .orderBy(trainingModules.displayOrder);
 }
 
 /**
@@ -6749,22 +6763,21 @@ export async function getRiderEarningsDetailed(filters: {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db
-    .select()
-    .from(riderEarningsTransactions)
-    .where(
-      and(
-        eq(riderEarningsTransactions.riderId, filters.riderId),
-        sql`${riderEarningsTransactions.transactionDate} >= ${filters.startDate}`,
-        sql`${riderEarningsTransactions.transactionDate} <= ${filters.endDate}`
-      )
-    );
+  const conditions = [
+    eq(riderEarningsTransactions.riderId, filters.riderId),
+    sql`${riderEarningsTransactions.transactionDate} >= ${filters.startDate}`,
+    sql`${riderEarningsTransactions.transactionDate} <= ${filters.endDate}`
+  ];
 
   if (filters.status) {
-    query = query.where(eq(riderEarningsTransactions.status, filters.status as any)) as any;
+    conditions.push(eq(riderEarningsTransactions.status, filters.status as any));
   }
 
-  return await query.orderBy(desc(riderEarningsTransactions.transactionDate));
+  return await db
+    .select()
+    .from(riderEarningsTransactions)
+    .where(and(...conditions))
+    .orderBy(desc(riderEarningsTransactions.transactionDate));
 }
 
 /**
@@ -7248,7 +7261,7 @@ export async function checkAndAwardBadges(riderId: number) {
         }
 
         case "rating": {
-          const ratingValue = rider.rating / 10; // Convert from stored format (48 -> 4.8)
+          const ratingValue = (rider.rating ?? 0) / 10; // Convert from stored format (48 -> 4.8)
           progress = Math.min((ratingValue / criteria.threshold) * 100, 100);
           earned = ratingValue >= criteria.threshold;
           break;
@@ -7568,4 +7581,180 @@ export async function getTranslationCoverage() {
     .groupBy(translations.languageCode, translations.namespace);
 
   return coverage;
+}
+
+
+// ============================================================================
+// ORDER CREATION
+// ============================================================================
+
+/**
+ * Generate a unique order number
+ */
+function generateOrderNumber(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `ORD-${timestamp}-${random}`;
+}
+
+/**
+ * Create a new order with items
+ */
+export async function createOrder(orderData: {
+  customerId: number;
+  items: Array<{
+    productId: number;
+    productName: string;
+    quantity: number;
+    price: number; // In FCFA cents
+  }>;
+  deliveryAddress: string;
+  deliveryLat?: string;
+  deliveryLng?: string;
+  pickupAddress?: string;
+  pickupLat?: string;
+  pickupLng?: string;
+  paymentMethod: 'mtn_money' | 'orange_money' | 'cash';
+  deliveryFee: number; // In FCFA cents
+  notes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Calculate subtotal and total
+  const subtotal = orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const total = subtotal + orderData.deliveryFee;
+
+  // Generate unique order number
+  const orderNumber = generateOrderNumber();
+
+  // Create the order
+  const [orderResult] = await db.insert(orders).values({
+    orderNumber,
+    customerId: orderData.customerId,
+    status: 'pending',
+    subtotal,
+    deliveryFee: orderData.deliveryFee,
+    total,
+    paymentMethod: orderData.paymentMethod,
+    paymentStatus: 'pending',
+    deliveryAddress: orderData.deliveryAddress,
+    deliveryLat: orderData.deliveryLat,
+    deliveryLng: orderData.deliveryLng,
+    pickupAddress: orderData.pickupAddress,
+    pickupLat: orderData.pickupLat,
+    pickupLng: orderData.pickupLng,
+    notes: orderData.notes,
+  });
+
+  const orderId = orderResult.insertId;
+
+  // Create order items
+  if (orderData.items.length > 0) {
+    await db.insert(orderItems).values(
+      orderData.items.map(item => ({
+        orderId,
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.price * item.quantity,
+      }))
+    );
+  }
+
+  return {
+    id: orderId,
+    orderNumber,
+    subtotal,
+    deliveryFee: orderData.deliveryFee,
+    total,
+  };
+}
+
+/**
+ * Get all customers (users who have placed orders or all users)
+ */
+export async function getCustomers(filters?: { search?: string; limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+  
+  if (filters?.search) {
+    conditions.push(
+      or(
+        like(users.name, `%${filters.search}%`),
+        like(users.email, `%${filters.search}%`)
+      )
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(whereClause)
+    .orderBy(desc(users.createdAt))
+    .limit(filters?.limit || 100);
+}
+
+/**
+ * Get all active products for order creation
+ */
+export async function getActiveProducts(filters?: { categoryId?: number; search?: string; limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(products.isActive, true)];
+  
+  if (filters?.categoryId) {
+    conditions.push(eq(products.categoryId, filters.categoryId));
+  }
+  
+  if (filters?.search) {
+    conditions.push(like(products.name, `%${filters.search}%`));
+  }
+
+  return await db
+    .select({
+      id: products.id,
+      name: products.name,
+      price: products.price,
+      stock: products.stock,
+      categoryId: products.categoryId,
+      imageUrl: products.imageUrl,
+    })
+    .from(products)
+    .where(and(...conditions))
+    .orderBy(products.name)
+    .limit(filters?.limit || 100);
+}
+
+/**
+ * Get all active delivery zones
+ */
+export async function getActiveDeliveryZones() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: deliveryZones.id,
+      name: deliveryZones.name,
+      city: deliveryZones.city,
+      baseFee: deliveryZones.baseFee,
+      perKmFee: deliveryZones.perKmFee,
+      minDeliveryTime: deliveryZones.minDeliveryTime,
+      maxDeliveryTime: deliveryZones.maxDeliveryTime,
+    })
+    .from(deliveryZones)
+    .where(eq(deliveryZones.isActive, true))
+    .orderBy(deliveryZones.name);
 }

@@ -49,6 +49,53 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.updateOrderStatus(input.orderId, input.status);
       }),
+
+    create: protectedProcedure
+      .input(z.object({
+        customerId: z.number(),
+        items: z.array(z.object({
+          productId: z.number(),
+          productName: z.string(),
+          quantity: z.number().min(1),
+          price: z.number(), // In FCFA cents
+        })).min(1),
+        deliveryAddress: z.string(),
+        deliveryLat: z.string().optional(),
+        deliveryLng: z.string().optional(),
+        pickupAddress: z.string().optional(),
+        pickupLat: z.string().optional(),
+        pickupLng: z.string().optional(),
+        paymentMethod: z.enum(['mtn_money', 'orange_money', 'cash']),
+        deliveryFee: z.number(), // In FCFA cents
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createOrder(input);
+      }),
+
+    getCustomers: protectedProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        limit: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getCustomers(input || {});
+      }),
+
+    getProducts: protectedProcedure
+      .input(z.object({
+        categoryId: z.number().optional(),
+        search: z.string().optional(),
+        limit: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getActiveProducts(input || {});
+      }),
+
+    getDeliveryZones: protectedProcedure
+      .query(async () => {
+        return await db.getActiveDeliveryZones();
+      }),
   }),
 
   dashboard: router({
@@ -4877,7 +4924,7 @@ export const appRouter = router({
               email: user.email || undefined,
               name: user.name || undefined,
               rewardName: result.rewardName,
-              rewardValue: result.rewardValue || "Special Reward",
+              rewardValue: String(result.rewardValue) || "Special Reward",
             });
           }
         }

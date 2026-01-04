@@ -111,13 +111,19 @@ export class PaymentGatewayService {
     if (!db) throw new Error("Database not available");
 
     for (const tx of transactions) {
+      // Skip transactions without orderId since it's required
+      if (!tx.orderId) {
+        console.warn(`Skipping transaction ${tx.transactionId} - no orderId`);
+        continue;
+      }
+      
       await db.insert(paymentTransactions).values({
+        orderId: parseInt(tx.orderId),
         transactionId: tx.transactionId,
         provider: tx.provider,
         amount: tx.amount,
         status: tx.status,
         phoneNumber: tx.phoneNumber,
-        orderId: tx.orderId ? parseInt(tx.orderId) : null,
         createdAt: tx.timestamp,
         updatedAt: tx.timestamp,
       });

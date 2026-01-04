@@ -19,7 +19,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Search, Eye, MapPin, Package, FileText, FileSpreadsheet } from "lucide-react";
+import { Search, Eye, MapPin, Package, FileText, FileSpreadsheet, Plus } from "lucide-react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 import { exportOrdersToPDF, exportOrdersToExcel } from "@/lib/exportUtils";
 import OrderTrackingTimeline from "@/components/OrderTrackingTimeline";
@@ -127,11 +128,17 @@ export default function Orders() {
           </Button>
           <Button
             onClick={handleExportExcel}
-            className="bg-[#2D8659] hover:bg-[#236B47]"
+            variant="outline"
           >
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             {t('orders:export_excel')}
           </Button>
+          <Link href="/orders/create">
+            <Button className="bg-[#2D8659] hover:bg-[#236B47]">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Order
+            </Button>
+          </Link>
         </div>
       </div>
 

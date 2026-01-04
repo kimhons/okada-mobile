@@ -73,6 +73,7 @@ import SecurityMonitoring from "./pages/SecurityMonitoring";
 import SystemHealth from "./pages/SystemHealth";
 import ABTesting from "./pages/ABTesting";
 import SEOManagement from "./pages/SEOManagement";
+import CreateOrder from "./pages/CreateOrder";
 
 
 function Router() {
@@ -80,6 +81,7 @@ function Router() {
     <Switch>
       <Route path="/" component={() => <DashboardLayout><Home /></DashboardLayout>} />
       <Route path="/orders" component={() => <DashboardLayout><Orders /></DashboardLayout>} />
+      <Route path="/orders/create" component={CreateOrder} />
       <Route path="/users" component={() => <DashboardLayout><Users /></DashboardLayout>} />
       <Route path="/riders" component={() => <DashboardLayout><Riders /></DashboardLayout>} />
       <Route path="/products" component={() => <DashboardLayout><Products /></DashboardLayout>} />

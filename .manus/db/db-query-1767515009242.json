@@ -1,0 +1,18 @@
+{
+  "query": "SELECT 'Orders customerIds' as source, GROUP_CONCAT(DISTINCT customerId ORDER BY customerId) as ids FROM orders\nUNION ALL\nSELECT 'Users IDs' as source, GROUP_CONCAT(id ORDER BY id SEPARATOR ',') as ids FROM users WHERE id <= 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT 'Orders customerIds' as source, GROUP_CONCAT(DISTINCT customerId ORDER BY customerId) as ids FROM orders\nUNION ALL\nSELECT 'Users IDs' as source, GROUP_CONCAT(id ORDER BY id SEPARATOR ',') as ids FROM users WHERE id <= 20;",
+  "rows": [
+    {
+      "source": "Orders customerIds",
+      "ids": "2370387,2370388,2370389,2370390,2370392,2370393,2370394,2370395,2370396,2370397"
+    },
+    {
+      "source": "Users IDs",
+      "ids": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "source\tids\nOrders customerIds\t2370387,2370388,2370389,2370390,2370392,2370393,2370394,2370395,2370396,2370397\nUsers IDs\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 118
+}
