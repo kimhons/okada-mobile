@@ -1,0 +1,60 @@
+{
+  "query": "SELECT o.customerId, u.id as userId, u.name FROM orders o LEFT JOIN users u ON o.customerId = u.id GROUP BY o.customerId, u.id, u.name LIMIT 15",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT o.customerId, u.id as userId, u.name FROM orders o LEFT JOIN users u ON o.customerId = u.id GROUP BY o.customerId, u.id, u.name LIMIT 15",
+  "rows": [
+    {
+      "customerId": "2370396",
+      "userId": "2370396",
+      "name": "Michel Tagne"
+    },
+    {
+      "customerId": "2370397",
+      "userId": "2370397",
+      "name": "Angélique Messi"
+    },
+    {
+      "customerId": "2370387",
+      "userId": "2370387",
+      "name": "Jean-Pierre Mbarga"
+    },
+    {
+      "customerId": "2370388",
+      "userId": "2370388",
+      "name": "Marie-Claire Ngo"
+    },
+    {
+      "customerId": "2370390",
+      "userId": "2370390",
+      "name": "Cécile Atangana"
+    },
+    {
+      "customerId": "2370392",
+      "userId": "2370392",
+      "name": "Emmanuel Fotso"
+    },
+    {
+      "customerId": "2370395",
+      "userId": "2370395",
+      "name": "Thérèse Njoya"
+    },
+    {
+      "customerId": "2370389",
+      "userId": "2370389",
+      "name": "Paul Essomba"
+    },
+    {
+      "customerId": "2370394",
+      "userId": "2370394",
+      "name": "François Tchinda"
+    },
+    {
+      "customerId": "2370393",
+      "userId": "2370393",
+      "name": "Brigitte Kamga"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\tuserId\tname\n2370396\t2370396\tMichel Tagne\n2370397\t2370397\tAngélique Messi\n2370387\t2370387\tJean-Pierre Mbarga\n2370388\t2370388\tMarie-Claire Ngo\n2370390\t2370390\tCécile Atangana\n2370392\t2370392\tEmmanuel Fotso\n2370395\t2370395\tThérèse Njoya\n2370389\t2370389\tPaul Essomba\n2370394\t2370394\tFrançois Tchinda\n2370393\t2370393\tBrigitte Kamga\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

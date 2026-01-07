@@ -96,6 +96,135 @@ export const appRouter = router({
       .query(async () => {
         return await db.getActiveDeliveryZones();
       }),
+
+    updateStatusWithHistory: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        status: z.string(),
+        riderId: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.updateOrderStatusWithHistory(
+          input.orderId,
+          input.status,
+          ctx.user?.id || 0,
+          'admin',
+          input.riderId,
+          input.notes
+        );
+      }),
+
+    getStatusHistory: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getOrderStatusHistory(input.orderId);
+      }),
+
+    getAvailableRiders: protectedProcedure
+      .query(async () => {
+        return await db.getAvailableRiders();
+      }),
+
+    updateOrder: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        deliveryAddress: z.string().optional(),
+        deliveryLat: z.string().optional(),
+        deliveryLng: z.string().optional(),
+        paymentMethod: z.string().optional(),
+        notes: z.string().optional(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { orderId, reason, ...updates } = input;
+        return await db.updateOrderWithHistory(orderId, updates, ctx.user?.id || 0, reason);
+      }),
+
+    updateOrderItems: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        items: z.array(z.object({
+          productId: z.number(),
+          productName: z.string(),
+          quantity: z.number().min(1),
+          price: z.number(),
+        })),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.updateOrderItems(input.orderId, input.items, ctx.user?.id || 0, input.reason);
+      }),
+
+    getEditHistory: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getOrderEditHistory(input.orderId);
+      }),
+  }),
+
+  customers: router({
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const customer = await db.getCustomerById(input.id);
+        const stats = await db.getCustomerStats(input.id);
+        const tags = await db.getCustomerTagAssignments(input.id);
+        return { customer, stats, tags };
+      }),
+
+    getOrders: protectedProcedure
+      .input(z.object({ customerId: z.number(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return await db.getCustomerOrders(input.customerId, input.limit);
+      }),
+
+    getNotes: protectedProcedure
+      .input(z.object({ customerId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCustomerNotes(input.customerId);
+      }),
+
+    addNote: protectedProcedure
+      .input(z.object({
+        customerId: z.number(),
+        note: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.addCustomerNote(input.customerId, input.note, ctx.user?.id || 0);
+      }),
+
+    getTags: protectedProcedure
+      .query(async () => {
+        return await db.getCustomerTags();
+      }),
+
+    createTag: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        color: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createCustomerTag(input.name, input.color);
+      }),
+
+    assignTag: protectedProcedure
+      .input(z.object({
+        customerId: z.number(),
+        tagId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.assignTagToCustomer(input.customerId, input.tagId, ctx.user?.id || 0);
+      }),
+
+    removeTag: protectedProcedure
+      .input(z.object({
+        customerId: z.number(),
+        tagId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.removeTagFromCustomer(input.customerId, input.tagId);
+      }),
   }),
 
   dashboard: router({

@@ -2042,3 +2042,81 @@ export type InsertTranslation = typeof translations.$inferInsert;
 // CREATE UNIQUE INDEX idx_translations_unique ON translations(languageCode, namespace, key);
 // CREATE INDEX idx_translations_language ON translations(languageCode);
 // CREATE INDEX idx_translations_namespace ON translations(namespace);
+
+
+/**
+ * Order status history table for tracking status changes
+ */
+export const orderStatusHistory = mysqlTable("orderStatusHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  previousStatus: varchar("previousStatus", { length: 50 }),
+  newStatus: varchar("newStatus", { length: 50 }).notNull(),
+  changedBy: int("changedBy"), // User ID who made the change
+  changedByType: mysqlEnum("changedByType", ["admin", "rider", "system"]).default("admin").notNull(),
+  riderId: int("riderId"), // If rider was assigned during this status change
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OrderStatusHistory = typeof orderStatusHistory.$inferSelect;
+export type InsertOrderStatusHistory = typeof orderStatusHistory.$inferInsert;
+
+/**
+ * Customer notes table for admin notes on customers
+ */
+export const customerNotes = mysqlTable("customerNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  note: text("note").notNull(),
+  createdBy: int("createdBy").notNull(), // Admin user ID
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomerNote = typeof customerNotes.$inferSelect;
+export type InsertCustomerNote = typeof customerNotes.$inferInsert;
+
+/**
+ * Customer tags table for categorizing customers
+ */
+export const customerTags = mysqlTable("customerTags", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  color: varchar("color", { length: 20 }).default("#6B7280").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CustomerTag = typeof customerTags.$inferSelect;
+export type InsertCustomerTag = typeof customerTags.$inferInsert;
+
+/**
+ * Customer tag assignments
+ */
+export const customerTagAssignments = mysqlTable("customerTagAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  tagId: int("tagId").notNull(),
+  assignedBy: int("assignedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CustomerTagAssignment = typeof customerTagAssignments.$inferSelect;
+export type InsertCustomerTagAssignment = typeof customerTagAssignments.$inferInsert;
+
+/**
+ * Order edit history table for tracking order modifications
+ */
+export const orderEditHistory = mysqlTable("orderEditHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  editedBy: int("editedBy").notNull(), // Admin user ID
+  fieldChanged: varchar("fieldChanged", { length: 100 }).notNull(),
+  oldValue: text("oldValue"),
+  newValue: text("newValue"),
+  reason: text("reason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OrderEditHistory = typeof orderEditHistory.$inferSelect;
+export type InsertOrderEditHistory = typeof orderEditHistory.$inferInsert;

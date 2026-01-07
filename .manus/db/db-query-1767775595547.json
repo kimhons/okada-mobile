@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS customerTags (\n  id int AUTO_INCREMENT NOT NULL,\n  name varchar(100) NOT NULL UNIQUE,\n  color varchar(20) NOT NULL DEFAULT '#6B7280',\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT customerTags_id PRIMARY KEY(id)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute CREATE TABLE IF NOT EXISTS customerTags (\n  id int AUTO_INCREMENT NOT NULL,\n  name varchar(100) NOT NULL UNIQUE,\n  color varchar(20) NOT NULL DEFAULT '#6B7280',\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT customerTags_id PRIMARY KEY(id)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 172
+}

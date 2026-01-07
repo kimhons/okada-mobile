@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS orderEditHistory (\n  id int AUTO_INCREMENT NOT NULL,\n  orderId int NOT NULL,\n  editedBy int NOT NULL,\n  fieldChanged varchar(100) NOT NULL,\n  oldValue text,\n  newValue text,\n  reason text,\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT orderEditHistory_id PRIMARY KEY(id)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute CREATE TABLE IF NOT EXISTS orderEditHistory (\n  id int AUTO_INCREMENT NOT NULL,\n  orderId int NOT NULL,\n  editedBy int NOT NULL,\n  fieldChanged varchar(100) NOT NULL,\n  oldValue text,\n  newValue text,\n  reason text,\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT orderEditHistory_id PRIMARY KEY(id)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 177
+}

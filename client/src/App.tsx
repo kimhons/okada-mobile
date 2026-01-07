@@ -74,6 +74,7 @@ import SystemHealth from "./pages/SystemHealth";
 import ABTesting from "./pages/ABTesting";
 import SEOManagement from "./pages/SEOManagement";
 import CreateOrder from "./pages/CreateOrder";
+import CustomerDetail from "./pages/CustomerDetail";
 
 
 function Router() {
@@ -83,6 +84,7 @@ function Router() {
       <Route path="/orders" component={() => <DashboardLayout><Orders /></DashboardLayout>} />
       <Route path="/orders/create" component={CreateOrder} />
       <Route path="/users" component={() => <DashboardLayout><Users /></DashboardLayout>} />
+      <Route path="/customers/:id" component={() => <DashboardLayout><CustomerDetail /></DashboardLayout>} />
       <Route path="/riders" component={() => <DashboardLayout><Riders /></DashboardLayout>} />
       <Route path="/products" component={() => <DashboardLayout><Products /></DashboardLayout>} />
       <Route path="/analytics" component={() => <DashboardLayout><Analytics /></DashboardLayout>} />

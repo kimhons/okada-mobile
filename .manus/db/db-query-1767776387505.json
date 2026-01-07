@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, name FROM users ORDER BY id DESC LIMIT 15",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT id, name FROM users ORDER BY id DESC LIMIT 15",
+  "rows": [
+    {
+      "id": "2550654",
+      "name": "Kim DJ"
+    },
+    {
+      "id": "2550653",
+      "name": "Test User"
+    },
+    {
+      "id": "2550652",
+      "name": "Test User"
+    },
+    {
+      "id": "2550651",
+      "name": "Test User"
+    },
+    {
+      "id": "2550650",
+      "name": "Test User"
+    },
+    {
+      "id": "2550649",
+      "name": "Test User"
+    },
+    {
+      "id": "2550648",
+      "name": "Test User"
+    },
+    {
+      "id": "2550647",
+      "name": "Test User"
+    },
+    {
+      "id": "2550646",
+      "name": "Test User"
+    },
+    {
+      "id": "2550645",
+      "name": "Test Admin"
+    },
+    {
+      "id": "2550644",
+      "name": "Test Admin"
+    },
+    {
+      "id": "2550643",
+      "name": "Test Admin"
+    },
+    {
+      "id": "2550642",
+      "name": "Test Admin"
+    },
+    {
+      "id": "2550641",
+      "name": "Test Admin"
+    },
+    {
+      "id": "2550640",
+      "name": "Test Admin"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n2550654\tKim DJ\n2550653\tTest User\n2550652\tTest User\n2550651\tTest User\n2550650\tTest User\n2550649\tTest User\n2550648\tTest User\n2550647\tTest User\n2550646\tTest User\n2550645\tTest Admin\n2550644\tTest Admin\n2550643\tTest Admin\n2550642\tTest Admin\n2550641\tTest Admin\n2550640\tTest Admin\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

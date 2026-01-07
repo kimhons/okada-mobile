@@ -1,0 +1,40 @@
+{
+  "query": "SELECT DISTINCT customerId FROM orders ORDER BY customerId LIMIT 15",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT DISTINCT customerId FROM orders ORDER BY customerId LIMIT 15",
+  "rows": [
+    {
+      "customerId": "2370387"
+    },
+    {
+      "customerId": "2370388"
+    },
+    {
+      "customerId": "2370389"
+    },
+    {
+      "customerId": "2370390"
+    },
+    {
+      "customerId": "2370392"
+    },
+    {
+      "customerId": "2370393"
+    },
+    {
+      "customerId": "2370394"
+    },
+    {
+      "customerId": "2370395"
+    },
+    {
+      "customerId": "2370396"
+    },
+    {
+      "customerId": "2370397"
+    }
+  ],
+  "messages": [],
+  "stdout": "customerId\n2370387\n2370388\n2370389\n2370390\n2370392\n2370393\n2370394\n2370395\n2370396\n2370397\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

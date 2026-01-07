@@ -41,7 +41,32 @@
 
 ---
 
-## 🎯 Current Sprint: Sprint 17 - Data Integrity & Order Creation (IN PROGRESS)
+## 🎯 Current Sprint: Sprint 18 - Order Workflow & Customer Management (COMPLETED)
+
+### Phase 1: Order Status Workflow
+- [x] Create orderStatusHistory table in database
+- [x] Add updateOrderStatusWithHistory function
+- [x] Implement status transition UI with confirmation
+- [x] Add status history display in order details
+- [x] Test status workflow end-to-end
+
+### Phase 2: Customer Detail Page
+- [x] Create CustomerDetail page component
+- [x] Add customer information display
+- [x] Show order history with stats
+- [x] Implement customer notes system
+- [x] Add customer tags functionality
+- [x] Test customer detail page
+
+### Phase 3: Order Editing
+- [x] Create orderEditHistory table
+- [x] Add edit order dialog in Orders page
+- [x] Implement edit history tracking
+- [x] Test order editing functionality
+
+---
+
+## Sprint 17 - Data Integrity & Order Creation (COMPLETED)
 
 ### Phase 1: Seed Realistic Customer Data
 - [x] Analyze existing order customerId values
@@ -1339,3 +1364,31 @@
 - [ ] Add email notification templates
 - [ ] Add SMS notification integration
 - [ ] Test notification delivery
+
+
+## 🎯 Current Sprint: Sprint 18 - Order Management Enhancements (IN PROGRESS)
+
+### Phase 1: Order Status Workflow
+- [ ] Add status transition buttons to order detail view
+- [ ] Create updateOrderStatus tRPC procedure
+- [ ] Implement status validation (only allow valid transitions)
+- [ ] Add confirmation dialogs for status changes
+- [ ] Show status history timeline
+- [ ] Add rider assignment when transitioning to "rider assigned"
+
+### Phase 2: Customer Detail Page
+- [ ] Create CustomerDetail page component
+- [ ] Add customer info card (name, email, phone, address)
+- [ ] Display order history with pagination
+- [ ] Show total spend and order count statistics
+- [ ] Add customer notes/tags functionality
+- [ ] Create route and navigation
+
+### Phase 3: Order Editing
+- [ ] Add edit mode to order detail page
+- [ ] Allow product quantity changes
+- [ ] Allow delivery address updates
+- [ ] Allow payment method changes
+- [ ] Recalculate totals on edit
+- [ ] Add edit history/audit trail
+

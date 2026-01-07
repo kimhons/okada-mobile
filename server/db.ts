@@ -1,4 +1,4 @@
-import { eq, desc, like, and, or, count, sql, gte, lte, asc } from "drizzle-orm";
+import { eq, desc, like, and, or, count, sql, gte, lte, asc, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -26,7 +26,7 @@ import {
   InsertRealtimeNotification,
   mobileTrainingSync,
   InsertMobileTrainingSync,
-  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions, riderShifts, InsertRiderShift, riderEarningsTransactions, InsertRiderEarningsTransaction, shiftSwaps, InsertShiftSwap, riderAvailability, InsertRiderAvailability, riderPayouts, InsertRiderPayout, badges, riderBadges, badgeNotifications } from "../drizzle/schema";
+  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions, riderShifts, InsertRiderShift, riderEarningsTransactions, InsertRiderEarningsTransaction, shiftSwaps, InsertShiftSwap, riderAvailability, InsertRiderAvailability, riderPayouts, InsertRiderPayout, badges, riderBadges, badgeNotifications, orderStatusHistory, customerNotes, customerTags, customerTagAssignments, orderEditHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -126,7 +126,33 @@ export async function getAllOrders(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db.select().from(orders);
+  // Join with users to get customer name
+  let query = db
+    .select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      customerId: orders.customerId,
+      riderId: orders.riderId,
+      status: orders.status,
+      total: orders.total,
+      deliveryFee: orders.deliveryFee,
+      deliveryAddress: orders.deliveryAddress,
+      deliveryLat: orders.deliveryLat,
+      deliveryLng: orders.deliveryLng,
+      pickupAddress: orders.pickupAddress,
+      pickupLat: orders.pickupLat,
+      pickupLng: orders.pickupLng,
+      paymentMethod: orders.paymentMethod,
+      paymentStatus: orders.paymentStatus,
+      notes: orders.notes,
+      estimatedDeliveryTime: orders.estimatedDeliveryTime,
+      actualDeliveryTime: orders.actualDeliveryTime,
+      createdAt: orders.createdAt,
+      updatedAt: orders.updatedAt,
+      customerName: users.name,
+    })
+    .from(orders)
+    .leftJoin(users, eq(orders.customerId, users.id));
 
   // Apply filters
   const conditions = [];
@@ -137,7 +163,8 @@ export async function getAllOrders(filters?: {
     conditions.push(
       or(
         like(orders.orderNumber, `%${filters.search}%`),
-        like(orders.deliveryAddress, `%${filters.search}%`)
+        like(orders.deliveryAddress, `%${filters.search}%`),
+        like(users.name, `%${filters.search}%`)
       )
     );
   }
@@ -7757,4 +7784,429 @@ export async function getActiveDeliveryZones() {
     .from(deliveryZones)
     .where(eq(deliveryZones.isActive, true))
     .orderBy(deliveryZones.name);
+}
+
+
+/**
+ * Update order status with history tracking
+ */
+export async function updateOrderStatusWithHistory(
+  orderId: number,
+  newStatus: string,
+  changedBy: number,
+  changedByType: 'admin' | 'rider' | 'system' = 'admin',
+  riderId?: number,
+  notes?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get current order status
+  const currentOrder = await getOrderById(orderId);
+  if (!currentOrder) return null;
+
+  const previousStatus = currentOrder.status;
+
+  // Update order status
+  await db.update(orders)
+    .set({ 
+      status: newStatus as any, 
+      riderId: riderId || currentOrder.riderId,
+      updatedAt: new Date() 
+    })
+    .where(eq(orders.id, orderId));
+
+  // Insert status history record
+  await db.insert(orderStatusHistory).values({
+    orderId,
+    previousStatus,
+    newStatus,
+    changedBy,
+    changedByType,
+    riderId,
+    notes,
+  });
+
+  return await getOrderById(orderId);
+}
+
+/**
+ * Get order status history
+ */
+export async function getOrderStatusHistory(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: orderStatusHistory.id,
+      orderId: orderStatusHistory.orderId,
+      previousStatus: orderStatusHistory.previousStatus,
+      newStatus: orderStatusHistory.newStatus,
+      changedBy: orderStatusHistory.changedBy,
+      changedByType: orderStatusHistory.changedByType,
+      riderId: orderStatusHistory.riderId,
+      notes: orderStatusHistory.notes,
+      createdAt: orderStatusHistory.createdAt,
+    })
+    .from(orderStatusHistory)
+    .where(eq(orderStatusHistory.orderId, orderId))
+    .orderBy(desc(orderStatusHistory.createdAt));
+}
+
+/**
+ * Get available riders for assignment
+ */
+export async function getAvailableRiders() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: riders.id,
+      name: riders.name,
+      phone: riders.phone,
+      rating: riders.rating,
+      totalDeliveries: riders.totalDeliveries,
+    })
+    .from(riders)
+    .where(eq(riders.status, 'approved'))
+    .orderBy(desc(riders.rating));
+}
+
+/**
+ * Get customer by ID with full details
+ */
+export async function getCustomerById(customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      phone: users.phone,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(eq(users.id, customerId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Get customer order history
+ */
+export async function getCustomerOrders(customerId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      status: orders.status,
+      total: orders.total,
+      paymentMethod: orders.paymentMethod,
+      paymentStatus: orders.paymentStatus,
+      deliveryAddress: orders.deliveryAddress,
+      createdAt: orders.createdAt,
+    })
+    .from(orders)
+    .where(eq(orders.customerId, customerId))
+    .orderBy(desc(orders.createdAt))
+    .limit(limit);
+}
+
+/**
+ * Get customer statistics
+ */
+export async function getCustomerStats(customerId: number) {
+  const db = await getDb();
+  if (!db) return { totalOrders: 0, totalSpent: 0, avgOrderValue: 0 };
+
+  const result = await db
+    .select({
+      totalOrders: count(orders.id),
+      totalSpent: sum(orders.total),
+    })
+    .from(orders)
+    .where(eq(orders.customerId, customerId));
+
+  const stats = result[0];
+  const totalOrders = Number(stats?.totalOrders) || 0;
+  const totalSpent = Number(stats?.totalSpent) || 0;
+  const avgOrderValue = totalOrders > 0 ? Math.round(totalSpent / totalOrders) : 0;
+
+  return { totalOrders, totalSpent, avgOrderValue };
+}
+
+/**
+ * Add customer note
+ */
+export async function addCustomerNote(customerId: number, note: string, createdBy: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.insert(customerNotes).values({
+    customerId,
+    note,
+    createdBy,
+  });
+
+  return { id: Number(result[0].insertId), customerId, note, createdBy };
+}
+
+/**
+ * Get customer notes
+ */
+export async function getCustomerNotes(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: customerNotes.id,
+      note: customerNotes.note,
+      createdBy: customerNotes.createdBy,
+      createdAt: customerNotes.createdAt,
+    })
+    .from(customerNotes)
+    .where(eq(customerNotes.customerId, customerId))
+    .orderBy(desc(customerNotes.createdAt));
+}
+
+/**
+ * Get all customer tags
+ */
+export async function getCustomerTags() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(customerTags)
+    .orderBy(customerTags.name);
+}
+
+/**
+ * Create customer tag
+ */
+export async function createCustomerTag(name: string, color: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.insert(customerTags).values({ name, color });
+  return { id: Number(result[0].insertId), name, color };
+}
+
+/**
+ * Get tags assigned to a customer
+ */
+export async function getCustomerTagAssignments(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: customerTagAssignments.id,
+      tagId: customerTagAssignments.tagId,
+      tagName: customerTags.name,
+      tagColor: customerTags.color,
+      createdAt: customerTagAssignments.createdAt,
+    })
+    .from(customerTagAssignments)
+    .innerJoin(customerTags, eq(customerTagAssignments.tagId, customerTags.id))
+    .where(eq(customerTagAssignments.customerId, customerId));
+}
+
+/**
+ * Assign tag to customer
+ */
+export async function assignTagToCustomer(customerId: number, tagId: number, assignedBy: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.insert(customerTagAssignments).values({
+    customerId,
+    tagId,
+    assignedBy,
+  });
+
+  return { id: Number(result[0].insertId), customerId, tagId };
+}
+
+/**
+ * Remove tag from customer
+ */
+export async function removeTagFromCustomer(customerId: number, tagId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.delete(customerTagAssignments)
+    .where(and(
+      eq(customerTagAssignments.customerId, customerId),
+      eq(customerTagAssignments.tagId, tagId)
+    ));
+
+  return true;
+}
+
+/**
+ * Update order with edit history
+ */
+export async function updateOrderWithHistory(
+  orderId: number,
+  updates: {
+    deliveryAddress?: string;
+    deliveryLat?: string;
+    deliveryLng?: string;
+    paymentMethod?: string;
+    notes?: string;
+  },
+  editedBy: number,
+  reason?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get current order
+  const currentOrder = await getOrderById(orderId);
+  if (!currentOrder) return null;
+
+  // Track changes
+  const changes: Array<{ field: string; oldValue: string | null; newValue: string | null }> = [];
+
+  if (updates.deliveryAddress && updates.deliveryAddress !== currentOrder.deliveryAddress) {
+    changes.push({
+      field: 'deliveryAddress',
+      oldValue: currentOrder.deliveryAddress,
+      newValue: updates.deliveryAddress,
+    });
+  }
+
+  if (updates.paymentMethod && updates.paymentMethod !== currentOrder.paymentMethod) {
+    changes.push({
+      field: 'paymentMethod',
+      oldValue: currentOrder.paymentMethod,
+      newValue: updates.paymentMethod,
+    });
+  }
+
+  if (updates.notes !== undefined && updates.notes !== currentOrder.notes) {
+    changes.push({
+      field: 'notes',
+      oldValue: currentOrder.notes || null,
+      newValue: updates.notes || null,
+    });
+  }
+
+  // Apply updates
+  const updateData: any = { updatedAt: new Date() };
+  if (updates.deliveryAddress) updateData.deliveryAddress = updates.deliveryAddress;
+  if (updates.deliveryLat) updateData.deliveryLat = updates.deliveryLat;
+  if (updates.deliveryLng) updateData.deliveryLng = updates.deliveryLng;
+  if (updates.paymentMethod) updateData.paymentMethod = updates.paymentMethod;
+  if (updates.notes !== undefined) updateData.notes = updates.notes;
+
+  await db.update(orders)
+    .set(updateData)
+    .where(eq(orders.id, orderId));
+
+  // Record edit history
+  for (const change of changes) {
+    await db.insert(orderEditHistory).values({
+      orderId,
+      editedBy,
+      fieldChanged: change.field,
+      oldValue: change.oldValue,
+      newValue: change.newValue,
+      reason,
+    });
+  }
+
+  return await getOrderById(orderId);
+}
+
+/**
+ * Update order items
+ */
+export async function updateOrderItems(
+  orderId: number,
+  items: Array<{ productId: number; productName: string; quantity: number; price: number }>,
+  editedBy: number,
+  reason?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get current order
+  const currentOrder = await getOrderById(orderId);
+  if (!currentOrder) return null;
+
+  // Get current items
+  const currentItems = await getOrderItems(orderId);
+
+  // Delete existing items
+  await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
+
+  // Insert new items and calculate totals
+  let subtotal = 0;
+  for (const item of items) {
+    const itemTotal = item.price * item.quantity;
+    subtotal += itemTotal;
+    
+    await db.insert(orderItems).values({
+      orderId,
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      price: item.price,
+      total: itemTotal,
+    });
+  }
+
+  // Update order totals
+  const total = subtotal + currentOrder.deliveryFee;
+  await db.update(orders)
+    .set({ subtotal, total, updatedAt: new Date() })
+    .where(eq(orders.id, orderId));
+
+  // Record edit history
+  await db.insert(orderEditHistory).values({
+    orderId,
+    editedBy,
+    fieldChanged: 'items',
+    oldValue: JSON.stringify(currentItems),
+    newValue: JSON.stringify(items),
+    reason,
+  });
+
+  return await getOrderById(orderId);
+}
+
+/**
+ * Get order edit history
+ */
+export async function getOrderEditHistory(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: orderEditHistory.id,
+      orderId: orderEditHistory.orderId,
+      editedBy: orderEditHistory.editedBy,
+      fieldChanged: orderEditHistory.fieldChanged,
+      oldValue: orderEditHistory.oldValue,
+      newValue: orderEditHistory.newValue,
+      reason: orderEditHistory.reason,
+      createdAt: orderEditHistory.createdAt,
+    })
+    .from(orderEditHistory)
+    .where(eq(orderEditHistory.orderId, orderId))
+    .orderBy(desc(orderEditHistory.createdAt));
 }
