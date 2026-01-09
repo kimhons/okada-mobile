@@ -89,3 +89,33 @@ scripts:
       melos analyze
       melos test
     description: Run CI pipeline
+
+  # Package-specific commands
+  test:core:
+    run: cd packages/dart/okada_core && flutter test
+    description: Run okada_core tests
+
+  test:ui:
+    run: cd packages/dart/okada_ui && flutter test
+    description: Run okada_ui tests
+
+  test:api:
+    run: cd packages/dart/okada_api && flutter test
+    description: Run okada_api tests
+
+  test:auth:
+    run: cd packages/dart/okada_auth && flutter test
+    description: Run okada_auth tests
+
+  test:offline:
+    run: cd packages/dart/okada_offline && flutter test
+    description: Run okada_offline tests
+
+  # Deep clean
+  clean:deep:
+    run: |
+      melos exec -- "flutter clean"
+      melos exec -- "rm -rf .dart_tool"
+      melos exec -- "rm -rf build"
+      rm -rf .melos
+    description: Deep clean all packages and melos cache

@@ -1,0 +1,43 @@
+name: okada_core
+description: Okada Platform - Core shared business logic, utilities, and constants
+version: 1.0.0
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: ^3.10.7
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Dependency Injection
+  get_it: ^7.6.4
+  injectable: ^2.3.2
+  # Functional Programming
+  dartz: ^0.10.1
+  # Networking (for error handling)
+  dio: ^5.4.0
+  # Storage
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  # Utilities
+  equatable: ^2.0.5
+  intl: any
+  connectivity_plus: ^5.0.2
+  logger: ^2.0.2
+  uuid: ^4.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  injectable_generator: ^2.4.1
+  build_runner: ^2.4.8
+  mocktail: ^1.0.1
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true

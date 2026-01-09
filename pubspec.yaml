@@ -1,0 +1,19 @@
+name: okada_mobile_workspace
+description: Okada Platform Mobile Apps Monorepo
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.7
+
+workspace:
+  - apps/customer_app
+  - apps/rider_app
+  - packages/dart/okada_core
+  - packages/dart/okada_ui
+  - packages/dart/okada_api
+  - packages/dart/okada_auth
+  - packages/dart/okada_offline
+
+dev_dependencies:
+  melos: ^7.0.0

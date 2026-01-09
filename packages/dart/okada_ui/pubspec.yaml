@@ -1,0 +1,36 @@
+name: okada_ui
+description: Okada Platform - Shared UI components, theme, and design system
+version: 1.0.0
+publish_to: 'none'
+resolution: workspace
+
+environment:
+  sdk: ^3.10.7
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  okada_core:
+    path: ../okada_core
+  # UI Components
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.9
+  lottie: ^3.0.0
+  # Animations
+  flutter_staggered_animations: ^1.1.1
+  animations: ^2.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/images/
+    - assets/illustrations/
+    - assets/animations/
