@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9 --activate
@@ -27,7 +27,7 @@ ENV VITE_APP_LOGO=$VITE_APP_LOGO
 RUN pnpm build
 
 # Production stage
-FROM node:22-alpine AS production
+FROM node:25-alpine AS production
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9 --activate
