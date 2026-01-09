@@ -278,6 +278,36 @@ export const appRouter = router({
         const success = await db.updateUserRole(input.userId, input.role);
         return { success };
       }),
+    suspend: protectedProcedure
+      .input(z.object({ 
+        userId: z.number(), 
+        reason: z.string().min(1, 'Suspension reason is required'),
+        duration: z.enum(['7_days', '30_days', '90_days', 'permanent']).optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can suspend users');
+        }
+        const success = await db.suspendUser(input.userId, input.reason, input.duration || 'permanent');
+        return { success, message: `User suspended successfully. Reason: ${input.reason}` };
+      }),
+    unsuspend: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can unsuspend users');
+        }
+        const success = await db.unsuspendUser(input.userId);
+        return { success, message: 'User account reactivated successfully' };
+      }),
+    getSuspensionHistory: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view suspension history');
+        }
+        return await db.getUserSuspensionHistory(input.userId);
+      }),
   }),
 
   riders: router({

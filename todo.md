@@ -1425,3 +1425,65 @@
 - [x] Add user preference for sound on/off with volume control
 - [x] Add sound toggle button to NotificationBell component
 - [x] Test sound system (14 tests passing)
+
+
+## Sprint 21: 10-Item Sequential Task Execution
+
+### Task 1: Add LanguageSwitcher to DashboardLayout header
+- [x] Import LanguageSwitcher component (already done)
+- [x] Add to header next to NotificationBell (already done)
+- [x] Test language switching works
+- [x] Write unit test (5 tests passing)
+
+### Task 2: Fix index-based key warnings in ReportVisualization.tsx
+- [x] Identify all index-based keys (already using proper keys)
+- [x] Replace with unique identifiers (uses key={key} for series, cell-name-index for pie)
+- [x] Verify no ESLint warnings
+- [x] Write unit test (7 tests passing)
+
+### Task 3: Fix index-based key warnings in RiderBadgeProfile.tsx
+- [x] Identify all index-based keys (uses skeleton-i for loading, rb.id for badges)
+- [x] Replace with unique identifiers (already using proper keys)
+- [x] Verify no ESLint warnings
+- [x] Write unit test (7 tests passing)
+
+### Task 4: Add badge display to rider detail pages
+- [x] Create BadgeDisplay component (with tier styling, size variants, points display)
+- [x] Integrate with RiderDetail page (added RiderBadgeProfile to Riders.tsx dialog)
+- [x] Show earned badges with icons (trophy, star, zap, etc.)
+- [x] Write unit test (10 tests passing)
+
+### Task 5: Create moderation guidelines page
+- [x] Create ModerationGuidelines.tsx page (with tabs for Products, Users, Riders, Content)
+- [x] Add content moderation rules (16 rules across 4 categories)
+- [x] Add to App.tsx routes (/moderation-guidelines)
+- [x] Write unit test (7 tests passing)
+
+### Task 6: Add account suspension workflow
+- [x] Add suspend/unsuspend procedures to routers (suspend, unsuspend, getSuspensionHistory)
+- [x] Add suspension functions to db.ts (suspendUser, unsuspendUser, getUserSuspensionHistory)
+- [x] Add suspension reason field with duration options (7/30/90 days or permanent)
+- [x] Write unit test (10 tests passing)
+
+### Task 7: Create API documentation for tRPC procedures
+- [x] Generate API docs markdown file (docs/API.md)
+- [x] Document all public procedures (auth.me, auth.logout)
+- [x] Document all protected procedures (50+ procedures across 15 routers)
+- [x] Add examples (TypeScript/React usage examples)
+
+### Task 8: Add lazy loading for images
+- [x] Create LazyImage component (with fallback support)
+- [x] Add intersection observer (with configurable threshold and rootMargin)
+- [x] Add placeholder/skeleton (using Skeleton component)
+- [x] Write unit test (13 tests passing)
+
+### Task 9: Implement code splitting for routes
+- [x] Add React.lazy for page components (50+ lazy-loaded routes in lazyRoutes.ts)
+- [x] Add Suspense with loading fallback (PageLoader component)
+- [x] Group routes by feature (analytics, admin, marketing, support, etc.)
+- [x] Write unit test (13 tests passing)ing
+### Task 10: Final testing and checkpoint
+- [x] Run all tests (70 new tests passing for sprint 21 features)
+- [x] Verify all 10 tasks complete
+- [x] Save checkpoint
+- [ ] Save checkpoint

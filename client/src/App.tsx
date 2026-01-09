@@ -75,6 +75,7 @@ import ABTesting from "./pages/ABTesting";
 import SEOManagement from "./pages/SEOManagement";
 import CreateOrder from "./pages/CreateOrder";
 import CustomerDetail from "./pages/CustomerDetail";
+import ModerationGuidelines from "./pages/ModerationGuidelines";
 
 
 function Router() {
@@ -137,6 +138,7 @@ function Router() {
       <Route path="/advanced-reporting" component={() => <DashboardLayout><AdvancedReporting /></DashboardLayout>} />
       <Route path="/system-settings" component={() => <DashboardLayout><SystemSettings /></DashboardLayout>} />
       <Route path="/content-moderation" component={() => <DashboardLayout><ContentModeration /></DashboardLayout>} />
+      <Route path="/moderation-guidelines" component={ModerationGuidelines} />
       <Route path="/fraud-detection" component={() => <DashboardLayout><FraudDetection /></DashboardLayout>} />
       <Route path="/live-dashboard" component={LiveDashboard} />
       <Route path="/incidents" component={IncidentManagement} />

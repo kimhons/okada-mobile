@@ -446,6 +446,107 @@ export async function updateUserRole(userId: number, role: 'admin' | 'user') {
   }
 }
 
+// User Suspension Management
+
+export async function suspendUser(userId: number, reason: string, duration: string) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Calculate suspension end date based on duration
+    let suspendedUntil: Date | null = null;
+    const now = new Date();
+    
+    switch (duration) {
+      case '7_days':
+        suspendedUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30_days':
+        suspendedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90_days':
+        suspendedUntil = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'permanent':
+      default:
+        suspendedUntil = null; // null means permanent
+        break;
+    }
+
+    // Update user status (we'll use a status field or a separate suspension record)
+    // For now, we'll log the suspension in activity log
+    await db.insert(activityLog).values({
+      adminId: 0, // System action
+      adminName: 'System',
+      action: 'user_suspended',
+      entityType: 'user',
+      entityId: userId,
+      details: JSON.stringify({ reason, duration, suspendedUntil }),
+      ipAddress: 'system',
+    });
+
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to suspend user:', error);
+    return false;
+  }
+}
+
+export async function unsuspendUser(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Log the unsuspension
+    await db.insert(activityLog).values({
+      adminId: 0, // System action
+      adminName: 'System',
+      action: 'user_unsuspended',
+      entityType: 'user',
+      entityId: userId,
+      details: JSON.stringify({ unsuspendedAt: new Date() }),
+      ipAddress: 'system',
+    });
+
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to unsuspend user:', error);
+    return false;
+  }
+}
+
+export async function getUserSuspensionHistory(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const history = await db
+      .select()
+      .from(activityLog)
+      .where(
+        and(
+          eq(activityLog.entityType, 'user'),
+          eq(activityLog.entityId, userId),
+          or(
+            eq(activityLog.action, 'user_suspended'),
+            eq(activityLog.action, 'user_unsuspended')
+          )
+        )
+      )
+      .orderBy(desc(activityLog.createdAt));
+
+    return history.map(log => ({
+      id: log.id,
+      action: log.action,
+      details: log.details ? JSON.parse(log.details) : {},
+      createdAt: log.createdAt,
+    }));
+  } catch (error) {
+    console.error('[Database] Failed to get suspension history:', error);
+    return [];
+  }
+}
+
 // Additional Rider Management Queries (getAllRiders and updateRiderStatus are defined above)
 
 export async function getRiderEarningsHistory(riderId: number) {

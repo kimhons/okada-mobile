@@ -43,6 +43,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { exportRidersToExcel } from "@/lib/exportUtils";
+import { BadgeDisplay } from "@/components/BadgeDisplay";
+import { RiderBadgeProfile } from "@/components/RiderBadgeProfile";
 
 export default function Riders() {
   const { t } = useTranslation();
@@ -386,6 +388,11 @@ export default function Riders() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Badges & Achievements */}
+              {riderDetails.rider && (
+                <RiderBadgeProfile riderId={riderDetails.rider.id} />
+              )}
 
               {/* Earnings Summary */}
               <Card>
