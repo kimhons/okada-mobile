@@ -126,12 +126,15 @@ export async function getAllOrders(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  // Join with users to get customer name
+  // Use denormalized customerName field for better performance
   let query = db
     .select({
       id: orders.id,
       orderNumber: orders.orderNumber,
       customerId: orders.customerId,
+      customerName: orders.customerName,
+      customerPhone: orders.customerPhone,
+      customerEmail: orders.customerEmail,
       riderId: orders.riderId,
       status: orders.status,
       total: orders.total,
@@ -149,10 +152,8 @@ export async function getAllOrders(filters?: {
       actualDeliveryTime: orders.actualDeliveryTime,
       createdAt: orders.createdAt,
       updatedAt: orders.updatedAt,
-      customerName: users.name,
     })
-    .from(orders)
-    .leftJoin(users, eq(orders.customerId, users.id));
+    .from(orders);
 
   // Apply filters
   const conditions = [];
@@ -164,7 +165,8 @@ export async function getAllOrders(filters?: {
       or(
         like(orders.orderNumber, `%${filters.search}%`),
         like(orders.deliveryAddress, `%${filters.search}%`),
-        like(users.name, `%${filters.search}%`)
+        like(orders.customerName, `%${filters.search}%`),
+        like(orders.customerPhone, `%${filters.search}%`)
       )
     );
   }
@@ -301,6 +303,7 @@ export async function getRecentOrders(limit: number = 5) {
       id: orders.id,
       orderNumber: orders.orderNumber,
       customerId: orders.customerId,
+      customerName: orders.customerName,
       status: orders.status,
       total: orders.total,
       createdAt: orders.createdAt,
@@ -309,26 +312,14 @@ export async function getRecentOrders(limit: number = 5) {
     .orderBy(sql`${orders.createdAt} DESC`)
     .limit(limit);
 
-  // Get customer names for each order
-  const ordersWithCustomers = await Promise.all(
-    recentOrders.map(async (order) => {
-      const [customer] = await db
-        .select({ name: users.name })
-        .from(users)
-        .where(eq(users.id, order.customerId))
-        .limit(1);
-      
-      return {
-        id: order.orderNumber,
-        customer: customer?.name || 'Unknown Customer',
-        status: order.status,
-        amount: `${(order.total / 100).toLocaleString()} FCFA`,
-        createdAt: order.createdAt,
-      };
-    })
-  );
-
-  return ordersWithCustomers;
+  // Map to display format using denormalized customerName
+  return recentOrders.map((order) => ({
+    id: order.orderNumber,
+    customer: order.customerName || 'Unknown Customer',
+    status: order.status,
+    amount: `${(order.total / 100).toLocaleString()} FCFA`,
+    createdAt: order.createdAt,
+  }));
 }
 
 // Analytics Functions

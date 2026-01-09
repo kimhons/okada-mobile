@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, orderNumber, customerName, customerPhone FROM orders LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute SELECT id, orderNumber, customerName, customerPhone FROM orders LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "orderNumber": "ORD-0001",
+      "customerName": "Mariama Sow",
+      "customerPhone": "+237 672789082"
+    },
+    {
+      "id": "2",
+      "orderNumber": "ORD-0002",
+      "customerName": "Pierre Atangana",
+      "customerPhone": "+237 601849129"
+    },
+    {
+      "id": "3",
+      "orderNumber": "ORD-0003",
+      "customerName": "Sophie Kamga",
+      "customerPhone": "+237 690878402"
+    },
+    {
+      "id": "4",
+      "orderNumber": "ORD-0004",
+      "customerName": "Jean-Pierre Mbarga",
+      "customerPhone": "+237 648844628"
+    },
+    {
+      "id": "5",
+      "orderNumber": "ORD-0005",
+      "customerName": "Paul Essomba",
+      "customerPhone": "+237 671587939"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\tcustomerPhone\n1\tORD-0001\tMariama Sow\t+237 672789082\n2\tORD-0002\tPierre Atangana\t+237 601849129\n3\tORD-0003\tSophie Kamga\t+237 690878402\n4\tORD-0004\tJean-Pierre Mbarga\t+237 648844628\n5\tORD-0005\tPaul Essomba\t+237 671587939\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

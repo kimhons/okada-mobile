@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE orders SET \n  customerName = CASE \n    WHEN customerId % 10 = 0 THEN 'Jean-Pierre Mbarga'\n    WHEN customerId % 10 = 1 THEN 'Marie Nguema'\n    WHEN customerId % 10 = 2 THEN 'Paul Essomba'\n    WHEN customerId % 10 = 3 THEN 'Fatou Diallo'\n    WHEN customerId % 10 = 4 THEN 'Emmanuel Nkodo'\n    WHEN customerId % 10 = 5 THEN 'Aissatou Bah'\n    WHEN customerId % 10 = 6 THEN 'Christian Fotso'\n    WHEN customerId % 10 = 7 THEN 'Mariama Sow'\n    WHEN customerId % 10 = 8 THEN 'Pierre Atangana'\n    ELSE 'Sophie Kamga'\n  END,\n  customerPhone = CONCAT('+237 6', LPAD(FLOOR(RAND() * 100000000), 8, '0')),\n  customerEmail = CONCAT('customer', customerId, '@example.com')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute UPDATE orders SET \n  customerName = CASE \n    WHEN customerId % 10 = 0 THEN 'Jean-Pierre Mbarga'\n    WHEN customerId % 10 = 1 THEN 'Marie Nguema'\n    WHEN customerId % 10 = 2 THEN 'Paul Essomba'\n    WHEN customerId % 10 = 3 THEN 'Fatou Diallo'\n    WHEN customerId % 10 = 4 THEN 'Emmanuel Nkodo'\n    WHEN customerId % 10 = 5 THEN 'Aissatou Bah'\n    WHEN customerId % 10 = 6 THEN 'Christian Fotso'\n    WHEN customerId % 10 = 7 THEN 'Mariama Sow'\n    WHEN customerId % 10 = 8 THEN 'Pierre Atangana'\n    ELSE 'Sophie Kamga'\n  END,\n  customerPhone = CONCAT('+237 6', LPAD(FLOOR(RAND() * 100000000), 8, '0')),\n  customerEmail = CONCAT('customer', customerId, '@example.com')",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 60
+}

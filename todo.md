@@ -1392,3 +1392,27 @@
 - [ ] Recalculate totals on edit
 - [ ] Add edit history/audit trail
 
+
+
+## Sprint 19: SMS Gateway, Customer Resolution & Real-time Notifications
+
+### Phase 1: Africa's Talking SMS Gateway Integration
+- [x] Create Africa's Talking SMS service module
+- [x] Add API key configuration via secrets
+- [x] Implement SMS sending with proper Cameroon phone formatting
+- [x] Add SMS delivery status tracking
+- [x] Update OrderNotificationService to use real SMS gateway
+
+### Phase 2: Customer Name Resolution
+- [x] Fix customer name display in Home dashboard
+- [x] Fix customer name display in Orders list
+- [x] Added denormalized customerName, customerPhone, customerEmail fields to orders
+- [x] Add fallback for orders without customer data
+
+### Phase 3: Real-time WebSocket Notifications
+- [x] Connect order status changes to WebSocket broadcasts
+- [x] Add real-time order updates to dashboard
+- [x] Implement notification toast for new orders
+- [x] Add NotificationBell component to dashboard header
+- [x] Add live rider location updates
+

@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `smsLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `recipient` varchar(20) NOT NULL,\n  `message` text NOT NULL,\n  `status` enum('sent','delivered','failed','pending','rejected') NOT NULL DEFAULT 'pending',\n  `messageId` varchar(100),\n  `cost` varchar(50),\n  `errorMessage` text,\n  `sentAt` timestamp NOT NULL,\n  `deliveredAt` timestamp,\n  `orderId` int,\n  `notificationType` varchar(100),\n  `provider` varchar(50) DEFAULT 'africastalking',\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT `smsLogs_id` PRIMARY KEY(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute CREATE TABLE IF NOT EXISTS `smsLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `recipient` varchar(20) NOT NULL,\n  `message` text NOT NULL,\n  `status` enum('sent','delivered','failed','pending','rejected') NOT NULL DEFAULT 'pending',\n  `messageId` varchar(100),\n  `cost` varchar(50),\n  `errorMessage` text,\n  `sentAt` timestamp NOT NULL,\n  `deliveredAt` timestamp,\n  `orderId` int,\n  `notificationType` varchar(100),\n  `provider` varchar(50) DEFAULT 'africastalking',\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT `smsLogs_id` PRIMARY KEY(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 274
+}

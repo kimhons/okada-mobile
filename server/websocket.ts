@@ -189,3 +189,57 @@ export function getConnectedAdminCount(): number {
 export function getIO() {
   return io;
 }
+
+// Broadcast order status notification to all admins
+export function broadcastOrderNotification(notification: {
+  orderId: number;
+  orderNumber: string;
+  status: string;
+  customerName?: string;
+  message: string;
+  type: 'status_change' | 'new_order' | 'rider_assigned' | 'delivery_complete';
+}) {
+  io?.to("admins").emit("order:notification", {
+    ...notification,
+    timestamp: new Date(),
+  });
+  console.log(`[WebSocket] Broadcast order notification: ${notification.type} for order ${notification.orderNumber}`);
+}
+
+// Broadcast new order alert
+export function broadcastNewOrderAlert(order: {
+  id: number;
+  orderNumber: string;
+  customerName?: string;
+  total: number;
+  deliveryAddress: string;
+}) {
+  io?.to("admins").emit("order:new:alert", {
+    ...order,
+    timestamp: new Date(),
+  });
+  console.log(`[WebSocket] New order alert: ${order.orderNumber}`);
+}
+
+// Broadcast rider assignment notification
+export function broadcastRiderAssignment(data: {
+  orderId: number;
+  orderNumber: string;
+  riderId: number;
+  riderName: string;
+}) {
+  // Notify admins
+  io?.to("admins").emit("order:rider:assigned", {
+    ...data,
+    timestamp: new Date(),
+  });
+  
+  // Notify the assigned rider
+  io?.to(`rider:${data.riderId}`).emit("order:assigned", {
+    orderId: data.orderId,
+    orderNumber: data.orderNumber,
+    timestamp: new Date(),
+  });
+  
+  console.log(`[WebSocket] Rider ${data.riderName} assigned to order ${data.orderNumber}`);
+}

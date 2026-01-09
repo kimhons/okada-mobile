@@ -302,23 +302,19 @@ export const OrderNotificationService = {
     };
   },
 
-  /**
-   * Send SMS (mock implementation - replace with actual SMS gateway)
-   */
-  async sendSMS(message: SMSMessage): Promise<boolean> {
-    try {
-      // TODO: Integrate with actual SMS gateway (e.g., Twilio, Africa's Talking)
-      console.log(`[SMS] Sending to ${message.to}: ${message.message}`);
-      
-      // Simulate SMS sending
-      // In production, this would call the SMS gateway API
-      
-      return true;
-    } catch (error) {
-      console.error("SMS sending failed:", error);
-      return false;
-    }
-  },
+/**
+ * Send SMS using Africa's Talking gateway
+ */
+async sendSMS(message: SMSMessage): Promise<boolean> {
+  try {
+    const { SMSService } = await import("./smsService");
+    const result = await SMSService.send(message.to, message.message);
+    return result.success;
+  } catch (error) {
+    console.error("SMS sending failed:", error);
+    return false;
+  }
+},
 
   /**
    * Send Email (mock implementation - replace with actual email service)

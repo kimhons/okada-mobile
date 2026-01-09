@@ -87,6 +87,9 @@ export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
   orderNumber: varchar("orderNumber", { length: 50 }).notNull().unique(),
   customerId: int("customerId").notNull(), // Reference to users table
+  customerName: varchar("customerName", { length: 255 }), // Denormalized for display
+  customerPhone: varchar("customerPhone", { length: 20 }), // Denormalized for contact
+  customerEmail: varchar("customerEmail", { length: 320 }), // Denormalized for notifications
   riderId: int("riderId"), // Reference to riders table
   status: mysqlEnum("status", [
     "pending",
@@ -2120,3 +2123,37 @@ export const orderEditHistory = mysqlTable("orderEditHistory", {
 
 export type OrderEditHistory = typeof orderEditHistory.$inferSelect;
 export type InsertOrderEditHistory = typeof orderEditHistory.$inferInsert;
+
+
+/**
+ * SMS Logs table - Track all SMS messages sent through the platform
+ */
+export const smsLogs = mysqlTable("smsLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Message details
+  recipient: varchar("recipient", { length: 20 }).notNull(),
+  message: text("message").notNull(),
+  
+  // Status tracking
+  status: mysqlEnum("status", ["sent", "delivered", "failed", "pending", "rejected"]).default("pending").notNull(),
+  messageId: varchar("messageId", { length: 100 }), // Provider message ID
+  cost: varchar("cost", { length: 50 }), // Cost from provider
+  errorMessage: text("errorMessage"),
+  
+  // Timestamps
+  sentAt: timestamp("sentAt").notNull(),
+  deliveredAt: timestamp("deliveredAt"),
+  
+  // Context
+  orderId: int("orderId"),
+  notificationType: varchar("notificationType", { length: 100 }),
+  
+  // Provider info
+  provider: varchar("provider", { length: 50 }).default("africastalking"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SMSLog = typeof smsLogs.$inferSelect;
+export type InsertSMSLog = typeof smsLogs.$inferInsert;
