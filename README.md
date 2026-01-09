@@ -2,9 +2,10 @@
 
 > Comprehensive admin dashboard for managing Okada motorcycle delivery platform operations in Cameroon
 
-![Database Integrity](https://github.com/YOUR_USERNAME/okada-admin/workflows/Database%20Integrity%20Check/badge.svg)
-![CI](https://github.com/YOUR_USERNAME/okada-admin/workflows/CI/badge.svg)
-![Deploy to Staging](https://github.com/YOUR_USERNAME/okada-admin/workflows/Deploy%20to%20Staging/badge.svg)
+[![CI/CD](https://github.com/kimhons/okada-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/kimhons/okada-mobile/actions/workflows/ci.yml)
+[![Database Integrity](https://github.com/kimhons/okada-mobile/actions/workflows/database-integrity.yml/badge.svg)](https://github.com/kimhons/okada-mobile/actions/workflows/database-integrity.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://reactjs.org/)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-22.x-green.svg)
 
@@ -39,8 +40,8 @@ Okada Admin Dashboard is a full-stack web application built for managing motorcy
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/okada-admin.git
-cd okada-admin
+git clone https://github.com/kimhons/okada-mobile.git
+cd okada-mobile
 
 # Install dependencies
 pnpm install
@@ -315,18 +316,31 @@ All UI components use **shadcn/ui** for consistency:
 - ✅ ESLint configuration
 - ✅ CI/CD pipeline with GitHub Actions
 
-### In Progress (Sprint 10)
-- 🚧 Database integrity monitoring
-- 🚧 Code quality improvements
+### Completed (Sprint 10-24)
+- ✅ Database integrity monitoring
+- ✅ Code quality improvements (ESLint)
+- ✅ User verification system
+- ✅ Platform statistics dashboard
+- ✅ Dispute resolution workflow
+- ✅ Geo-location analytics
+- ✅ Real-time notifications
+- ✅ Referral program
+- ✅ Loyalty rewards
+- ✅ Customer Segmentation
+- ✅ Marketing Automation
+- ✅ Risk Management
+- ✅ Compliance Center
+- ✅ Webhook Management
+- ✅ Vendor Management
+- ✅ Fleet Management
+- ✅ Backup & Recovery
+
+### Admin Dashboard: 100% Complete (80/80 screens)
 
 ### Planned
-- 📋 User verification system
-- 📋 Platform statistics dashboard
-- 📋 Dispute resolution workflow
-- 📋 Geo-location analytics
-- 📋 Real-time notifications
-- 📋 Referral program
-- 📋 Loyalty rewards
+- 📋 Mobile Customer App (0/45 screens)
+- 📋 Mobile Rider App (0/45 screens)
+- 📋 Seller Portal (2/30 screens)
 
 ---
 
@@ -367,7 +381,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For issues and questions:
 - 📧 Email: support@okada-admin.com
-- 🐛 Issues: [GitHub Issues](https://github.com/YOUR_USERNAME/okada-admin/issues)
+- 🐛 Issues: [GitHub Issues](https://github.com/kimhons/okada-mobile/issues)
 - 📖 Docs: [Documentation](./docs/)
 
 ---
