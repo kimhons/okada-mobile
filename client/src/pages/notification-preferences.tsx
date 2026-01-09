@@ -21,9 +21,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Edit, CheckCircle, XCircle, Mail, Bell, MessageSquare } from "lucide-react";
+import { Settings, Edit, CheckCircle, XCircle, Mail, Bell, MessageSquare, Moon } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import DNDSettings from "@/components/DNDSettings";
 
 export default function NotificationPreferences() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -187,6 +188,22 @@ export default function NotificationPreferences() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Do Not Disturb Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Moon className="h-5 w-5" />
+            Do Not Disturb
+          </CardTitle>
+          <CardDescription>
+            Configure quiet hours to mute notifications during specific times
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DNDSettings />
+        </CardContent>
+      </Card>
 
       {/* Preferences Table */}
       <Card>

@@ -8983,3 +8983,457 @@ export async function getRiderAssignmentStats(riderId: number): Promise<{
     return { activeOrders: 0, completedToday: 0, totalDeliveries: 0 };
   }
 }
+
+
+/**
+ * Generate fraud report data
+ */
+export async function generateFraudReport(filters?: {
+  startDate?: Date;
+  endDate?: Date;
+  severity?: string;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const conditions = [];
+  if (filters?.startDate) {
+    conditions.push(gte(fraudAlerts.createdAt, filters.startDate));
+  }
+  if (filters?.endDate) {
+    conditions.push(lte(fraudAlerts.createdAt, filters.endDate));
+  }
+  if (filters?.severity) {
+    conditions.push(eq(fraudAlerts.severity, filters.severity as any));
+  }
+  if (filters?.status) {
+    conditions.push(eq(fraudAlerts.status, filters.status as any));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Get all alerts matching criteria
+  const alerts = await db
+    .select()
+    .from(fraudAlerts)
+    .leftJoin(users, eq(users.id, fraudAlerts.userId))
+    .where(whereClause)
+    .orderBy(desc(fraudAlerts.createdAt));
+
+  // Calculate summary statistics
+  const totalAlerts = alerts.length;
+  const criticalAlerts = alerts.filter((a) => a.fraudAlerts.severity === "critical").length;
+  const highAlerts = alerts.filter((a) => a.fraudAlerts.severity === "high").length;
+  const mediumAlerts = alerts.filter((a) => a.fraudAlerts.severity === "medium").length;
+  const lowAlerts = alerts.filter((a) => a.fraudAlerts.severity === "low").length;
+
+  const resolvedAlerts = alerts.filter((a) => a.fraudAlerts.status === "resolved").length;
+  const confirmedFraud = alerts.filter((a) => a.fraudAlerts.status === "confirmed").length;
+  const falsePositives = alerts.filter((a) => a.fraudAlerts.status === "false_positive").length;
+
+  // Group by alert type
+  const alertsByType: Record<string, number> = {};
+  alerts.forEach((a) => {
+    const type = a.fraudAlerts.alertType;
+    alertsByType[type] = (alertsByType[type] || 0) + 1;
+  });
+
+  // Calculate average risk score
+  const avgRiskScore =
+    alerts.length > 0
+      ? alerts.reduce((sum, a) => sum + (a.fraudAlerts.riskScore || 0), 0) / alerts.length
+      : 0;
+
+  // Get top affected users
+  const userAlertCounts: Record<number, { count: number; name: string | null }> = {};
+  alerts.forEach((a) => {
+    if (a.fraudAlerts.userId) {
+      if (!userAlertCounts[a.fraudAlerts.userId]) {
+        userAlertCounts[a.fraudAlerts.userId] = { count: 0, name: a.users?.name || null };
+      }
+      userAlertCounts[a.fraudAlerts.userId].count++;
+    }
+  });
+
+  const topAffectedUsers = Object.entries(userAlertCounts)
+    .map(([userId, data]) => ({ userId: parseInt(userId), ...data }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  return {
+    summary: {
+      totalAlerts,
+      bySeverity: {
+        critical: criticalAlerts,
+        high: highAlerts,
+        medium: mediumAlerts,
+        low: lowAlerts,
+      },
+      byStatus: {
+        resolved: resolvedAlerts,
+        confirmed: confirmedFraud,
+        falsePositives,
+        pending: totalAlerts - resolvedAlerts - confirmedFraud - falsePositives,
+      },
+      alertsByType,
+      averageRiskScore: Math.round(avgRiskScore * 100) / 100,
+    },
+    topAffectedUsers,
+    recentAlerts: alerts.slice(0, 20).map((a) => ({
+      id: a.fraudAlerts.id,
+      alertType: a.fraudAlerts.alertType,
+      severity: a.fraudAlerts.severity,
+      riskScore: a.fraudAlerts.riskScore,
+      status: a.fraudAlerts.status,
+      userName: a.users?.name,
+      createdAt: a.fraudAlerts.createdAt,
+    })),
+    generatedAt: new Date(),
+    filters,
+  };
+}
+
+
+/**
+ * Generate safety report data
+ */
+export async function generateSafetyReport(filters?: {
+  startDate?: Date;
+  endDate?: Date;
+  severity?: string;
+  incidentType?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const conditions = [];
+  if (filters?.startDate) {
+    conditions.push(gte(incidents.createdAt, filters.startDate));
+  }
+  if (filters?.endDate) {
+    conditions.push(lte(incidents.createdAt, filters.endDate));
+  }
+  if (filters?.severity) {
+    conditions.push(eq(incidents.severity, filters.severity as any));
+  }
+  if (filters?.incidentType) {
+    conditions.push(eq(incidents.incidentType, filters.incidentType as any));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Get all incidents matching criteria
+  const incidentList = await db
+    .select()
+    .from(incidents)
+    .leftJoin(riders, eq(riders.id, incidents.riderId))
+    .where(whereClause)
+    .orderBy(desc(incidents.createdAt));
+
+  // Calculate summary statistics
+  const totalIncidents = incidentList.length;
+  const criticalIncidents = incidentList.filter((i) => i.incidents.severity === "critical").length;
+  const severeIncidents = incidentList.filter((i) => i.incidents.severity === "severe").length;
+  const moderateIncidents = incidentList.filter((i) => i.incidents.severity === "moderate").length;
+  const minorIncidents = incidentList.filter((i) => i.incidents.severity === "minor").length;
+
+  const resolvedIncidents = incidentList.filter((i) => i.incidents.status === "resolved").length;
+  const investigatingIncidents = incidentList.filter((i) => i.incidents.status === "investigating").length;
+  const pendingIncidents = incidentList.filter((i) => i.incidents.status === "pending").length;
+
+  // Group by incident type
+  const incidentsByType: Record<string, number> = {};
+  incidentList.forEach((i) => {
+    const type = i.incidents.incidentType;
+    incidentsByType[type] = (incidentsByType[type] || 0) + 1;
+  });
+
+  // Calculate total claims and compensation
+  const totalClaimAmount = incidentList.reduce((sum, i) => sum + (i.incidents.claimAmount || 0), 0);
+  const totalCompensation = incidentList.reduce((sum, i) => sum + (i.incidents.compensationAmount || 0), 0);
+
+  // Get riders with most incidents
+  const riderIncidentCounts: Record<number, { count: number; name: string | null }> = {};
+  incidentList.forEach((i) => {
+    if (i.incidents.riderId) {
+      if (!riderIncidentCounts[i.incidents.riderId]) {
+        riderIncidentCounts[i.incidents.riderId] = { count: 0, name: i.riders?.name || null };
+      }
+      riderIncidentCounts[i.incidents.riderId].count++;
+    }
+  });
+
+  const ridersWithMostIncidents = Object.entries(riderIncidentCounts)
+    .map(([riderId, data]) => ({ riderId: parseInt(riderId), ...data }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  return {
+    summary: {
+      totalIncidents,
+      bySeverity: {
+        critical: criticalIncidents,
+        severe: severeIncidents,
+        moderate: moderateIncidents,
+        minor: minorIncidents,
+      },
+      byStatus: {
+        resolved: resolvedIncidents,
+        investigating: investigatingIncidents,
+        pending: pendingIncidents,
+      },
+      incidentsByType,
+      financials: {
+        totalClaimAmount,
+        totalCompensation,
+        pendingClaims: totalClaimAmount - totalCompensation,
+      },
+    },
+    ridersWithMostIncidents,
+    recentIncidents: incidentList.slice(0, 20).map((i) => ({
+      id: i.incidents.id,
+      incidentType: i.incidents.incidentType,
+      severity: i.incidents.severity,
+      status: i.incidents.status,
+      riderName: i.riders?.name,
+      claimAmount: i.incidents.claimAmount,
+      createdAt: i.incidents.createdAt,
+    })),
+    generatedAt: new Date(),
+    filters,
+  };
+}
+
+
+/**
+ * Send loyalty points earned notification
+ */
+export async function sendLoyaltyPointsNotification(
+  userId: number,
+  points: number,
+  reason: string,
+  newBalance: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const notification = await createNotification({
+    userId,
+    type: "system",
+    title: `You earned ${points} loyalty points!`,
+    message: `${reason}. Your new balance is ${newBalance} points.`,
+  });
+
+  return notification;
+}
+
+/**
+ * Send tier upgrade notification
+ */
+export async function sendTierUpgradeNotification(
+  userId: number,
+  oldTier: string,
+  newTier: string,
+  benefits: string[]
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const benefitsList = benefits.length > 0 ? ` New benefits: ${benefits.join(", ")}` : "";
+  
+  const notification = await createNotification({
+    userId,
+    type: "system",
+    title: `Congratulations! You've been upgraded to ${newTier}!`,
+    message: `You've moved from ${oldTier} to ${newTier}.${benefitsList}`,
+  });
+
+  return notification;
+}
+
+/**
+ * Send reward available notification
+ */
+export async function sendRewardAvailableNotification(
+  userId: number,
+  rewardName: string,
+  pointsCost: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const notification = await createNotification({
+    userId,
+    type: "system",
+    title: `New reward available: ${rewardName}`,
+    message: `You can now redeem ${rewardName} for ${pointsCost} points.`,
+  });
+
+  return notification;
+}
+
+/**
+ * Check and process tier upgrade
+ */
+export async function checkAndProcessTierUpgrade(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get user's current points and tier
+  const [userPoints] = await db
+    .select()
+    .from(userLoyaltyPoints)
+    .where(eq(userLoyaltyPoints.userId, userId))
+    .limit(1);
+
+  if (!userPoints) return null;
+
+  // Get all tiers ordered by minimum points
+  const tiers = await db
+    .select()
+    .from(loyaltyTiers)
+    .orderBy(asc(loyaltyTiers.minPoints));
+
+  // Find the appropriate tier based on lifetime points
+  let newTier = tiers[0];
+  for (const tier of tiers) {
+    if (userPoints.lifetimePoints >= tier.minPoints) {
+      newTier = tier;
+    }
+  }
+
+  // Check if tier changed
+  if (newTier && userPoints.currentTierId !== newTier.id) {
+    const oldTier = tiers.find((t) => t.id === userPoints.currentTierId);
+    
+    // Update user's tier
+    await db
+      .update(userLoyaltyPoints)
+      .set({ currentTierId: newTier.id })
+      .where(eq(userLoyaltyPoints.userId, userId));
+
+    // Send notification
+    const benefits = newTier.benefits ? JSON.parse(newTier.benefits as string) : [];
+    await sendTierUpgradeNotification(
+      userId,
+      oldTier?.name || "Basic",
+      newTier.name,
+      benefits
+    );
+
+    return { upgraded: true, oldTier: oldTier?.name, newTier: newTier.name };
+  }
+
+  return { upgraded: false };
+}
+
+
+/**
+ * Send training course completion notification
+ */
+export async function sendCourseCompletionNotification(
+  riderId: number,
+  moduleTitle: string,
+  score: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get rider info
+  const rider = await getRiderById(riderId);
+  if (!rider) return null;
+
+  const notification = await createNotification({
+    userId: riderId, // Use riderId as userId for rider notifications
+    type: "system",
+    title: `Training Complete: ${moduleTitle}`,
+    message: `Congratulations! You completed "${moduleTitle}" with a score of ${score}%.`,
+  });
+
+  return notification;
+}
+
+/**
+ * Send certification earned notification
+ */
+export async function sendCertificationEarnedNotification(
+  riderId: number,
+  certificationName: string,
+  expiryDate?: Date
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get rider info
+  const rider = await getRiderById(riderId);
+  if (!rider) return null;
+
+  const expiryInfo = expiryDate ? ` Valid until ${expiryDate.toLocaleDateString()}.` : "";
+  
+  const notification = await createNotification({
+    userId: riderId, // Use riderId as userId for rider notifications
+    type: "system",
+    title: `Certification Earned: ${certificationName}`,
+    message: `You have earned the "${certificationName}" certification.${expiryInfo}`,
+  });
+
+  return notification;
+}
+
+/**
+ * Send training reminder notification
+ */
+export async function sendTrainingReminderNotification(
+  riderId: number,
+  moduleTitle: string,
+  dueDate: Date
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get rider info
+  const rider = await getRiderById(riderId);
+  if (!rider) return null;
+
+  const daysUntilDue = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  
+  const notification = await createNotification({
+    userId: riderId, // Use riderId as userId for rider notifications
+    type: "system",
+    title: `Training Reminder: ${moduleTitle}`,
+    message: `Please complete "${moduleTitle}" within ${daysUntilDue} days.`,
+  });
+
+  return notification;
+}
+
+/**
+ * Check and send mandatory training reminders
+ */
+export async function sendMandatoryTrainingReminders() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get all active riders
+  const activeRiders = await getAllRiders({ status: "approved" });
+  const reminders: { riderId: number; moduleTitle: string }[] = [];
+
+  for (const rider of activeRiders) {
+    // Get rider's training progress
+    const progress = await getRiderTrainingProgress(rider.id);
+    
+    // Get all mandatory modules
+    const mandatoryModules = await getTrainingModules({ isMandatory: true, isActive: true });
+    
+    // Find incomplete mandatory modules
+    for (const module of mandatoryModules) {
+      const moduleProgress = progress.find((p) => p.moduleId === module.id);
+      if (!moduleProgress || moduleProgress.status !== "completed") {
+        reminders.push({ riderId: rider.id, moduleTitle: module.title });
+      }
+    }
+  }
+
+  return reminders;
+}

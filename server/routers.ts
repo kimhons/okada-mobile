@@ -4870,6 +4870,28 @@ export const appRouter = router({
 
         return result;
       }),
+
+    generateReport: protectedProcedure
+      .input(z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        severity: z.string().optional(),
+        status: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const report = await db.generateFraudReport(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "generate_fraud_report",
+          entityType: "report",
+          entityId: 0,
+          details: `Generated fraud report`,
+        });
+
+        return report;
+      }),
   }),
 
   // Live Dashboard
@@ -5336,6 +5358,28 @@ export const appRouter = router({
     getStats: protectedProcedure
       .query(async () => {
         return await db.getIncidentStats();
+      }),
+
+    generateReport: protectedProcedure
+      .input(z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        severity: z.string().optional(),
+        incidentType: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const report = await db.generateSafetyReport(input);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "generate_safety_report",
+          entityType: "report",
+          entityId: 0,
+          details: `Generated safety report`,
+        });
+
+        return report;
       }),
   }),
 
@@ -6481,6 +6525,22 @@ export const appRouter = router({
             entityId: input.id,
             details: `Approved seller application ID: ${input.id}`,
           });
+          
+          // Send notification to owner about approval
+          await notifyOwner({
+            title: "Seller Application Approved",
+            content: `Seller application #${input.id} has been approved by ${ctx.user.name || 'Admin'}. The seller can now start listing products.`,
+          });
+          
+          // Log seller notification (using sellerId as reference)
+          if (result.sellerId) {
+            await db.createNotification({
+              userId: result.sellerId,
+              type: 'system',
+              title: 'Congratulations! Your Seller Application is Approved',
+              message: `Your seller application #${input.id} has been approved. You can now start listing products on our platform.`,
+            });
+          }
         }
         
         return result;
@@ -6495,6 +6555,10 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') {
           throw new Error('Only admins can reject applications');
         }
+        
+        // Get application details before rejection for notification
+        const application = await db.getSellerApplicationById(input.id);
+        
         const success = await db.rejectSellerApplication(input.id, ctx.user.id, input.rejectionReason);
         
         if (success) {
@@ -6506,6 +6570,22 @@ export const appRouter = router({
             entityId: input.id,
             details: `Rejected seller application ID: ${input.id}`,
           });
+          
+          // Send notification to owner about rejection
+          await notifyOwner({
+            title: "Seller Application Rejected",
+            content: `Seller application #${input.id} has been rejected by ${ctx.user.name || 'Admin'}. Reason: ${input.rejectionReason}`,
+          });
+          
+          // Create notification for the applicant (using sellerId as reference)
+          if (application?.sellerId) {
+            await db.createNotification({
+              userId: application.sellerId,
+              type: 'system',
+              title: 'Seller Application Update',
+              message: `Your seller application #${input.id} was not approved. Reason: ${input.rejectionReason}. Please address the issues and reapply.`,
+            });
+          }
         }
         
         return { success };

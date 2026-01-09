@@ -160,8 +160,8 @@ export default function ReportVisualization({
                 fill="#8884d8"
                 dataKey={yAxisKey}
               >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${entry[xAxisKey]}-${index}`} fill={COLORS[index % COLORS.length]} />
+                {data.map((entry) => (
+                  <Cell key={`cell-${String(entry[xAxisKey])}`} fill={COLORS[data.indexOf(entry) % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip

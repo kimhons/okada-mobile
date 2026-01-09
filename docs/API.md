@@ -158,6 +158,41 @@ All protected procedures require authentication via session cookie. The session 
 | `backup.create` | Mutation | Admin | Create a database backup |
 | `backup.restore` | Mutation | Admin | Restore from backup |
 
+## SMS Logs
+
+| Procedure | Type | Access | Description |
+|-----------|------|--------|-------------|
+| `smsLogs.list` | Query | Protected | List SMS delivery logs with filters |
+| `smsLogs.retry` | Mutation | Protected | Retry a failed SMS message |
+| `smsLogs.getStats` | Query | Protected | Get SMS delivery statistics |
+
+## Do Not Disturb
+
+| Procedure | Type | Access | Description |
+|-----------|------|--------|-------------|
+| `dnd.getSchedule` | Query | Protected | Get DND schedule for current user |
+| `dnd.setSchedule` | Mutation | Protected | Set DND schedule |
+| `dnd.isActive` | Query | Protected | Check if DND is currently active |
+
+## Seller Applications
+
+| Procedure | Type | Access | Description |
+|-----------|------|--------|-------------|
+| `sellerApplications.list` | Query | Admin | List seller applications |
+| `sellerApplications.getById` | Query | Admin | Get application details |
+| `sellerApplications.approve` | Mutation | Admin | Approve a seller application |
+| `sellerApplications.reject` | Mutation | Admin | Reject a seller application |
+| `sellerApplications.requestInfo` | Mutation | Admin | Request additional information |
+
+## Bulk Operations
+
+| Procedure | Type | Access | Description |
+|-----------|------|--------|-------------|
+| `orders.bulkUpdateStatus` | Mutation | Protected | Update status for multiple orders |
+| `orders.bulkAssignRider` | Mutation | Protected | Assign rider to multiple orders |
+| `orders.assignToRider` | Mutation | Protected | Assign single order to rider |
+| `orders.unassignRider` | Mutation | Protected | Remove rider assignment |
+
 ## Error Handling
 
 All procedures return errors in a consistent format:

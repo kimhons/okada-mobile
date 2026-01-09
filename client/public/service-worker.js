@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/manifest.json",
+  "/offline.html",
 ];
 
 // API endpoints to cache for offline access (read-only operations)
@@ -144,8 +145,15 @@ self.addEventListener("fetch", (event) => {
           });
         }
         return response;
-      }).catch((error) => {
+      }).catch(async (error) => {
         console.error("[Service Worker] Fetch failed:", request.url, error);
+        // Return offline page for navigation requests
+        if (request.mode === 'navigate') {
+          const offlinePage = await caches.match('/offline.html');
+          if (offlinePage) {
+            return offlinePage;
+          }
+        }
         return new Response("Offline", { status: 503, statusText: "Service Unavailable" });
       });
     })

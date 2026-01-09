@@ -31,6 +31,8 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import { exportOrdersToPDF, exportOrdersToExcel } from "@/lib/exportUtils";
 import OrderTrackingTimeline from "@/components/OrderTrackingTimeline";
+import RiderAssignment from "@/components/RiderAssignment";
+import BulkOrderActions from "@/components/BulkOrderActions";
 
 const statusColors: Record<string, string> = {
   pending: "bg-gray-100 text-gray-800",
@@ -95,6 +97,29 @@ export default function Orders() {
   const [selectedRiderId, setSelectedRiderId] = useState<number | undefined>();
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+
+  const toggleOrderSelection = (orderId: number) => {
+    setSelectedOrderIds(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (orders && selectedOrderIds.length === orders.length) {
+      setSelectedOrderIds([]);
+    } else if (orders) {
+      setSelectedOrderIds(orders.map(o => o.id));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedOrderIds([]);
+    setShowBulkActions(false);
+  };
 
   const { data: orders, isLoading, refetch } = trpc.orders.list.useQuery({
     search: search || undefined,
@@ -283,10 +308,31 @@ export default function Orders() {
       {/* Orders List */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('orders:orders_list')}</CardTitle>
-          <CardDescription>
-            {t('orders:orders_found', { count: orders?.length || 0 })}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{t('orders:orders_list')}</CardTitle>
+              <CardDescription>
+                {t('orders:orders_found', { count: orders?.length || 0 })}
+              </CardDescription>
+            </div>
+            {selectedOrderIds.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {selectedOrderIds.length} selected
+                </Badge>
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  Clear
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="bg-[#2D8659] hover:bg-[#236B47]"
+                  onClick={() => setShowBulkActions(true)}
+                >
+                  Bulk Actions
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -295,12 +341,35 @@ export default function Orders() {
             </div>
           ) : orders && orders.length > 0 ? (
             <div className="space-y-3">
+              {/* Select All */}
+              <div className="flex items-center gap-2 pb-2 border-b">
+                <input
+                  type="checkbox"
+                  checked={orders.length > 0 && selectedOrderIds.length === orders.length}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-muted-foreground">
+                  Select all ({orders.length})
+                </span>
+              </div>
               {orders.map((order) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                  className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                    selectedOrderIds.includes(order.id) 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border hover:bg-accent/50'
+                  }`}
                 >
                   <div className="flex items-center gap-4 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrderIds.includes(order.id)}
+                      onChange={() => toggleOrderSelection(order.id)}
+                      className="h-4 w-4 rounded border-gray-300"
+                      onClick={(e) => e.stopPropagation()}
+                    />
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                       <Package className="h-6 w-6 text-primary" />
                     </div>
@@ -499,6 +568,20 @@ export default function Orders() {
                       </Button>
                     </div>
                   </div>
+                )}
+
+                {/* Rider Assignment */}
+                {orderDetails.order && (
+                  <RiderAssignment
+                    orderId={orderDetails.order.id}
+                    currentRiderId={orderDetails.order.riderId}
+                    currentRiderName={orderDetails.order.riderId ? `Rider #${orderDetails.order.riderId}` : null}
+                    orderStatus={orderDetails.order.status}
+                    onAssigned={() => {
+                      refetch();
+                      refetchDetails();
+                    }}
+                  />
                 )}
 
                 {/* Order Items */}
@@ -754,6 +837,18 @@ export default function Orders() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Actions Dialog */}
+      {showBulkActions && (
+        <BulkOrderActions
+          selectedOrderIds={selectedOrderIds}
+          onComplete={() => {
+            refetch();
+            clearSelection();
+          }}
+          onClearSelection={clearSelection}
+        />
+      )}
     </div>
   );
 }
