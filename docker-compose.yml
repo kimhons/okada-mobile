@@ -1,0 +1,245 @@
+version: '3.8'
+
+services:
+  # ===================
+  # Infrastructure
+  # ===================
+  
+  mysql:
+    image: mysql:8.0
+    container_name: okada-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-okada_root_2024}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-okada}
+      MYSQL_USER: ${MYSQL_USER:-okada}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-okada_pass_2024}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: okada-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: okada-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-okada}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-okada_rabbit_2024}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================
+  # Backend Services
+  # ===================
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: okada-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - ORDER_SERVICE_URL=http://order-service:3003
+      - PRODUCT_SERVICE_URL=http://product-service:3004
+      - PAYMENT_SERVICE_URL=http://payment-service:3005
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3006
+    depends_on:
+      - redis
+      - auth-service
+    networks:
+      - okada-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: okada-auth-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=mysql://okada:okada_pass_2024@mysql:3306/okada
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-okada_jwt_secret_2024}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - okada-network
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: okada-user-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - DATABASE_URL=mysql://okada:okada_pass_2024@mysql:3306/okada
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - okada-network
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: okada-order-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - DATABASE_URL=mysql://okada:okada_pass_2024@mysql:3306/okada
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://okada:okada_rabbit_2024@rabbitmq:5672
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - okada-network
+
+  product-service:
+    build:
+      context: ./services/product-service
+      dockerfile: Dockerfile
+    container_name: okada-product-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - DATABASE_URL=mysql://okada:okada_pass_2024@mysql:3306/okada
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - okada-network
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: okada-payment-service
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - DATABASE_URL=mysql://okada:okada_pass_2024@mysql:3306/okada
+      - REDIS_URL=redis://redis:6379
+      - MTN_MOMO_API_KEY=${MTN_MOMO_API_KEY}
+      - ORANGE_MONEY_API_KEY=${ORANGE_MONEY_API_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - okada-network
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: okada-notification-service
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=development
+      - PORT=3006
+      - DATABASE_URL=mysql://okada:okada_pass_2024@mysql:3306/okada
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://okada:okada_rabbit_2024@rabbitmq:5672
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - okada-network
+
+  # ===================
+  # AI Services
+  # ===================
+
+  ai-service:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: okada-ai-service
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHON_ENV=development
+      - PORT=8080
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - okada-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+networks:
+  okada-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  rabbitmq_data:

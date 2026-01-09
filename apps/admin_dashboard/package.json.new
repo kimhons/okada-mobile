@@ -1,0 +1,59 @@
+{
+  "name": "okada-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Okada Platform - Complete delivery management system for Cameroon",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kimhons/okada-mobile.git"
+  },
+  "author": "Okada Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm --filter @okada/admin-web dev",
+    "dev:admin": "pnpm --filter @okada/admin-web dev",
+    "dev:seller": "pnpm --filter @okada/seller-web dev",
+    "dev:services": "docker-compose -f infrastructure/docker/docker-compose.dev.yml up",
+    "build": "pnpm -r build",
+    "build:admin": "pnpm --filter @okada/admin-web build",
+    "build:seller": "pnpm --filter @okada/seller-web build",
+    "test": "pnpm -r test",
+    "test:admin": "pnpm --filter @okada/admin-web test",
+    "lint": "pnpm -r lint",
+    "check": "pnpm -r check",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "db:push": "pnpm --filter @okada/admin-web db:push",
+    "db:studio": "pnpm --filter @okada/admin-web db:studio",
+    "flutter:bootstrap": "melos bootstrap",
+    "flutter:test": "melos test",
+    "flutter:analyze": "melos analyze",
+    "flutter:build:apk": "melos build:apk",
+    "flutter:build:ios": "melos build:ios",
+    "flutter:clean": "melos clean",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.dart": [
+      "dart format"
+    ]
+  }
+}

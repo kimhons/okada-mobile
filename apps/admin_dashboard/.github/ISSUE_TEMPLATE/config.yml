@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/kimhons/okada-mobile/discussions
+    about: Ask questions and discuss ideas
+  - name: 📖 Documentation
+    url: https://github.com/kimhons/okada-mobile/tree/main/docs
+    about: Read the documentation
+  - name: 🔒 Security Issues
+    url: https://github.com/kimhons/okada-mobile/security/policy
+    about: Report security vulnerabilities privately

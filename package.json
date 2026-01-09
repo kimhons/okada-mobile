@@ -1,0 +1,52 @@
+{
+  "name": "okada-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Okada Platform - Quick Commerce & Delivery for Cameroon",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kimhons/okada-mobile.git"
+  },
+  "author": "Okada Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm --filter @okada/admin-dashboard dev",
+    "dev:admin": "pnpm --filter @okada/admin-dashboard dev",
+    "dev:merchant": "pnpm --filter @okada/merchant-portal dev",
+    "dev:services": "docker-compose -f infrastructure/docker/docker-compose.dev.yml up",
+    "build": "pnpm -r build",
+    "build:admin": "pnpm --filter @okada/admin-dashboard build",
+    "build:merchant": "pnpm --filter @okada/merchant-portal build",
+    "test": "pnpm -r test",
+    "test:admin": "pnpm --filter @okada/admin-dashboard test",
+    "lint": "pnpm -r lint",
+    "check": "pnpm -r check",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "db:push": "pnpm --filter @okada/admin-dashboard db:push",
+    "db:studio": "pnpm --filter @okada/admin-dashboard db:studio",
+    "flutter:customer": "cd apps/customer_app && flutter run",
+    "flutter:rider": "cd apps/rider_app && flutter run",
+    "flutter:test": "cd apps/customer_app && flutter test && cd ../rider_app && flutter test",
+    "flutter:build:apk": "cd apps/customer_app && flutter build apk --release && cd ../rider_app && flutter build apk --release",
+    "flutter:build:ios": "cd apps/customer_app && flutter build ios --release && cd ../rider_app && flutter build ios --release",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "workspaces": [
+    "apps/admin_dashboard",
+    "apps/merchant_portal",
+    "services/*",
+    "packages/node/*"
+  ]
+}

@@ -1,0 +1,89 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.0.0)'
+        required: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '9'
+
+jobs:
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.event.inputs.version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run full test suite
+        run: pnpm test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build production
+        run: pnpm build
+        env:
+          VITE_APP_TITLE: Okada Admin Dashboard
+          VITE_APP_ID: ${{ secrets.VITE_APP_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: production
+
+      - name: Run database migrations
+        run: pnpm db:push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying version ${{ github.event.release.tag_name || github.event.inputs.version }} to production..."
+          # Add your production deployment commands here
+
+      - name: Health check
+        run: |
+          echo "Running health checks..."
+          # Add health check commands
+          # curl -f https://okada-admin.com/api/health || exit 1
+
+      - name: Create deployment record
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment?.id || 0,
+              state: 'success',
+              environment_url: 'https://okada-admin.com',
+              description: 'Production deployment successful'
+            });
+
+      - name: Notify team
+        if: success()
+        run: |
+          echo "🚀 Production deployment successful!"
+          echo "Version: ${{ github.event.release.tag_name || github.event.inputs.version }}"
+          echo "URL: https://okada-admin.com"

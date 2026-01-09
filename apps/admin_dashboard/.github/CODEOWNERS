@@ -1,0 +1,26 @@
+# Code Owners for Okada Admin Dashboard
+# These owners will be requested for review when someone opens a PR
+
+# Global owners (default)
+* @kimhons
+
+# Frontend
+/client/ @kimhons
+
+# Backend
+/server/ @kimhons
+
+# Database
+/drizzle/ @kimhons
+
+# CI/CD
+/.github/ @kimhons
+
+# Documentation
+*.md @kimhons
+/docs/ @kimhons
+
+# Configuration
+*.json @kimhons
+*.yml @kimhons
+*.yaml @kimhons

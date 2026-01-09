@@ -1,0 +1,143 @@
+name: okada_mobile
+repository: https://github.com/kimhons/okada-mobile
+
+packages:
+  - apps/*
+  - packages/dart/*
+
+ide:
+  intellij:
+    enabled: true
+
+command:
+  version:
+    branch: main
+    message: "chore: release %v"
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  # Analysis & Linting
+  analyze:
+    run: melos exec -- "flutter analyze --no-fatal-infos"
+    description: Analyze all packages
+
+  format:
+    run: melos exec -- "dart format --set-exit-if-changed ."
+    description: Format all packages
+
+  format:fix:
+    run: melos exec -- "dart format ."
+    description: Format and fix all packages
+
+  # Testing
+  test:
+    run: melos exec -- "flutter test"
+    description: Run tests in all packages
+    packageFilters:
+      dirExists: test
+
+  test:coverage:
+    run: melos exec -- "flutter test --coverage"
+    description: Run tests with coverage
+    packageFilters:
+      dirExists: test
+
+  # Code Generation
+  generate:
+    run: melos exec -- "dart run build_runner build --delete-conflicting-outputs"
+    description: Generate code for all packages
+    packageFilters:
+      dependsOn: build_runner
+
+  generate:watch:
+    run: melos exec -- "dart run build_runner watch --delete-conflicting-outputs"
+    description: Watch and generate code
+    packageFilters:
+      dependsOn: build_runner
+
+  # Localization
+  l10n:
+    run: melos exec -- "flutter gen-l10n"
+    description: Generate localization files
+    packageFilters:
+      fileExists: l10n.yaml
+
+  # Cleaning
+  clean:
+    run: melos exec -- "flutter clean"
+    description: Clean all packages
+
+  clean:deep:
+    run: |
+      melos clean
+      melos exec -- "rm -rf .dart_tool build .packages pubspec.lock"
+    description: Deep clean all packages
+
+  # Building
+  build:apk:
+    run: melos exec -- "flutter build apk --release"
+    description: Build release APK
+    packageFilters:
+      scope:
+        - customer_app
+        - rider_app
+
+  build:ios:
+    run: melos exec -- "flutter build ios --release --no-codesign"
+    description: Build release iOS
+    packageFilters:
+      scope:
+        - customer_app
+        - rider_app
+
+  build:web:
+    run: melos exec -- "flutter build web --release"
+    description: Build web release
+    packageFilters:
+      scope:
+        - seller_web
+
+  # Dependencies
+  deps:upgrade:
+    run: melos exec -- "flutter pub upgrade"
+    description: Upgrade dependencies
+
+  deps:outdated:
+    run: melos exec -- "flutter pub outdated"
+    description: Check outdated dependencies
+
+  # Quality Checks
+  check:
+    run: |
+      melos analyze
+      melos format
+      melos test
+    description: Run all quality checks
+
+  # CI/CD
+  ci:
+    run: |
+      melos bootstrap
+      melos analyze
+      melos test
+    description: Run CI pipeline
+
+  # App-specific commands
+  run:customer:
+    run: cd apps/customer_app && flutter run
+    description: Run customer app
+
+  run:rider:
+    run: cd apps/rider_app && flutter run
+    description: Run rider app
+
+  # Publishing (for packages)
+  publish:dry:
+    run: melos exec -- "dart pub publish --dry-run"
+    description: Dry run publish
+    packageFilters:
+      scope:
+        - okada_core
+        - okada_api
+        - okada_ui

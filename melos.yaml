@@ -1,0 +1,91 @@
+name: okada_mobile
+repository: https://github.com/kimhons/okada-mobile
+
+packages:
+  - apps/customer_app
+  - apps/rider_app
+  - packages/dart/*
+
+ide:
+  intellij:
+    enabled: true
+
+command:
+  version:
+    branch: main
+    message: "chore: release %v"
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  # Analysis & Linting
+  analyze:
+    run: melos exec -- "flutter analyze --no-fatal-infos"
+    description: Analyze all Flutter packages
+
+  format:
+    run: melos exec -- "dart format --set-exit-if-changed ."
+    description: Format all Dart packages
+
+  format:fix:
+    run: melos exec -- "dart format ."
+    description: Format and fix all Dart packages
+
+  # Testing
+  test:
+    run: melos exec -- "flutter test"
+    description: Run tests in all Flutter packages
+    packageFilters:
+      dirExists: test
+
+  test:coverage:
+    run: melos exec -- "flutter test --coverage"
+    description: Run tests with coverage
+    packageFilters:
+      dirExists: test
+
+  # Code Generation
+  generate:
+    run: melos exec -- "dart run build_runner build --delete-conflicting-outputs"
+    description: Generate code for all packages
+    packageFilters:
+      dependsOn: build_runner
+
+  # Cleaning
+  clean:
+    run: melos exec -- "flutter clean"
+    description: Clean all Flutter packages
+
+  # Building
+  build:apk:customer:
+    run: cd apps/customer_app && flutter build apk --release
+    description: Build customer app APK
+
+  build:apk:rider:
+    run: cd apps/rider_app && flutter build apk --release
+    description: Build rider app APK
+
+  build:ios:customer:
+    run: cd apps/customer_app && flutter build ios --release --no-codesign
+    description: Build customer app iOS
+
+  build:ios:rider:
+    run: cd apps/rider_app && flutter build ios --release --no-codesign
+    description: Build rider app iOS
+
+  # Running
+  run:customer:
+    run: cd apps/customer_app && flutter run
+    description: Run customer app
+
+  run:rider:
+    run: cd apps/rider_app && flutter run
+    description: Run rider app
+
+  # CI
+  ci:
+    run: |
+      melos bootstrap
+      melos analyze
+      melos test
+    description: Run CI pipeline

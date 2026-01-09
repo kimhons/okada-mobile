@@ -1,0 +1,13 @@
+packages:
+  # Web Applications
+  - 'apps/admin_web'
+  - 'apps/seller_web'
+  
+  # Backend Services
+  - 'services/*'
+  
+  # Shared Node.js Packages
+  - 'packages/node/*'
+  
+  # Infrastructure Tools
+  - 'tools/*'

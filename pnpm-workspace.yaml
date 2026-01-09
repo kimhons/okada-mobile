@@ -1,0 +1,10 @@
+packages:
+  # Web Applications
+  - 'apps/admin_dashboard'
+  - 'apps/merchant_portal'
+  
+  # Backend Services
+  - 'services/*'
+  
+  # Shared Node.js Packages
+  - 'packages/node/*'

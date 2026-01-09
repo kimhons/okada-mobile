@@ -1,0 +1,475 @@
+name: Okada Platform CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, staging]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+  FLUTTER_VERSION: '3.16.0'
+  MINIMUM_COVERAGE: 98
+
+jobs:
+  # Backend Services Testing
+  backend-test:
+    name: Backend Services Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - product-service
+          - order-service
+          - payment-service
+          - notification-service
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+      mongodb:
+        image: mongo:6
+        env:
+          MONGO_INITDB_ROOT_USERNAME: test
+          MONGO_INITDB_ROOT_PASSWORD: test
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/${{ matrix.service }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend/${{ matrix.service }}
+        run: npm ci
+
+      - name: Run linting
+        working-directory: backend/${{ matrix.service }}
+        run: npm run lint
+
+      - name: Run type checking
+        working-directory: backend/${{ matrix.service }}
+        run: npm run typecheck
+
+      - name: Run unit tests with coverage
+        working-directory: backend/${{ matrix.service }}
+        run: npm run test:coverage
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+          MONGODB_URI: mongodb://test:test@localhost:27017
+
+      - name: Check coverage threshold
+        working-directory: backend/${{ matrix.service }}
+        run: |
+          COVERAGE=$(npx nyc report --reporter=json-summary | jq '.total.lines.pct')
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < ${{ env.MINIMUM_COVERAGE }}" | bc -l) )); then
+            echo "Coverage $COVERAGE% is below minimum threshold of ${{ env.MINIMUM_COVERAGE }}%"
+            exit 1
+          fi
+
+      - name: Run integration tests
+        working-directory: backend/${{ matrix.service }}
+        run: npm run test:integration
+        env:
+          TEST_DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          TEST_REDIS_HOST: localhost
+          TEST_REDIS_PORT: 6379
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: backend/${{ matrix.service }}/coverage/lcov.info
+          flags: backend-${{ matrix.service }}
+          fail_ci_if_error: true
+
+  # Flutter Mobile Apps Testing
+  flutter-test:
+    name: Flutter Apps Test
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        app: [customer_app, rider_app]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+
+      - name: Get dependencies
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Run analyzer
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests with coverage
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter test --coverage
+
+      - name: Check coverage threshold
+        working-directory: mobile/${{ matrix.app }}
+        run: |
+          COVERAGE=$(lcov --summary coverage/lcov.info | grep "lines" | sed 's/.*: \([0-9.]*\)%.*/\1/')
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < ${{ env.MINIMUM_COVERAGE }}" | bc -l) )); then
+            echo "Coverage $COVERAGE% is below minimum threshold of ${{ env.MINIMUM_COVERAGE }}%"
+            exit 1
+          fi
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: mobile/${{ matrix.app }}/coverage/lcov.info
+          flags: mobile-${{ matrix.app }}
+
+  # Next.js Web Platform Testing
+  web-test:
+    name: Web Platform Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/merchant-platform/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web/merchant-platform
+        run: npm ci
+
+      - name: Run linting
+        working-directory: web/merchant-platform
+        run: npm run lint
+
+      - name: Run type checking
+        working-directory: web/merchant-platform
+        run: npm run type-check
+
+      - name: Run unit tests with coverage
+        working-directory: web/merchant-platform
+        run: npm run test:coverage
+
+      - name: Check coverage threshold
+        working-directory: web/merchant-platform
+        run: |
+          COVERAGE=$(npx nyc report --reporter=json-summary | jq '.total.lines.pct')
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < ${{ env.MINIMUM_COVERAGE }}" | bc -l) )); then
+            echo "Coverage $COVERAGE% is below minimum threshold of ${{ env.MINIMUM_COVERAGE }}%"
+            exit 1
+          fi
+
+      - name: Build application
+        working-directory: web/merchant-platform
+        run: npm run build
+
+      - name: Run E2E tests
+        working-directory: web/merchant-platform
+        run: npm run test:e2e
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: web/merchant-platform/coverage/lcov.info
+          flags: web-platform
+
+  # AI Brain Testing
+  ai-brain-test:
+    name: AI Brain Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('ai_brain/requirements.txt') }}
+
+      - name: Install dependencies
+        working-directory: ai_brain
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8 mypy black
+
+      - name: Run linting
+        working-directory: ai_brain
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          black --check .
+          mypy .
+
+      - name: Run tests with coverage
+        working-directory: ai_brain
+        run: pytest --cov=. --cov-report=xml --cov-report=term
+
+      - name: Check coverage threshold
+        working-directory: ai_brain
+        run: |
+          COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(float(root.get('line-rate')) * 100)")
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < ${{ env.MINIMUM_COVERAGE }}" | bc -l) )); then
+            echo "Coverage $COVERAGE% is below minimum threshold of ${{ env.MINIMUM_COVERAGE }}%"
+            exit 1
+          fi
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ai_brain/coverage.xml
+          flags: ai-brain
+
+  # Security Scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Run OWASP dependency check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'Okada Platform'
+          path: '.'
+          format: 'HTML'
+          args: >
+            --enableRetired
+            --enableExperimental
+
+  # Performance Testing
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup K6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        run: |
+          k6 run tests/performance/load-test.js --out json=results.json
+
+      - name: Analyze performance results
+        run: |
+          python tests/performance/analyze_results.py results.json
+
+  # Build and Push Docker Images
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    needs: [backend-test, flutter-test, web-test, ai-brain-test, security-scan]
+
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - product-service
+          - order-service
+          - payment-service
+          - notification-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: backend/${{ matrix.service }}
+          push: true
+          tags: |
+            okada/${{ matrix.service }}:latest
+            okada/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+    needs: docker-build
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: af-south-1
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster staging-cluster \
+            --service okada-backend \
+            --force-new-deployment
+
+      - name: Wait for deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster staging-cluster \
+            --services okada-backend
+
+      - name: Run smoke tests
+        run: |
+          npm run test:smoke -- --url https://staging-api.okada.cm
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: docker-build
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: af-south-1
+
+      - name: Blue-Green Deployment
+        run: |
+          ./scripts/deploy-blue-green.sh production
+
+      - name: Health check
+        run: |
+          ./scripts/health-check.sh https://api.okada.cm
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ./scripts/rollback.sh production
+
+  # Notification
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [backend-test, flutter-test, web-test, ai-brain-test, deploy-staging, deploy-production]
+
+    steps:
+      - name: Send Slack notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Pipeline: ${{ github.workflow }}
+            Status: ${{ job.status }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Send email notification
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: Pipeline Failed - ${{ github.workflow }}
+          to: tech.lead@okada.cm
+          from: ci-cd@okada.cm
+          body: |
+            Pipeline failed for commit ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            Check the logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -1,0 +1,36 @@
+Financial Overview Translation Keys
+===================================
+
+Namespace: financial
+
+Keys needed:
+1. title - "Financial Overview"
+2. description - "Track revenue, commissions, and payouts"
+3. last_updated - "Last updated"
+4. auto_refreshes - "Auto-refreshes every 30s"
+5. refresh - "Refresh"
+6. today - "Today"
+7. this_week - "This Week"
+8. this_month - "This Month"
+9. this_year - "This Year"
+10. total_revenue - "Total Revenue"
+11. commissions - "Commissions"
+12. payouts - "Payouts"
+13. orders - "Orders"
+14. vs_previous_period - "vs previous period"
+15. revenue_trends - "Revenue Trends"
+16. last_days - "Last {days} days"
+17. commission_breakdown - "Commission Breakdown"
+18. platform_commission - "Platform Commission"
+19. rider_commissions - "Rider Commissions"
+20. delivery_fees - "Delivery Fees"
+21. payout_status - "Payout Status"
+22. completed - "Completed"
+23. pending - "Pending"
+24. failed - "Failed"
+25. amount - "Amount"
+26. top_revenue_categories - "Top Revenue Categories"
+27. uncategorized - "Uncategorized"
+28. revenue_by_payment_method - "Revenue by Payment Method"
+29. unknown - "Unknown"
+30. no_data_available - "No data available"
