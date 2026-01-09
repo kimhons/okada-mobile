@@ -1416,3 +1416,12 @@
 - [x] Add NotificationBell component to dashboard header
 - [x] Add live rider location updates
 
+
+## Sprint 20: Notification Sound System
+
+### New Order Alert Sound
+- [x] Create notification sound audio file (new-order.wav - pleasant chime)
+- [x] Add sound playback to useOrderNotifications hook
+- [x] Add user preference for sound on/off with volume control
+- [x] Add sound toggle button to NotificationBell component
+- [x] Test sound system (14 tests passing)

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Wifi, WifiOff, X, Package, Truck, CheckCircle, AlertCircle } from "lucide-react";
+import { Bell, Wifi, WifiOff, Package, Truck, CheckCircle, AlertCircle, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -8,11 +8,27 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import { useOrderNotifications } from "@/hooks/useOrderNotifications";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function NotificationBell() {
-  const { isConnected, notifications, newOrders, clearNotifications, clearNewOrders } = useOrderNotifications();
+  const { 
+    isConnected, 
+    notifications, 
+    newOrders, 
+    clearNotifications, 
+    clearNewOrders,
+    soundEnabled,
+    toggleSound,
+    volume,
+    setVolume,
+  } = useOrderNotifications();
   const [open, setOpen] = useState(false);
 
   const totalUnread = notifications.length + newOrders.length;
@@ -72,21 +88,60 @@ export function NotificationBell() {
               <WifiOff className="h-4 w-4 text-red-500" />
             )}
           </div>
-          {totalUnread > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                clearNotifications();
-                clearNewOrders();
-              }}
-            >
-              Clear all
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {/* Sound toggle */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={toggleSound}
+                >
+                  {soundEnabled ? (
+                    <Volume2 className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <VolumeX className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {soundEnabled ? "Sound on - Click to mute" : "Sound off - Click to enable"}
+              </TooltipContent>
+            </Tooltip>
+            
+            {totalUnread > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  clearNotifications();
+                  clearNewOrders();
+                }}
+              >
+                Clear all
+              </Button>
+            )}
+          </div>
         </div>
 
-        <ScrollArea className="h-[300px]">
+        {/* Volume slider - only show when sound is enabled */}
+        {soundEnabled && (
+          <div className="px-4 py-2 border-b flex items-center gap-3">
+            <VolumeX className="h-3 w-3 text-muted-foreground" />
+            <Slider
+              value={[volume * 100]}
+              onValueChange={([val]) => setVolume(val / 100)}
+              max={100}
+              step={5}
+              className="flex-1"
+            />
+            <Volume2 className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground w-8">{Math.round(volume * 100)}%</span>
+          </div>
+        )}
+
+        <ScrollArea className="h-[280px]">
           {totalUnread === 0 ? (
             <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
               <Bell className="h-10 w-10 mb-2 opacity-50" />
@@ -94,6 +149,11 @@ export function NotificationBell() {
               <p className="text-xs mt-1">
                 {isConnected ? "You're connected for real-time updates" : "Reconnecting..."}
               </p>
+              {soundEnabled && (
+                <p className="text-xs mt-2 text-green-600 flex items-center gap-1">
+                  <Volume2 className="h-3 w-3" /> Sound alerts enabled
+                </p>
+              )}
             </div>
           ) : (
             <div className="divide-y">

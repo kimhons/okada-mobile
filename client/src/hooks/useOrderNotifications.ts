@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
@@ -38,6 +38,9 @@ interface RiderLocation {
   timestamp: Date;
 }
 
+const SOUND_ENABLED_KEY = "okada_notification_sound_enabled";
+const SOUND_VOLUME_KEY = "okada_notification_sound_volume";
+
 interface UseOrderNotificationsReturn {
   isConnected: boolean;
   notifications: OrderNotification[];
@@ -45,6 +48,11 @@ interface UseOrderNotificationsReturn {
   riderLocations: Map<number, RiderLocation>;
   clearNotifications: () => void;
   clearNewOrders: () => void;
+  // Sound controls
+  soundEnabled: boolean;
+  toggleSound: () => void;
+  volume: number;
+  setVolume: (volume: number) => void;
 }
 
 export function useOrderNotifications(): UseOrderNotificationsReturn {
@@ -53,6 +61,74 @@ export function useOrderNotifications(): UseOrderNotificationsReturn {
   const [notifications, setNotifications] = useState<OrderNotification[]>([]);
   const [newOrders, setNewOrders] = useState<NewOrderAlert[]>([]);
   const [riderLocations, setRiderLocations] = useState<Map<number, RiderLocation>>(new Map());
+  
+  // Sound state
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const stored = localStorage.getItem(SOUND_ENABLED_KEY);
+    return stored === null ? true : stored === "true";
+  });
+  
+  const [volume, setVolumeState] = useState<number>(() => {
+    if (typeof window === "undefined") return 0.7;
+    const stored = localStorage.getItem(SOUND_VOLUME_KEY);
+    return stored ? parseFloat(stored) : 0.7;
+  });
+
+  // Audio ref
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioInitialized = useRef(false);
+
+  // Initialize audio on first user interaction
+  const initializeAudio = useCallback(() => {
+    if (audioInitialized.current) return;
+    
+    try {
+      audioRef.current = new Audio("/sounds/new-order.wav");
+      audioRef.current.preload = "auto";
+      audioRef.current.volume = volume;
+      audioInitialized.current = true;
+      console.log("[NotificationSound] Audio initialized");
+    } catch (error) {
+      console.warn("[NotificationSound] Could not initialize audio:", error);
+    }
+  }, [volume]);
+
+  // Play notification sound
+  const playSound = useCallback(() => {
+    if (!soundEnabled) return;
+    
+    // Initialize audio if not done yet
+    if (!audioInitialized.current) {
+      initializeAudio();
+    }
+
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.volume = volume;
+      audioRef.current.play().catch((error) => {
+        console.warn("[NotificationSound] Playback failed:", error.message);
+      });
+    }
+  }, [soundEnabled, volume, initializeAudio]);
+
+  // Initialize audio on mount and user interaction
+  useEffect(() => {
+    const handleInteraction = () => {
+      initializeAudio();
+      // Remove listeners after first interaction
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("keydown", handleInteraction);
+    };
+
+    document.addEventListener("click", handleInteraction);
+    document.addEventListener("keydown", handleInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("keydown", handleInteraction);
+    };
+  }, [initializeAudio]);
 
   useEffect(() => {
     // Connect to WebSocket server
@@ -98,13 +174,8 @@ export function useOrderNotifications(): UseOrderNotificationsReturn {
       console.log("[WebSocket] New order alert:", data);
       setNewOrders((prev) => [data, ...prev.slice(0, 19)]); // Keep last 20
       
-      // Play notification sound (if available)
-      try {
-        const audio = new Audio("/sounds/new-order.mp3");
-        audio.play().catch(() => {}); // Ignore if audio fails
-      } catch (e) {
-        // Ignore audio errors
-      }
+      // Play notification sound
+      playSound();
       
       toast.success("New Order Received!", {
         description: `${data.orderNumber} - ${data.customerName || "Customer"} - ${(data.total / 100).toLocaleString()} FCFA`,
@@ -160,7 +231,7 @@ export function useOrderNotifications(): UseOrderNotificationsReturn {
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [playSound]);
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
@@ -170,6 +241,27 @@ export function useOrderNotifications(): UseOrderNotificationsReturn {
     setNewOrders([]);
   }, []);
 
+  const toggleSound = useCallback(() => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    localStorage.setItem(SOUND_ENABLED_KEY, String(newValue));
+    
+    // Play a test sound when enabling
+    if (newValue) {
+      setTimeout(() => playSound(), 100);
+    }
+  }, [soundEnabled, playSound]);
+
+  const setVolume = useCallback((newVolume: number) => {
+    const clampedVolume = Math.max(0, Math.min(1, newVolume));
+    setVolumeState(clampedVolume);
+    localStorage.setItem(SOUND_VOLUME_KEY, String(clampedVolume));
+    
+    if (audioRef.current) {
+      audioRef.current.volume = clampedVolume;
+    }
+  }, []);
+
   return {
     isConnected,
     notifications,
@@ -177,6 +269,10 @@ export function useOrderNotifications(): UseOrderNotificationsReturn {
     riderLocations,
     clearNotifications,
     clearNewOrders,
+    soundEnabled,
+    toggleSound,
+    volume,
+    setVolume,
   };
 }
 
