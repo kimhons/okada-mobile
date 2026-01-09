@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS dndSchedules (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  userId INT NOT NULL,\n  name VARCHAR(100) NOT NULL,\n  isActive BOOLEAN DEFAULT TRUE NOT NULL,\n  startTime VARCHAR(5) NOT NULL,\n  endTime VARCHAR(5) NOT NULL,\n  daysOfWeek VARCHAR(20) DEFAULT '0,1,2,3,4,5,6' NOT NULL,\n  muteSounds BOOLEAN DEFAULT TRUE NOT NULL,\n  muteDesktopNotifications BOOLEAN DEFAULT TRUE NOT NULL,\n  muteEmailNotifications BOOLEAN DEFAULT FALSE NOT NULL,\n  allowUrgent BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 345pWMaQPV1VyKp.a65a051686cd --database nUAKQyKDeRXRJaus4VQ4c7 --execute CREATE TABLE IF NOT EXISTS dndSchedules (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  userId INT NOT NULL,\n  name VARCHAR(100) NOT NULL,\n  isActive BOOLEAN DEFAULT TRUE NOT NULL,\n  startTime VARCHAR(5) NOT NULL,\n  endTime VARCHAR(5) NOT NULL,\n  daysOfWeek VARCHAR(20) DEFAULT '0,1,2,3,4,5,6' NOT NULL,\n  muteSounds BOOLEAN DEFAULT TRUE NOT NULL,\n  muteDesktopNotifications BOOLEAN DEFAULT TRUE NOT NULL,\n  muteEmailNotifications BOOLEAN DEFAULT FALSE NOT NULL,\n  allowUrgent BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1109
+}

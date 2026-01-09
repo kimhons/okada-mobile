@@ -2157,3 +2157,84 @@ export const smsLogs = mysqlTable("smsLogs", {
 
 export type SMSLog = typeof smsLogs.$inferSelect;
 export type InsertSMSLog = typeof smsLogs.$inferInsert;
+
+
+/**
+ * Do Not Disturb schedules for notification muting
+ */
+export const dndSchedules = mysqlTable("dndSchedules", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // User reference
+  userId: int("userId").notNull(),
+  
+  // Schedule details
+  name: varchar("name", { length: 100 }).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  
+  // Time settings (stored as HH:MM format)
+  startTime: varchar("startTime", { length: 5 }).notNull(), // e.g., "22:00"
+  endTime: varchar("endTime", { length: 5 }).notNull(), // e.g., "07:00"
+  
+  // Days of week (stored as comma-separated: "0,1,2,3,4,5,6" where 0=Sunday)
+  daysOfWeek: varchar("daysOfWeek", { length: 20 }).default("0,1,2,3,4,5,6").notNull(),
+  
+  // What to mute
+  muteSounds: boolean("muteSounds").default(true).notNull(),
+  muteDesktopNotifications: boolean("muteDesktopNotifications").default(true).notNull(),
+  muteEmailNotifications: boolean("muteEmailNotifications").default(false).notNull(),
+  
+  // Allow exceptions
+  allowUrgent: boolean("allowUrgent").default(true).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DNDSchedule = typeof dndSchedules.$inferSelect;
+export type InsertDNDSchedule = typeof dndSchedules.$inferInsert;
+
+
+/**
+ * Seller applications for onboarding workflow
+ */
+export const sellerApplications = mysqlTable("sellerApplications", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Applicant info
+  applicantName: varchar("applicantName", { length: 255 }).notNull(),
+  applicantEmail: varchar("applicantEmail", { length: 320 }).notNull(),
+  applicantPhone: varchar("applicantPhone", { length: 20 }).notNull(),
+  
+  // Business info
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  businessType: varchar("businessType", { length: 100 }).notNull(),
+  businessAddress: text("businessAddress").notNull(),
+  businessDescription: text("businessDescription"),
+  
+  // Documents (JSON array of URLs)
+  idDocument: text("idDocument"), // National ID or passport
+  businessLicense: text("businessLicense"),
+  taxCertificate: text("taxCertificate"),
+  proofOfAddress: text("proofOfAddress"),
+  
+  // Bank/Payment info
+  bankName: varchar("bankName", { length: 100 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 50 }),
+  mobileMoneyProvider: mysqlEnum("mobileMoneyProvider", ["mtn_money", "orange_money"]),
+  mobileMoneyNumber: varchar("mobileMoneyNumber", { length: 20 }),
+  
+  // Application status
+  status: mysqlEnum("status", ["pending", "under_review", "approved", "rejected", "requires_info"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewNotes: text("reviewNotes"),
+  rejectionReason: text("rejectionReason"),
+  
+  // Converted seller reference
+  sellerId: int("sellerId"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SellerApplication = typeof sellerApplications.$inferSelect;
+export type InsertSellerApplication = typeof sellerApplications.$inferInsert;

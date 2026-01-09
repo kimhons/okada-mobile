@@ -115,6 +115,114 @@ export const appRouter = router({
         );
       }),
 
+    bulkUpdateStatus: protectedProcedure
+      .input(z.object({
+        orderIds: z.array(z.number()).min(1),
+        status: z.string(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.bulkUpdateOrderStatus(
+          input.orderIds,
+          input.status,
+          ctx.user?.id || 0,
+          input.notes
+        );
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "bulk_update_order_status",
+          entityType: "orders",
+          details: `Bulk updated ${result.success} orders to ${input.status}`,
+        });
+        
+        return result;
+      }),
+
+    bulkAssignRider: protectedProcedure
+      .input(z.object({
+        orderIds: z.array(z.number()).min(1),
+        riderId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.bulkAssignRider(
+          input.orderIds,
+          input.riderId,
+          ctx.user?.id || 0
+        );
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "bulk_assign_rider",
+          entityType: "orders",
+          details: `Bulk assigned ${result.success} orders to rider ID: ${input.riderId}`,
+        });
+        
+        return result;
+      }),
+
+    assignToRider: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        riderId: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.assignOrderToRider(
+          input.orderId,
+          input.riderId,
+          ctx.user?.id || 0,
+          input.notes
+        );
+        
+        if (result.success) {
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "assign_order_to_rider",
+            entityType: "order",
+            entityId: input.orderId,
+            details: `Assigned order #${input.orderId} to rider: ${result.rider?.name}`,
+          });
+        }
+        
+        return result;
+      }),
+
+    unassignFromRider: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await db.unassignOrderFromRider(
+          input.orderId,
+          ctx.user?.id || 0,
+          input.reason
+        );
+        
+        if (success) {
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "unassign_order_from_rider",
+            entityType: "order",
+            entityId: input.orderId,
+            details: `Unassigned rider from order #${input.orderId}`,
+          });
+        }
+        
+        return { success };
+      }),
+
+    getRiderStats: protectedProcedure
+      .input(z.object({ riderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getRiderAssignmentStats(input.riderId);
+      }),
+
     getStatusHistory: protectedProcedure
       .input(z.object({ orderId: z.number() }))
       .query(async ({ input }) => {
@@ -6306,7 +6414,305 @@ export const appRouter = router({
       return await db.getTranslationCoverage();
     }),
   }),
-});
 
-export type AppRouter = typeof appRouter;
+  // Seller Applications Management
+  sellerApplications: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view seller applications');
+        }
+        return await db.getSellerApplications(input || {});
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view seller applications');
+        }
+        return await db.getSellerApplicationById(input.id);
+      }),
+    
+    create: publicProcedure
+      .input(z.object({
+        applicantName: z.string(),
+        applicantEmail: z.string().email(),
+        applicantPhone: z.string(),
+        businessName: z.string(),
+        businessType: z.string(),
+        businessAddress: z.string(),
+        businessDescription: z.string().optional(),
+        idDocument: z.string().optional(),
+        businessLicense: z.string().optional(),
+        taxCertificate: z.string().optional(),
+        proofOfAddress: z.string().optional(),
+        bankName: z.string().optional(),
+        bankAccountNumber: z.string().optional(),
+        mobileMoneyProvider: z.enum(["mtn_money", "orange_money"]).optional(),
+        mobileMoneyNumber: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createSellerApplication(input);
+        return { id };
+      }),
+    
+    approve: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        reviewNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can approve applications');
+        }
+        const result = await db.approveSellerApplication(input.id, ctx.user.id, input.reviewNotes);
+        
+        if (result.success) {
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "approve_seller_application",
+            entityType: "seller_application",
+            entityId: input.id,
+            details: `Approved seller application ID: ${input.id}`,
+          });
+        }
+        
+        return result;
+      }),
+    
+    reject: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        rejectionReason: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can reject applications');
+        }
+        const success = await db.rejectSellerApplication(input.id, ctx.user.id, input.rejectionReason);
+        
+        if (success) {
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "reject_seller_application",
+            entityType: "seller_application",
+            entityId: input.id,
+            details: `Rejected seller application ID: ${input.id}`,
+          });
+        }
+        
+        return { success };
+      }),
+    
+    requestInfo: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        reviewNotes: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can request more info');
+        }
+        const success = await db.requestMoreInfoForApplication(input.id, ctx.user.id, input.reviewNotes);
+        
+        if (success) {
+          await db.logActivity({
+            adminId: ctx.user.id,
+            adminName: ctx.user.name || "Unknown",
+            action: "request_info_seller_application",
+            entityType: "seller_application",
+            entityId: input.id,
+            details: `Requested more info for application ID: ${input.id}`,
+          });
+        }
+        
+        return { success };
+      }),
+  }),
+
+  // Do Not Disturb Schedule Management
+  dnd: router({
+    getSchedules: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getDNDSchedules(ctx.user.id);
+      }),
+    
+    getScheduleById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getDNDScheduleById(input.id);
+      }),
+    
+    createSchedule: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/),
+        daysOfWeek: z.string().optional(),
+        muteSounds: z.boolean().optional(),
+        muteDesktopNotifications: z.boolean().optional(),
+        muteEmailNotifications: z.boolean().optional(),
+        allowUrgent: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createDNDSchedule({
+          userId: ctx.user.id,
+          ...input,
+        });
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "create_dnd_schedule",
+          entityType: "dnd_schedule",
+          details: `Created DND schedule: ${input.name}`,
+        });
+        
+        return { id };
+      }),
+    
+    updateSchedule: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        daysOfWeek: z.string().optional(),
+        muteSounds: z.boolean().optional(),
+        muteDesktopNotifications: z.boolean().optional(),
+        muteEmailNotifications: z.boolean().optional(),
+        allowUrgent: z.boolean().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { id, ...updates } = input;
+        const success = await db.updateDNDSchedule(id, updates);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "update_dnd_schedule",
+          entityType: "dnd_schedule",
+          entityId: id,
+          details: `Updated DND schedule ID: ${id}`,
+        });
+        
+        return { success };
+      }),
+    
+    deleteSchedule: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await db.deleteDNDSchedule(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "delete_dnd_schedule",
+          entityType: "dnd_schedule",
+          entityId: input.id,
+          details: `Deleted DND schedule ID: ${input.id}`,
+        });
+        
+        return { success };
+      }),
+    
+    toggleSchedule: protectedProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await db.toggleDNDSchedule(input.id, input.isActive);
+        return { success };
+      }),
+    
+    checkStatus: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.isInDNDPeriod(ctx.user.id);
+      }),
+  }),
+
+  // SMS Logs Management
+  smsLogs: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        recipient: z.string().optional(),
+        orderId: z.number().optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view SMS logs');
+        }
+        return await db.getSMSLogs(input || {});
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view SMS logs');
+        }
+        return await db.getSMSLogById(input.id);
+      }),
+    
+    getStats: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view SMS stats');
+        }
+        return await db.getSMSStats();
+      }),
+    
+    retry: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can retry SMS delivery');
+        }
+        const success = await db.retrySMSDelivery(input.id);
+        
+        await db.logActivity({
+          adminId: ctx.user.id,
+          adminName: ctx.user.name || "Unknown",
+          action: "retry_sms",
+          entityType: "sms_log",
+          entityId: input.id,
+          details: `Retried SMS delivery for log ID: ${input.id}`,
+        });
+        
+        return { success };
+      }),
+    
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["sent", "delivered", "failed", "pending", "rejected"]),
+        errorMessage: z.string().optional(),
+        deliveredAt: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update SMS status');
+        }
+        const success = await db.updateSMSLogStatus(
+          input.id,
+          input.status,
+          input.errorMessage,
+          input.deliveredAt
+        );
+        return { success };
+      }),
+  }),
+});
+export type AppRouter = typeof appRouter;;
 

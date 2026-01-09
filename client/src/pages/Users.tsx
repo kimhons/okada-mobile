@@ -27,15 +27,18 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, UserCircle, ShoppingBag, Calendar, FileSpreadsheet } from "lucide-react";
+import { Search, UserCircle, ShoppingBag, Calendar, FileSpreadsheet, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { exportUsersToExcel } from "@/lib/exportUtils";
+import { SuspensionDialog } from "@/components/SuspensionDialog";
 
 export default function Users() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [suspensionUserId, setSuspensionUserId] = useState<number | null>(null);
+  const [suspensionUserName, setSuspensionUserName] = useState<string>("");
 
   const { data: users = [], isLoading, refetch } = trpc.users.list.useQuery({
     search,
@@ -186,13 +189,26 @@ export default function Users() {
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
                       <TableCell>{formatDate(user.lastSignedIn)}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedUserId(user.id)}
-                        >
-                          {t('users:view_details')}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedUserId(user.id)}
+                          >
+                            {t('users:view_details')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSuspensionUserId(user.id);
+                              setSuspensionUserName(user.name || "Unknown User");
+                            }}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -345,6 +361,20 @@ export default function Users() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Suspension Dialog */}
+      {suspensionUserId && (
+        <SuspensionDialog
+          userId={suspensionUserId}
+          userName={suspensionUserName}
+          isOpen={!!suspensionUserId}
+          onClose={() => {
+            setSuspensionUserId(null);
+            setSuspensionUserName("");
+          }}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 }

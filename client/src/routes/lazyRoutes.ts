@@ -78,3 +78,5 @@ export const LazyTranslationManagement = lazy(() => import("@/pages/TranslationM
 export const LazyInventoryAlerts = lazy(() => import("@/pages/InventoryAlerts"));
 export const LazyCustomerFeedbackAnalysis = lazy(() => import("@/pages/CustomerFeedbackAnalysis"));
 export const LazyTransactionHistory = lazy(() => import("@/pages/TransactionHistory"));
+export const LazySMSLogs = lazy(() => import("@/pages/SMSLogs"));
+export const LazySellerOnboarding = lazy(() => import("@/pages/SellerOnboarding"));

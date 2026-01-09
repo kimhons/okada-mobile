@@ -8302,3 +8302,684 @@ export async function getOrderEditHistory(orderId: number) {
     .where(eq(orderEditHistory.orderId, orderId))
     .orderBy(desc(orderEditHistory.createdAt));
 }
+
+// ============================================================================
+// SMS Logs Management
+// ============================================================================
+
+import { smsLogs, InsertSMSLog, SMSLog } from "../drizzle/schema";
+
+export async function getSMSLogs(options: {
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+  recipient?: string;
+  orderId?: number;
+  limit?: number;
+  offset?: number;
+}): Promise<SMSLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    let query = db.select().from(smsLogs);
+    const conditions = [];
+
+    if (options.status && options.status !== 'all') {
+      conditions.push(eq(smsLogs.status, options.status as "sent" | "delivered" | "failed" | "pending" | "rejected"));
+    }
+    if (options.startDate) {
+      conditions.push(gte(smsLogs.sentAt, options.startDate));
+    }
+    if (options.endDate) {
+      conditions.push(lte(smsLogs.sentAt, options.endDate));
+    }
+    if (options.recipient) {
+      conditions.push(like(smsLogs.recipient, `%${options.recipient}%`));
+    }
+    if (options.orderId) {
+      conditions.push(eq(smsLogs.orderId, options.orderId));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const result = await query
+      .orderBy(desc(smsLogs.sentAt))
+      .limit(options.limit || 50)
+      .offset(options.offset || 0);
+
+    return result;
+  } catch (error) {
+    console.error('[Database] Failed to get SMS logs:', error);
+    return [];
+  }
+}
+
+export async function getSMSLogById(id: number): Promise<SMSLog | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.select().from(smsLogs).where(eq(smsLogs.id, id)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error('[Database] Failed to get SMS log by ID:', error);
+    return null;
+  }
+}
+
+export async function createSMSLog(log: InsertSMSLog): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(smsLogs).values(log);
+    return result[0].insertId;
+  } catch (error) {
+    console.error('[Database] Failed to create SMS log:', error);
+    return null;
+  }
+}
+
+export async function updateSMSLogStatus(
+  id: number,
+  status: "sent" | "delivered" | "failed" | "pending" | "rejected",
+  errorMessage?: string,
+  deliveredAt?: Date
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    const updateData: Partial<SMSLog> = { status };
+    if (errorMessage) updateData.errorMessage = errorMessage;
+    if (deliveredAt) updateData.deliveredAt = deliveredAt;
+
+    await db.update(smsLogs).set(updateData).where(eq(smsLogs.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to update SMS log status:', error);
+    return false;
+  }
+}
+
+export async function getSMSStats(): Promise<{
+  total: number;
+  sent: number;
+  delivered: number;
+  failed: number;
+  pending: number;
+}> {
+  const db = await getDb();
+  if (!db) return { total: 0, sent: 0, delivered: 0, failed: 0, pending: 0 };
+
+  try {
+    const allLogs = await db.select().from(smsLogs);
+    const stats = {
+      total: allLogs.length,
+      sent: allLogs.filter(l => l.status === 'sent').length,
+      delivered: allLogs.filter(l => l.status === 'delivered').length,
+      failed: allLogs.filter(l => l.status === 'failed').length,
+      pending: allLogs.filter(l => l.status === 'pending').length,
+    };
+    return stats;
+  } catch (error) {
+    console.error('[Database] Failed to get SMS stats:', error);
+    return { total: 0, sent: 0, delivered: 0, failed: 0, pending: 0 };
+  }
+}
+
+export async function retrySMSDelivery(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Reset status to pending for retry
+    await db.update(smsLogs).set({ 
+      status: 'pending',
+      errorMessage: null,
+    }).where(eq(smsLogs.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to retry SMS delivery:', error);
+    return false;
+  }
+}
+
+// ============================================================================
+// Do Not Disturb Schedule Management
+// ============================================================================
+
+import { dndSchedules, InsertDNDSchedule, DNDSchedule } from "../drizzle/schema";
+
+export async function getDNDSchedules(userId: number): Promise<DNDSchedule[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db.select().from(dndSchedules).where(eq(dndSchedules.userId, userId));
+  } catch (error) {
+    console.error('[Database] Failed to get DND schedules:', error);
+    return [];
+  }
+}
+
+export async function getDNDScheduleById(id: number): Promise<DNDSchedule | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.select().from(dndSchedules).where(eq(dndSchedules.id, id)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error('[Database] Failed to get DND schedule by ID:', error);
+    return null;
+  }
+}
+
+export async function createDNDSchedule(schedule: InsertDNDSchedule): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(dndSchedules).values(schedule);
+    return result[0].insertId;
+  } catch (error) {
+    console.error('[Database] Failed to create DND schedule:', error);
+    return null;
+  }
+}
+
+export async function updateDNDSchedule(id: number, updates: Partial<InsertDNDSchedule>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(dndSchedules).set(updates).where(eq(dndSchedules.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to update DND schedule:', error);
+    return false;
+  }
+}
+
+export async function deleteDNDSchedule(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.delete(dndSchedules).where(eq(dndSchedules.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to delete DND schedule:', error);
+    return false;
+  }
+}
+
+export async function toggleDNDSchedule(id: number, isActive: boolean): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(dndSchedules).set({ isActive }).where(eq(dndSchedules.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to toggle DND schedule:', error);
+    return false;
+  }
+}
+
+export async function isInDNDPeriod(userId: number): Promise<{ isDND: boolean; schedule: DNDSchedule | null }> {
+  const db = await getDb();
+  if (!db) return { isDND: false, schedule: null };
+
+  try {
+    const schedules = await db.select().from(dndSchedules)
+      .where(and(
+        eq(dndSchedules.userId, userId),
+        eq(dndSchedules.isActive, true)
+      ));
+
+    const now = new Date();
+    const currentDay = now.getDay(); // 0-6, Sunday = 0
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    for (const schedule of schedules) {
+      const days = schedule.daysOfWeek.split(',').map(Number);
+      if (!days.includes(currentDay)) continue;
+
+      const { startTime, endTime } = schedule;
+      
+      // Handle overnight schedules (e.g., 22:00 - 07:00)
+      if (startTime > endTime) {
+        if (currentTime >= startTime || currentTime <= endTime) {
+          return { isDND: true, schedule };
+        }
+      } else {
+        if (currentTime >= startTime && currentTime <= endTime) {
+          return { isDND: true, schedule };
+        }
+      }
+    }
+
+    return { isDND: false, schedule: null };
+  } catch (error) {
+    console.error('[Database] Failed to check DND period:', error);
+    return { isDND: false, schedule: null };
+  }
+}
+
+// ============================================================================
+// Seller Application Management
+// ============================================================================
+
+import { sellerApplications, InsertSellerApplication, SellerApplication } from "../drizzle/schema";
+
+export async function getSellerApplications(options?: {
+  status?: string;
+  search?: string;
+}): Promise<SellerApplication[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    let query = db.select().from(sellerApplications);
+    const conditions = [];
+
+    if (options?.status && options.status !== 'all') {
+      conditions.push(eq(sellerApplications.status, options.status as any));
+    }
+    if (options?.search) {
+      conditions.push(
+        or(
+          like(sellerApplications.businessName, `%${options.search}%`),
+          like(sellerApplications.applicantName, `%${options.search}%`),
+          like(sellerApplications.applicantEmail, `%${options.search}%`)
+        )
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    return await query.orderBy(desc(sellerApplications.createdAt));
+  } catch (error) {
+    console.error('[Database] Failed to get seller applications:', error);
+    return [];
+  }
+}
+
+export async function getSellerApplicationById(id: number): Promise<SellerApplication | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.select().from(sellerApplications).where(eq(sellerApplications.id, id)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error('[Database] Failed to get seller application by ID:', error);
+    return null;
+  }
+}
+
+export async function createSellerApplication(application: InsertSellerApplication): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(sellerApplications).values(application);
+    return result[0].insertId;
+  } catch (error) {
+    console.error('[Database] Failed to create seller application:', error);
+    return null;
+  }
+}
+
+export async function updateSellerApplication(id: number, updates: Partial<InsertSellerApplication>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(sellerApplications).set(updates).where(eq(sellerApplications.id, id));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to update seller application:', error);
+    return false;
+  }
+}
+
+export async function approveSellerApplication(
+  applicationId: number,
+  reviewerId: number,
+  reviewNotes?: string
+): Promise<{ success: boolean; sellerId?: number }> {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    // Get the application
+    const application = await getSellerApplicationById(applicationId);
+    if (!application) return { success: false };
+
+    // Create seller from application
+    const sellerResult = await db.insert(sellers).values({
+      userId: 0, // Will be linked when user registers
+      businessName: application.businessName,
+      businessType: application.businessType,
+      businessAddress: application.businessAddress,
+      businessPhone: application.applicantPhone,
+      businessEmail: application.applicantEmail,
+      bankName: application.bankName,
+      bankAccountNumber: application.bankAccountNumber,
+      mobileMoneyProvider: application.mobileMoneyProvider,
+      mobileMoneyNumber: application.mobileMoneyNumber,
+      status: 'approved',
+      verificationDocuments: JSON.stringify([
+        application.idDocument,
+        application.businessLicense,
+        application.taxCertificate,
+        application.proofOfAddress,
+      ].filter(Boolean)),
+    });
+
+    const sellerId = sellerResult[0].insertId;
+
+    // Update application status
+    await db.update(sellerApplications).set({
+      status: 'approved',
+      reviewedBy: reviewerId,
+      reviewedAt: new Date(),
+      reviewNotes,
+      sellerId,
+    }).where(eq(sellerApplications.id, applicationId));
+
+    return { success: true, sellerId };
+  } catch (error) {
+    console.error('[Database] Failed to approve seller application:', error);
+    return { success: false };
+  }
+}
+
+export async function rejectSellerApplication(
+  applicationId: number,
+  reviewerId: number,
+  rejectionReason: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(sellerApplications).set({
+      status: 'rejected',
+      reviewedBy: reviewerId,
+      reviewedAt: new Date(),
+      rejectionReason,
+    }).where(eq(sellerApplications.id, applicationId));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to reject seller application:', error);
+    return false;
+  }
+}
+
+export async function requestMoreInfoForApplication(
+  applicationId: number,
+  reviewerId: number,
+  reviewNotes: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(sellerApplications).set({
+      status: 'requires_info',
+      reviewedBy: reviewerId,
+      reviewedAt: new Date(),
+      reviewNotes,
+    }).where(eq(sellerApplications.id, applicationId));
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to request more info:', error);
+    return false;
+  }
+}
+
+// ============================================================================
+// Bulk Order Operations
+// ============================================================================
+
+export async function bulkUpdateOrderStatus(
+  orderIds: number[],
+  status: string,
+  updatedBy: number,
+  notes?: string
+): Promise<{ success: number; failed: number }> {
+  const db = await getDb();
+  if (!db) return { success: 0, failed: orderIds.length };
+
+  let success = 0;
+  let failed = 0;
+
+  try {
+    for (const orderId of orderIds) {
+      try {
+        await db.update(orders).set({ 
+          status: status as any,
+          updatedAt: new Date() 
+        }).where(eq(orders.id, orderId));
+        
+        // Log status change
+        await db.insert(orderStatusHistory).values({
+          orderId,
+          newStatus: status,
+          changedBy: updatedBy,
+          changedByType: 'admin' as const,
+          notes: notes || `Bulk status update to ${status}`,
+        });
+        
+        success++;
+      } catch (error) {
+        console.error(`Failed to update order ${orderId}:`, error);
+        failed++;
+      }
+    }
+
+    return { success, failed };
+  } catch (error) {
+    console.error('[Database] Failed to bulk update orders:', error);
+    return { success: 0, failed: orderIds.length };
+  }
+}
+
+export async function bulkAssignRider(
+  orderIds: number[],
+  riderId: number,
+  updatedBy: number
+): Promise<{ success: number; failed: number }> {
+  const db = await getDb();
+  if (!db) return { success: 0, failed: orderIds.length };
+
+  let success = 0;
+  let failed = 0;
+
+  try {
+    for (const orderId of orderIds) {
+      try {
+        await db.update(orders).set({ 
+          riderId,
+          status: 'rider_assigned' as any,
+          updatedAt: new Date() 
+        }).where(eq(orders.id, orderId));
+        
+        // Log status change
+        await db.insert(orderStatusHistory).values({
+          orderId,
+          newStatus: 'rider_assigned',
+          changedBy: updatedBy,
+          changedByType: 'admin' as const,
+          riderId,
+          notes: `Bulk assigned to rider ID: ${riderId}`,
+        });
+        
+        success++;
+      } catch (error) {
+        console.error(`Failed to assign rider to order ${orderId}:`, error);
+        failed++;
+      }
+    }
+
+    return { success, failed };
+  } catch (error) {
+    console.error('[Database] Failed to bulk assign rider:', error);
+    return { success: 0, failed: orderIds.length };
+  }
+}
+
+// ============================================================================
+// Order Assignment to Riders
+// ============================================================================
+
+export async function assignOrderToRider(
+  orderId: number,
+  riderId: number,
+  assignedBy: number,
+  notes?: string
+): Promise<{ success: boolean; order?: any; rider?: any }> {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  try {
+    // Get current order
+    const order = await getOrderById(orderId);
+    if (!order) {
+      return { success: false };
+    }
+
+    // Get rider info
+    const riderResult = await db.select().from(riders).where(eq(riders.id, riderId)).limit(1);
+    if (riderResult.length === 0) {
+      return { success: false };
+    }
+    const rider = riderResult[0];
+
+    // Check if rider is available (approved status)
+    if (rider.status !== 'approved') {
+      return { success: false };
+    }
+
+    const previousStatus = order.status;
+
+    // Update order with rider assignment
+    await db.update(orders).set({
+      riderId,
+      status: 'rider_assigned' as any,
+      updatedAt: new Date(),
+    }).where(eq(orders.id, orderId));
+
+    // Log status change
+    await db.insert(orderStatusHistory).values({
+      orderId,
+      previousStatus,
+      newStatus: 'rider_assigned',
+      changedBy: assignedBy,
+      changedByType: 'admin' as const,
+      riderId,
+      notes: notes || `Assigned to ${rider.name}`,
+    });
+
+    // Get updated order
+    const updatedOrder = await getOrderById(orderId);
+
+    return { success: true, order: updatedOrder, rider };
+  } catch (error) {
+    console.error('[Database] Failed to assign order to rider:', error);
+    return { success: false };
+  }
+}
+
+export async function unassignOrderFromRider(
+  orderId: number,
+  unassignedBy: number,
+  reason?: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Get current order
+    const order = await getOrderById(orderId);
+    if (!order) return false;
+
+    const previousStatus = order.status;
+
+    // Update order to remove rider
+    await db.update(orders).set({
+      riderId: null,
+      status: 'confirmed' as any,
+      updatedAt: new Date(),
+    }).where(eq(orders.id, orderId));
+
+    // Log status change
+    await db.insert(orderStatusHistory).values({
+      orderId,
+      previousStatus,
+      newStatus: 'confirmed',
+      changedBy: unassignedBy,
+      changedByType: 'admin' as const,
+      notes: reason || 'Rider unassigned',
+    });
+
+    return true;
+  } catch (error) {
+    console.error('[Database] Failed to unassign order from rider:', error);
+    return false;
+  }
+}
+
+export async function getRiderAssignmentStats(riderId: number): Promise<{
+  activeOrders: number;
+  completedToday: number;
+  totalDeliveries: number;
+}> {
+  const db = await getDb();
+  if (!db) return { activeOrders: 0, completedToday: 0, totalDeliveries: 0 };
+
+  try {
+    // Get active orders count
+    const activeResult = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(orders)
+      .where(and(
+        eq(orders.riderId, riderId),
+        inArray(orders.status, ['rider_assigned', 'in_transit', 'quality_verification'] as any)
+      ));
+
+    // Get completed today count
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const completedResult = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(orders)
+      .where(and(
+        eq(orders.riderId, riderId),
+        eq(orders.status, 'delivered' as any),
+        gte(orders.updatedAt, today)
+      ));
+
+    // Get rider total deliveries
+    const riderResult = await db.select({ totalDeliveries: riders.totalDeliveries })
+      .from(riders)
+      .where(eq(riders.id, riderId))
+      .limit(1);
+
+    return {
+      activeOrders: Number(activeResult[0]?.count || 0),
+      completedToday: Number(completedResult[0]?.count || 0),
+      totalDeliveries: riderResult[0]?.totalDeliveries || 0,
+    };
+  } catch (error) {
+    console.error('[Database] Failed to get rider assignment stats:', error);
+    return { activeOrders: 0, completedToday: 0, totalDeliveries: 0 };
+  }
+}

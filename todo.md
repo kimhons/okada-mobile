@@ -1487,3 +1487,74 @@
 - [x] Verify all 10 tasks complete
 - [x] Save checkpoint
 - [ ] Save checkpoint
+
+---
+
+## 🎯 Current Sprint: Sprint 22 - Enhanced Features & UX Improvements
+
+### Task 1: Integrate lazy routes into App.tsx with Suspense
+- [x] Import lazy route components from lazyRoutes.ts
+- [x] Wrap routes in Suspense with PageLoader fallback
+- [x] Test all routes load correctly with code splitting
+- [x] Write unit tests for route loading (11 tests passing)
+
+### Task 2: Add suspension UI to Users page
+- [x] Add suspend/unsuspend buttons to user detail dialog
+- [x] Create suspension dialog with duration options
+- [x] Display suspension status and history
+- [x] Test suspension workflow end-to-end (12 tests passing)
+
+### Task 3: Create SMS Logs page for delivery tracking
+- [x] Create SMSLogs page component
+- [x] Display SMS delivery status (sent, delivered, failed)
+- [x] Add filtering by status, date, recipient
+- [x] Add retry functionality for failed messages
+- [x] Write unit tests (17 tests passing)
+
+### Task 4: Add different notification sounds for event types
+- [x] Create delivery completion sound (delivery-complete.wav)
+- [x] Create rider assignment sound (rider-assigned.wav)
+- [x] Create urgent alert sound (urgent-alert.wav)
+- [x] Update useNotificationSound hook with multiple sound types
+- [x] Add sound selection in notification preferences
+- [x] Write unit tests (23 tests passing)
+
+### Task 5: Implement browser desktop notification permissions
+- [x] Request notification permission on first interaction
+- [x] Show desktop notifications for new orders
+- [x] Add notification settings in preferences (DesktopNotificationSettings component)
+- [x] Handle permission denied state gracefully
+- [x] Write unit tests (21 tests passing)
+
+### Task 6: Add Do Not Disturb schedule feature
+- [x] Create DND schedule table in database (dndSchedules)
+- [x] Add DND settings UI in notification preferences (DNDSettings component)
+- [x] Implement time-based notification muting (isInDNDPeriod function)
+- [x] Show DND status indicator in header
+- [x] Write unit tests (19 tests passing)
+
+### Task 7: Create Seller Onboarding workflow
+- [x] Create seller application form (sellerApplications table)
+- [x] Add document upload for verification (idDocument, businessLicense, etc.)
+- [x] Implement approval workflow for admins (approve/reject/requestInfo)
+- [x] Create SellerOnboarding page with full workflow UI
+- [x] Write unit tests (17 tests passing)
+### Task 8: Add bulk order status updates
+- [x] Add checkbox selection to orders table (BulkOrderActions component)
+- [x] Create bulk action dropdown (update status, assign rider)
+- [x] Implement bulk status update procedure (bulkUpdateStatus, bulkAssignRider)
+- [x] Show progress indicator for bulk operations
+- [x] Write unit tests (20 tests passing)
+
+### Task 9: Implement order assignment to riders
+- [x] Add rider selection dropdown in order details (RiderAssignment component)
+- [x] Create assignOrderToRider procedure (with stats and unassign)
+- [x] Log assignment in order status history
+- [x] Update order tracking with rider info
+- [x] Write unit tests (23 tests passing)
+
+### Task 10: Final testing and checkpoint
+- [x] Run all Sprint 22 tests (163 tests passing across 9 test files)
+- [x] Verify all 10 tasks complete
+- [x] Save checkpoint
+

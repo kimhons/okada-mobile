@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OfflineIndicator } from "./components/OfflineIndicator";
@@ -7,80 +8,115 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useI18nLoader } from "./hooks/useI18nLoader";
 import DashboardLayout from "./components/DashboardLayout";
+import { PageLoader } from "./components/PageLoader";
+
+// Core pages - eager load for fast initial access
 import Home from "./pages/Home";
 import Orders from "./pages/Orders";
 import Users from "./pages/Users";
 import Riders from "./pages/Riders";
 import Products from "./pages/Products";
+import Sellers from "./pages/Sellers";
+
+// Lazy-loaded pages for code splitting
+import {
+  LazyGeoAnalytics,
+  LazyAdvancedReporting,
+  LazyQualityPhotoAnalytics,
+  LazyRevenueAnalytics,
+  LazyMobileMoneyAnalytics,
+  LazyTransactionAnalytics,
+  LazyPlatformStatistics,
+  LazyAdminUsers,
+  LazyAuditTrail,
+  LazyBackupRestore,
+  LazyAPIManagement,
+  LazySystemSettings,
+  LazySecurityMonitoring,
+  LazySystemHealth,
+  LazyTaxCompliance,
+  LazyPromotionalCampaigns,
+  LazyCouponManagement,
+  LazyLoyaltyProgram,
+  LazyReferralProgram,
+  LazyABTesting,
+  LazySEOManagement,
+  LazyFAQManagement,
+  LazyHelpDocumentation,
+  LazySupportTickets,
+  LazySupportTicketDetail,
+  LazyPushNotifications,
+  LazyEmailTemplates,
+  LazyNotificationPreferences,
+  LazyNotificationHistory,
+  LazyRiderLeaderboard,
+  LazyRiderTrainingTracker,
+  LazyRiderAvailabilityCalendar,
+  LazyRiderEarningsBreakdown,
+  LazyBadgeShowcase,
+  LazyShiftScheduling,
+  LazyReportBuilder,
+  LazyScheduledReports,
+  LazyDataExport,
+  LazyContentModeration,
+  LazyModerationGuidelines,
+  LazyFraudDetection,
+  LazyUserVerification,
+  LazyDisputeResolution,
+  LazyLiveDashboard,
+  LazyOrderTrackingMap,
+  LazyIncidentManagement,
+  LazyTranslationManagement,
+  LazyInventoryAlerts,
+  LazyCustomerFeedbackAnalysis,
+  LazyTransactionHistory,
+  LazySMSLogs,
+  LazySellerOnboarding,
+} from "./routes/lazyRoutes";
+
+// Pages that don't have lazy versions yet - keep eager imports
 import Analytics from "./pages/Analytics";
 import QualityVerification from "./pages/QualityVerification";
-import QualityPhotoAnalytics from "./pages/QualityPhotoAnalytics";
-import Sellers from "./pages/Sellers";
 import SellerDetail from "./pages/SellerDetail";
 import FinancialOverview from "./pages/FinancialOverview";
 import CommissionSettings from "./pages/CommissionSettings";
 import PaymentTransactions from "./pages/PaymentTransactions";
 import PayoutManagement from "./pages/PayoutManagement";
-import RevenueAnalytics from "./pages/RevenueAnalytics";
-import MobileMoneyAnalytics from "./pages/MobileMoneyAnalytics";
 import DeliveryZones from "./pages/DeliveryZones";
 import CustomerSupport from "./pages/CustomerSupport";
-import SupportTicketDetail from "./pages/SupportTicketDetail";
 import NotificationsCenter from "./pages/NotificationsCenter";
-import NotificationHistory from "./pages/NotificationHistory";
 import ActivityLog from "./pages/ActivityLog";
-import PromotionalCampaigns from "./pages/promotional-campaigns";
-import AdminUsers from "./pages/admin-users";
-import AuditTrail from "./pages/audit-trail";
-import BackupRestore from "./pages/backup-restore";
-import APIManagement from "./pages/api-management";
-import FAQManagement from "./pages/faq-management";
-import SupportTickets from "./pages/support-tickets";
-import HelpDocumentation from "./pages/help-documentation";
-import ReportBuilder from "./pages/report-builder";
-import ScheduledReports from "./pages/scheduled-reports";
-import DataExport from "./pages/data-export";
-import PushNotifications from "./pages/push-notifications";
-import EmailTemplates from "./pages/email-templates";
-import NotificationPreferences from "./pages/notification-preferences";
-import CouponManagement from "./pages/coupon-management";
-import LoyaltyProgram from "./pages/loyalty-program";
-import TransactionHistory from "./pages/TransactionHistory";
-import TransactionAnalytics from "./pages/TransactionAnalytics";
-import OrderTrackingMap from "./pages/OrderTrackingMap";
-import InventoryAlerts from "./pages/InventoryAlerts";
-import TranslationManagement from "./pages/TranslationManagement";
-import UserVerification from "./pages/UserVerification";
-import PlatformStatistics from "./pages/PlatformStatistics";
-import DisputeResolution from "./pages/DisputeResolution";
-import SystemSettings from "./pages/SystemSettings";
-import ContentModeration from "./pages/ContentModeration";
-import FraudDetection from "./pages/FraudDetection";
-import LiveDashboard from "./pages/LiveDashboard";
-import IncidentManagement from "./pages/IncidentManagement";
-import CustomerFeedbackAnalysis from "./pages/CustomerFeedbackAnalysis";
-import RiderTrainingTracker from "./pages/RiderTrainingTracker";
-import RiderLeaderboard from "./pages/RiderLeaderboard";
-import GeoAnalytics from "./pages/GeoAnalytics";
-import ReferralProgram from "./pages/ReferralProgram";
-import AdvancedReporting from "./pages/AdvancedReporting";
-import ShiftScheduling from "./pages/ShiftScheduling";
-import RiderAvailabilityCalendar from "./pages/RiderAvailabilityCalendar";
-import RiderEarningsBreakdown from "./pages/RiderEarningsBreakdown";
-import BadgeShowcase from "./pages/BadgeShowcase";
-import TaxCompliance from "./pages/TaxCompliance";
-import SecurityMonitoring from "./pages/SecurityMonitoring";
-import SystemHealth from "./pages/SystemHealth";
-import ABTesting from "./pages/ABTesting";
-import SEOManagement from "./pages/SEOManagement";
 import CreateOrder from "./pages/CreateOrder";
 import CustomerDetail from "./pages/CustomerDetail";
-import ModerationGuidelines from "./pages/ModerationGuidelines";
 
+/**
+ * Wraps a lazy component with DashboardLayout and Suspense
+ */
+function LazyRoute({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={<PageLoader />}>
+        <Component />
+      </Suspense>
+    </DashboardLayout>
+  );
+}
+
+/**
+ * Wraps a lazy component with Suspense only (no DashboardLayout)
+ */
+function LazyRouteNoDashboard({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
+  );
+}
 
 function Router() {
   return (
     <Switch>
+      {/* Core pages - eager loaded */}
       <Route path="/" component={() => <DashboardLayout><Home /></DashboardLayout>} />
       <Route path="/orders" component={() => <DashboardLayout><Orders /></DashboardLayout>} />
       <Route path="/orders/create" component={CreateOrder} />
@@ -88,70 +124,96 @@ function Router() {
       <Route path="/customers/:id" component={() => <DashboardLayout><CustomerDetail /></DashboardLayout>} />
       <Route path="/riders" component={() => <DashboardLayout><Riders /></DashboardLayout>} />
       <Route path="/products" component={() => <DashboardLayout><Products /></DashboardLayout>} />
-      <Route path="/analytics" component={() => <DashboardLayout><Analytics /></DashboardLayout>} />
-      <Route path="/quality-verification" component={() => <DashboardLayout><QualityVerification /></DashboardLayout>} />
-      <Route path="/quality-analytics" component={() => <DashboardLayout><QualityPhotoAnalytics /></DashboardLayout>} />
       <Route path="/sellers" component={() => <DashboardLayout><Sellers /></DashboardLayout>} />
       <Route path="/sellers/:id" component={() => <DashboardLayout><SellerDetail /></DashboardLayout>} />
+      
+      {/* Analytics - lazy loaded */}
+      <Route path="/analytics" component={() => <DashboardLayout><Analytics /></DashboardLayout>} />
+      <Route path="/quality-verification" component={() => <DashboardLayout><QualityVerification /></DashboardLayout>} />
+      <Route path="/quality-analytics" component={() => <LazyRoute component={LazyQualityPhotoAnalytics} />} />
+      <Route path="/geo-analytics" component={() => <LazyRoute component={LazyGeoAnalytics} />} />
+      <Route path="/revenue-analytics" component={() => <LazyRoute component={LazyRevenueAnalytics} />} />
+      <Route path="/mobile-money-analytics" component={() => <LazyRoute component={LazyMobileMoneyAnalytics} />} />
+      <Route path="/transaction-analytics" component={() => <LazyRoute component={LazyTransactionAnalytics} />} />
+      <Route path="/platform-statistics" component={() => <LazyRoute component={LazyPlatformStatistics} />} />
+      <Route path="/advanced-reporting" component={() => <LazyRoute component={LazyAdvancedReporting} />} />
+      
+      {/* Financial - mixed */}
       <Route path="/financial" component={() => <DashboardLayout><FinancialOverview /></DashboardLayout>} />
       <Route path="/commission-settings" component={() => <DashboardLayout><CommissionSettings /></DashboardLayout>} />
       <Route path="/payment-transactions" component={() => <DashboardLayout><PaymentTransactions /></DashboardLayout>} />
       <Route path="/payout-management" component={() => <DashboardLayout><PayoutManagement /></DashboardLayout>} />
-      <Route path="/revenue-analytics" component={() => <DashboardLayout><RevenueAnalytics /></DashboardLayout>} />
-      <Route path="/mobile-money-analytics" component={() => <DashboardLayout><MobileMoneyAnalytics /></DashboardLayout>} />
+      <Route path="/transaction-history" component={() => <LazyRoute component={LazyTransactionHistory} />} />
+      
+      {/* Delivery & Operations */}
       <Route path="/delivery-zones" component={() => <DashboardLayout><DeliveryZones /></DashboardLayout>} />
+      <Route path="/order-tracking" component={() => <LazyRoute component={LazyOrderTrackingMap} />} />
+      <Route path="/inventory-alerts" component={() => <LazyRoute component={LazyInventoryAlerts} />} />
+      
+      {/* Support */}
       <Route path="/support" component={() => <DashboardLayout><CustomerSupport /></DashboardLayout>} />
-      <Route path="/support/:id" component={() => <DashboardLayout><SupportTicketDetail /></DashboardLayout>} />
+      <Route path="/support/:id" component={() => <LazyRoute component={LazySupportTicketDetail} />} />
+      <Route path="/support-tickets" component={() => <LazyRoute component={LazySupportTickets} />} />
+      <Route path="/faq-management" component={() => <LazyRoute component={LazyFAQManagement} />} />
+      <Route path="/help-documentation" component={() => <LazyRoute component={LazyHelpDocumentation} />} />
+      
+      {/* Notifications */}
       <Route path="/notifications-center" component={() => <DashboardLayout><NotificationsCenter /></DashboardLayout>} />
-      <Route path="/notification-history" component={() => <DashboardLayout><NotificationHistory /></DashboardLayout>} />
+      <Route path="/notification-history" component={() => <LazyRoute component={LazyNotificationHistory} />} />
+      <Route path="/push-notifications" component={() => <LazyRoute component={LazyPushNotifications} />} />
+      <Route path="/email-templates" component={() => <LazyRoute component={LazyEmailTemplates} />} />
+      <Route path="/notification-preferences" component={() => <LazyRoute component={LazyNotificationPreferences} />} />
+      
+      {/* Activity & Logs */}
       <Route path="/activity-log" component={() => <DashboardLayout><ActivityLog /></DashboardLayout>} />
-      <Route path="/promotional-campaigns" component={() => <DashboardLayout><PromotionalCampaigns /></DashboardLayout>} />
-      <Route path="/admin-users" component={() => <DashboardLayout><AdminUsers /></DashboardLayout>} />
-      <Route path="/audit-trail" component={() => <DashboardLayout><AuditTrail /></DashboardLayout>} />
-      <Route path="/backup-restore" component={() => <DashboardLayout><BackupRestore /></DashboardLayout>} />
-      <Route path="/api-management" component={() => <DashboardLayout><APIManagement /></DashboardLayout>} />
-      <Route path="/faq-management" component={() => <DashboardLayout><FAQManagement /></DashboardLayout>} />
-      <Route path="/support-tickets" component={() => <DashboardLayout><SupportTickets /></DashboardLayout>} />
-      <Route path="/help-documentation" component={() => <DashboardLayout><HelpDocumentation /></DashboardLayout>} />
-      <Route path="/report-builder" component={() => <DashboardLayout><ReportBuilder /></DashboardLayout>} />
-      <Route path="/scheduled-reports" component={() => <DashboardLayout><ScheduledReports /></DashboardLayout>} />
-      <Route path="/data-export" component={() => <DashboardLayout><DataExport /></DashboardLayout>} />
-      <Route path="/push-notifications" component={() => <DashboardLayout><PushNotifications /></DashboardLayout>} />
-      <Route path="/email-templates" component={() => <DashboardLayout><EmailTemplates /></DashboardLayout>} />
-      <Route path="/notification-preferences" component={() => <DashboardLayout><NotificationPreferences /></DashboardLayout>} />
-      <Route path="/coupon-management" component={() => <DashboardLayout><CouponManagement /></DashboardLayout>} />
-      <Route path="/loyalty-program" component={() => <DashboardLayout><LoyaltyProgram /></DashboardLayout>} />
-      <Route path="/transaction-history" component={() => <DashboardLayout><TransactionHistory /></DashboardLayout>} />
-      <Route path="/transaction-analytics" component={() => <DashboardLayout><TransactionAnalytics /></DashboardLayout>} />
-      <Route path="/order-tracking" component={() => <DashboardLayout><OrderTrackingMap /></DashboardLayout>} />
-      <Route path="/inventory-alerts" component={() => <DashboardLayout><InventoryAlerts /></DashboardLayout>} />
-      <Route path="/translation-management" component={() => <DashboardLayout><TranslationManagement /></DashboardLayout>} />
-      <Route path="/user-verification" component={() => <DashboardLayout><UserVerification /></DashboardLayout>} />
-      <Route path="/platform-statistics" component={() => <DashboardLayout><PlatformStatistics /></DashboardLayout>} />
-      <Route path="/shift-scheduling" component={() => <DashboardLayout><ShiftScheduling /></DashboardLayout>} />
-      <Route path="/rider-availability" component={() => <DashboardLayout><RiderAvailabilityCalendar /></DashboardLayout>} />
-      <Route path="/rider-earnings" component={() => <DashboardLayout><RiderEarningsBreakdown /></DashboardLayout>} />
-      <Route path="/badges" component={() => <DashboardLayout><BadgeShowcase /></DashboardLayout>} />
-      <Route path="/rider-leaderboard" component={() => <DashboardLayout><RiderLeaderboard /></DashboardLayout>} />
-      <Route path="/geo-analytics" component={() => <DashboardLayout><GeoAnalytics /></DashboardLayout>} />
-      <Route path="/referral-program" component={() => <DashboardLayout><ReferralProgram /></DashboardLayout>} />
-      <Route path="/advanced-reporting" component={() => <DashboardLayout><AdvancedReporting /></DashboardLayout>} />
-      <Route path="/system-settings" component={() => <DashboardLayout><SystemSettings /></DashboardLayout>} />
-      <Route path="/content-moderation" component={() => <DashboardLayout><ContentModeration /></DashboardLayout>} />
-      <Route path="/moderation-guidelines" component={ModerationGuidelines} />
-      <Route path="/fraud-detection" component={() => <DashboardLayout><FraudDetection /></DashboardLayout>} />
-      <Route path="/live-dashboard" component={LiveDashboard} />
-      <Route path="/incidents" component={IncidentManagement} />
-      <Route path="/feedback-analysis" component={CustomerFeedbackAnalysis} />
-      <Route path="/rider-training" component={RiderTrainingTracker} />
-      <Route path="/tax-compliance" component={() => <DashboardLayout><TaxCompliance /></DashboardLayout>} />
-      <Route path="/security-monitoring" component={() => <DashboardLayout><SecurityMonitoring /></DashboardLayout>} />
-      <Route path="/system-health" component={() => <DashboardLayout><SystemHealth /></DashboardLayout>} />
-      <Route path="/ab-testing" component={() => <DashboardLayout><ABTesting /></DashboardLayout>} />
-      <Route path="/seo-management" component={() => <DashboardLayout><SEOManagement /></DashboardLayout>} />
-      <Route path="/shift-scheduling" component={ShiftScheduling} />
-      <Route path="/rider-availability" component={RiderAvailabilityCalendar} />
+      <Route path="/audit-trail" component={() => <LazyRoute component={LazyAuditTrail} />} />
+      
+      {/* Marketing & Campaigns */}
+      <Route path="/promotional-campaigns" component={() => <LazyRoute component={LazyPromotionalCampaigns} />} />
+      <Route path="/coupon-management" component={() => <LazyRoute component={LazyCouponManagement} />} />
+      <Route path="/loyalty-program" component={() => <LazyRoute component={LazyLoyaltyProgram} />} />
+      <Route path="/referral-program" component={() => <LazyRoute component={LazyReferralProgram} />} />
+      <Route path="/ab-testing" component={() => <LazyRoute component={LazyABTesting} />} />
+      <Route path="/seo-management" component={() => <LazyRoute component={LazySEOManagement} />} />
+      
+      {/* Admin & System */}
+      <Route path="/admin-users" component={() => <LazyRoute component={LazyAdminUsers} />} />
+      <Route path="/backup-restore" component={() => <LazyRoute component={LazyBackupRestore} />} />
+      <Route path="/api-management" component={() => <LazyRoute component={LazyAPIManagement} />} />
+      <Route path="/system-settings" component={() => <LazyRoute component={LazySystemSettings} />} />
+      <Route path="/security-monitoring" component={() => <LazyRoute component={LazySecurityMonitoring} />} />
+      <Route path="/system-health" component={() => <LazyRoute component={LazySystemHealth} />} />
+      <Route path="/tax-compliance" component={() => <LazyRoute component={LazyTaxCompliance} />} />
+      <Route path="/translation-management" component={() => <LazyRoute component={LazyTranslationManagement} />} />
+      
+      {/* Reports */}
+      <Route path="/report-builder" component={() => <LazyRoute component={LazyReportBuilder} />} />
+      <Route path="/scheduled-reports" component={() => <LazyRoute component={LazyScheduledReports} />} />
+      <Route path="/data-export" component={() => <LazyRoute component={LazyDataExport} />} />
+      
+      {/* Rider Management - lazy loaded */}
+      <Route path="/rider-leaderboard" component={() => <LazyRoute component={LazyRiderLeaderboard} />} />
+      <Route path="/rider-training" component={() => <LazyRouteNoDashboard component={LazyRiderTrainingTracker} />} />
+      <Route path="/rider-availability" component={() => <LazyRoute component={LazyRiderAvailabilityCalendar} />} />
+      <Route path="/rider-earnings" component={() => <LazyRoute component={LazyRiderEarningsBreakdown} />} />
+      <Route path="/badges" component={() => <LazyRoute component={LazyBadgeShowcase} />} />
+      <Route path="/shift-scheduling" component={() => <LazyRoute component={LazyShiftScheduling} />} />
+      
+      {/* Moderation & Compliance */}
+      <Route path="/content-moderation" component={() => <LazyRoute component={LazyContentModeration} />} />
+      <Route path="/moderation-guidelines" component={() => <LazyRouteNoDashboard component={LazyModerationGuidelines} />} />
+      <Route path="/fraud-detection" component={() => <LazyRoute component={LazyFraudDetection} />} />
+      <Route path="/user-verification" component={() => <LazyRoute component={LazyUserVerification} />} />
+      <Route path="/disputes" component={() => <LazyRoute component={LazyDisputeResolution} />} />
+      
+      {/* Live & Real-time */}
+      <Route path="/live-dashboard" component={() => <LazyRouteNoDashboard component={LazyLiveDashboard} />} />
+      <Route path="/incidents" component={() => <LazyRouteNoDashboard component={LazyIncidentManagement} />} />
+      <Route path="/feedback-analysis" component={() => <LazyRouteNoDashboard component={LazyCustomerFeedbackAnalysis} />} />
+      <Route path="/sms-logs" component={() => <LazyRoute component={LazySMSLogs} />} />
+      <Route path="/seller-onboarding" component={() => <LazyRoute component={LazySellerOnboarding} />} />
 
+      {/* 404 */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -179,4 +241,3 @@ function App() {
 }
 
 export default App;
-
