@@ -26,7 +26,7 @@ import {
   InsertRealtimeNotification,
   mobileTrainingSync,
   InsertMobileTrainingSync,
-  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions, riderShifts, InsertRiderShift, riderEarningsTransactions, InsertRiderEarningsTransaction, shiftSwaps, InsertShiftSwap, riderAvailability, InsertRiderAvailability, riderPayouts, InsertRiderPayout, badges, riderBadges, badgeNotifications, orderStatusHistory, customerNotes, customerTags, customerTagAssignments, orderEditHistory } from "../drizzle/schema";
+  orders, orderItems, riders, products, categories, qualityPhotos, riderEarnings, sellers, sellerPayouts, paymentTransactions, commissionSettings, InsertCommissionSetting, supportTickets, supportTicketMessages, InsertSupportTicketMessage, deliveryZones, InsertDeliveryZone, notifications, InsertNotification, activityLog, InsertActivityLog, campaigns, InsertCampaign, campaignUsage, InsertCampaignUsage, apiKeys, InsertApiKey, backupLogs, InsertBackupLog, faqs, InsertFaq, helpDocs, InsertHelpDoc, reports, InsertReport, exportHistory, InsertExportHistory, emailTemplates, InsertEmailTemplate, notificationPreferences, InsertNotificationPreference, pushNotificationsLog, InsertPushNotificationLog, coupons, InsertCoupon, couponUsage, InsertCouponUsage, promotionalCampaigns, InsertPromotionalCampaign, loyaltyProgram, InsertLoyaltyProgram, loyaltyTransactions, InsertLoyaltyTransaction, payouts, InsertPayout, transactions, InsertTransaction, revenueAnalytics, InsertRevenueAnalytics, riderLocations, InsertRiderLocation, inventoryAlerts, InsertInventoryAlert, inventoryThresholds, InsertInventoryThreshold, riderTierHistory, verificationRequests, platformStatistics, disputes, disputeMessages, riderAchievements, systemSettings, contentModerationQueue, fraudAlerts, liveDashboardEvents, geoRegions, regionalAnalytics, referrals, referralRewards, loyaltyTiers, userLoyaltyPoints, loyaltyPointsTransactions, loyaltyRewards, loyaltyRedemptions, riderShifts, InsertRiderShift, riderEarningsTransactions, InsertRiderEarningsTransaction, shiftSwaps, InsertShiftSwap, riderAvailability, InsertRiderAvailability, riderPayouts, InsertRiderPayout, badges, riderBadges, badgeNotifications, orderStatusHistory, customerNotes, customerTags, customerTagAssignments, orderEditHistory, backupSchedules, InsertBackupSchedule } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -9436,4 +9436,754 @@ export async function sendMandatoryTrainingReminders() {
   }
 
   return reminders;
+}
+
+
+// ============================================================================
+// SPRINT 24: Customer Segmentation, Marketing Automation, Risk Management,
+// Compliance, Webhooks, Vendors, Fleet, and Route Optimization
+// ============================================================================
+
+import {
+  customerSegments, InsertCustomerSegment, CustomerSegment,
+  marketingAutomations, InsertMarketingAutomation, MarketingAutomation,
+  riskAssessments, InsertRiskAssessment, RiskAssessment,
+  complianceChecks, InsertComplianceCheck, ComplianceCheck,
+  complianceViolations, InsertComplianceViolation, ComplianceViolation,
+  webhookEndpoints, InsertWebhookEndpoint, WebhookEndpoint,
+  webhookLogs, InsertWebhookLog, WebhookLog,
+  vendors, InsertVendor, Vendor,
+  vendorContracts, InsertVendorContract, VendorContract,
+  vehicles, InsertVehicle, Vehicle,
+  vehicleMaintenance, InsertVehicleMaintenance, VehicleMaintenance,
+  deliveryRoutes, InsertDeliveryRoute, DeliveryRoute,
+  routeWaypoints, InsertRouteWaypoint, RouteWaypoint
+} from "../drizzle/schema";
+
+// ============================================================================
+// Customer Segmentation Functions
+// ============================================================================
+
+export async function getCustomerSegments(filters?: { isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(customerSegments);
+  
+  if (filters?.isActive !== undefined) {
+    query = query.where(eq(customerSegments.isActive, filters.isActive)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(customerSegments.createdAt));
+}
+
+export async function getCustomerSegmentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(customerSegments).where(eq(customerSegments.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createCustomerSegment(segment: InsertCustomerSegment) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(customerSegments).values(segment);
+  return { id: Number(result[0].insertId), ...segment };
+}
+
+export async function updateCustomerSegment(id: number, updates: Partial<InsertCustomerSegment>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(customerSegments).set(updates).where(eq(customerSegments.id, id));
+  return await getCustomerSegmentById(id);
+}
+
+export async function deleteCustomerSegment(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(customerSegments).where(eq(customerSegments.id, id));
+  return true;
+}
+
+// ============================================================================
+// Marketing Automation Functions
+// ============================================================================
+
+export async function getMarketingAutomations(filters?: { status?: string; segmentId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(marketingAutomations);
+  
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(marketingAutomations.status, filters.status as any));
+  }
+  if (filters?.segmentId) {
+    conditions.push(eq(marketingAutomations.segmentId, filters.segmentId));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(marketingAutomations.createdAt));
+}
+
+export async function getMarketingAutomationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(marketingAutomations).where(eq(marketingAutomations.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createMarketingAutomation(automation: InsertMarketingAutomation) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(marketingAutomations).values(automation);
+  return { id: Number(result[0].insertId), ...automation };
+}
+
+export async function updateMarketingAutomation(id: number, updates: Partial<InsertMarketingAutomation>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(marketingAutomations).set(updates).where(eq(marketingAutomations.id, id));
+  return await getMarketingAutomationById(id);
+}
+
+export async function deleteMarketingAutomation(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(marketingAutomations).where(eq(marketingAutomations.id, id));
+  return true;
+}
+
+export async function updateAutomationMetrics(id: number, metrics: { sentCount?: number; openedCount?: number; clickedCount?: number; convertedCount?: number }) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(marketingAutomations).set(metrics).where(eq(marketingAutomations.id, id));
+  return await getMarketingAutomationById(id);
+}
+
+// ============================================================================
+// Risk Assessment Functions
+// ============================================================================
+
+export async function getRiskAssessments(filters?: { category?: string; severity?: string; status?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(riskAssessments);
+  
+  const conditions = [];
+  if (filters?.category) {
+    conditions.push(eq(riskAssessments.category, filters.category as any));
+  }
+  if (filters?.severity) {
+    conditions.push(eq(riskAssessments.severity, filters.severity as any));
+  }
+  if (filters?.status) {
+    conditions.push(eq(riskAssessments.status, filters.status as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(riskAssessments.riskScore));
+}
+
+export async function getRiskAssessmentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(riskAssessments).where(eq(riskAssessments.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createRiskAssessment(assessment: InsertRiskAssessment) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(riskAssessments).values(assessment);
+  return { id: Number(result[0].insertId), ...assessment };
+}
+
+export async function updateRiskAssessment(id: number, updates: Partial<InsertRiskAssessment>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(riskAssessments).set(updates).where(eq(riskAssessments.id, id));
+  return await getRiskAssessmentById(id);
+}
+
+export async function deleteRiskAssessment(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(riskAssessments).where(eq(riskAssessments.id, id));
+  return true;
+}
+
+// ============================================================================
+// Compliance Functions
+// ============================================================================
+
+export async function getComplianceChecks(filters?: { area?: string; status?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(complianceChecks);
+  
+  const conditions = [];
+  if (filters?.area) {
+    conditions.push(eq(complianceChecks.area, filters.area as any));
+  }
+  if (filters?.status) {
+    conditions.push(eq(complianceChecks.status, filters.status as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(complianceChecks.nextCheckDate));
+}
+
+export async function getComplianceCheckById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(complianceChecks).where(eq(complianceChecks.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createComplianceCheck(check: InsertComplianceCheck) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(complianceChecks).values(check);
+  return { id: Number(result[0].insertId), ...check };
+}
+
+export async function updateComplianceCheck(id: number, updates: Partial<InsertComplianceCheck>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(complianceChecks).set(updates).where(eq(complianceChecks.id, id));
+  return await getComplianceCheckById(id);
+}
+
+export async function getComplianceViolations(filters?: { checkId?: number; severity?: string; remediationStatus?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(complianceViolations);
+  
+  const conditions = [];
+  if (filters?.checkId) {
+    conditions.push(eq(complianceViolations.checkId, filters.checkId));
+  }
+  if (filters?.severity) {
+    conditions.push(eq(complianceViolations.severity, filters.severity as any));
+  }
+  if (filters?.remediationStatus) {
+    conditions.push(eq(complianceViolations.remediationStatus, filters.remediationStatus as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(complianceViolations.createdAt));
+}
+
+export async function createComplianceViolation(violation: InsertComplianceViolation) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(complianceViolations).values(violation);
+  return { id: Number(result[0].insertId), ...violation };
+}
+
+export async function updateComplianceViolation(id: number, updates: Partial<InsertComplianceViolation>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(complianceViolations).set(updates).where(eq(complianceViolations.id, id));
+  const result = await db.select().from(complianceViolations).where(eq(complianceViolations.id, id)).limit(1);
+  return result[0] || null;
+}
+
+// ============================================================================
+// Webhook Functions
+// ============================================================================
+
+export async function getWebhookEndpoints(filters?: { isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(webhookEndpoints);
+  
+  if (filters?.isActive !== undefined) {
+    query = query.where(eq(webhookEndpoints.isActive, filters.isActive)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(webhookEndpoints.createdAt));
+}
+
+export async function getWebhookEndpointById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(webhookEndpoints).where(eq(webhookEndpoints.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createWebhookEndpoint(endpoint: InsertWebhookEndpoint) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(webhookEndpoints).values(endpoint);
+  return { id: Number(result[0].insertId), ...endpoint };
+}
+
+export async function updateWebhookEndpoint(id: number, updates: Partial<InsertWebhookEndpoint>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(webhookEndpoints).set(updates).where(eq(webhookEndpoints.id, id));
+  return await getWebhookEndpointById(id);
+}
+
+export async function deleteWebhookEndpoint(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(webhookEndpoints).where(eq(webhookEndpoints.id, id));
+  return true;
+}
+
+export async function getWebhookLogs(filters?: { endpointId?: number; status?: string; limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(webhookLogs);
+  
+  const conditions = [];
+  if (filters?.endpointId) {
+    conditions.push(eq(webhookLogs.endpointId, filters.endpointId));
+  }
+  if (filters?.status) {
+    conditions.push(eq(webhookLogs.status, filters.status as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  query = query.orderBy(desc(webhookLogs.createdAt)) as typeof query;
+  
+  if (filters?.limit) {
+    query = query.limit(filters.limit) as typeof query;
+  }
+  
+  return await query;
+}
+
+export async function createWebhookLog(log: InsertWebhookLog) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(webhookLogs).values(log);
+  return { id: Number(result[0].insertId), ...log };
+}
+
+export async function updateWebhookLog(id: number, updates: Partial<InsertWebhookLog>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(webhookLogs).set(updates).where(eq(webhookLogs.id, id));
+  const result = await db.select().from(webhookLogs).where(eq(webhookLogs.id, id)).limit(1);
+  return result[0] || null;
+}
+
+// ============================================================================
+// Vendor Functions
+// ============================================================================
+
+export async function getVendors(filters?: { status?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(vendors);
+  
+  if (filters?.status) {
+    query = query.where(eq(vendors.status, filters.status as any)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(vendors.createdAt));
+}
+
+export async function getVendorById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(vendors).where(eq(vendors.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createVendor(vendor: InsertVendor) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(vendors).values(vendor);
+  return { id: Number(result[0].insertId), ...vendor };
+}
+
+export async function updateVendor(id: number, updates: Partial<InsertVendor>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(vendors).set(updates).where(eq(vendors.id, id));
+  return await getVendorById(id);
+}
+
+export async function deleteVendor(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(vendors).where(eq(vendors.id, id));
+  return true;
+}
+
+export async function getVendorContracts(filters?: { vendorId?: number; status?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(vendorContracts);
+  
+  const conditions = [];
+  if (filters?.vendorId) {
+    conditions.push(eq(vendorContracts.vendorId, filters.vendorId));
+  }
+  if (filters?.status) {
+    conditions.push(eq(vendorContracts.status, filters.status as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(vendorContracts.endDate));
+}
+
+export async function createVendorContract(contract: InsertVendorContract) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(vendorContracts).values(contract);
+  return { id: Number(result[0].insertId), ...contract };
+}
+
+export async function updateVendorContract(id: number, updates: Partial<InsertVendorContract>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(vendorContracts).set(updates).where(eq(vendorContracts.id, id));
+  const result = await db.select().from(vendorContracts).where(eq(vendorContracts.id, id)).limit(1);
+  return result[0] || null;
+}
+
+// ============================================================================
+// Fleet Management Functions
+// ============================================================================
+
+export async function getVehicles(filters?: { status?: string; type?: string; assignedRiderId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(vehicles);
+  
+  const conditions = [];
+  if (filters?.status) {
+    conditions.push(eq(vehicles.status, filters.status as any));
+  }
+  if (filters?.type) {
+    conditions.push(eq(vehicles.type, filters.type as any));
+  }
+  if (filters?.assignedRiderId) {
+    conditions.push(eq(vehicles.assignedRiderId, filters.assignedRiderId));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(vehicles.createdAt));
+}
+
+export async function getVehicleById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(vehicles).where(eq(vehicles.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function getVehicleByPlate(plateNumber: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(vehicles).where(eq(vehicles.plateNumber, plateNumber)).limit(1);
+  return result[0] || null;
+}
+
+export async function createVehicle(vehicle: InsertVehicle) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(vehicles).values(vehicle);
+  return { id: Number(result[0].insertId), ...vehicle };
+}
+
+export async function updateVehicle(id: number, updates: Partial<InsertVehicle>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(vehicles).set(updates).where(eq(vehicles.id, id));
+  return await getVehicleById(id);
+}
+
+export async function deleteVehicle(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(vehicles).where(eq(vehicles.id, id));
+  return true;
+}
+
+export async function getVehicleMaintenance(filters?: { vehicleId?: number; status?: string; type?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(vehicleMaintenance);
+  
+  const conditions = [];
+  if (filters?.vehicleId) {
+    conditions.push(eq(vehicleMaintenance.vehicleId, filters.vehicleId));
+  }
+  if (filters?.status) {
+    conditions.push(eq(vehicleMaintenance.status, filters.status as any));
+  }
+  if (filters?.type) {
+    conditions.push(eq(vehicleMaintenance.type, filters.type as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(vehicleMaintenance.scheduledDate));
+}
+
+export async function createVehicleMaintenance(maintenance: InsertVehicleMaintenance) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(vehicleMaintenance).values(maintenance);
+  return { id: Number(result[0].insertId), ...maintenance };
+}
+
+export async function updateVehicleMaintenance(id: number, updates: Partial<InsertVehicleMaintenance>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(vehicleMaintenance).set(updates).where(eq(vehicleMaintenance.id, id));
+  const result = await db.select().from(vehicleMaintenance).where(eq(vehicleMaintenance.id, id)).limit(1);
+  return result[0] || null;
+}
+
+// ============================================================================
+// Route Optimization Functions
+// ============================================================================
+
+export async function getDeliveryRoutes(filters?: { riderId?: number; vehicleId?: number; status?: string; date?: Date }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(deliveryRoutes);
+  
+  const conditions = [];
+  if (filters?.riderId) {
+    conditions.push(eq(deliveryRoutes.riderId, filters.riderId));
+  }
+  if (filters?.vehicleId) {
+    conditions.push(eq(deliveryRoutes.vehicleId, filters.vehicleId));
+  }
+  if (filters?.status) {
+    conditions.push(eq(deliveryRoutes.status, filters.status as any));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as typeof query;
+  }
+  
+  return await query.orderBy(desc(deliveryRoutes.date));
+}
+
+export async function getDeliveryRouteById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(deliveryRoutes).where(eq(deliveryRoutes.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function createDeliveryRoute(route: InsertDeliveryRoute) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(deliveryRoutes).values(route);
+  return { id: Number(result[0].insertId), ...route };
+}
+
+export async function updateDeliveryRoute(id: number, updates: Partial<InsertDeliveryRoute>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(deliveryRoutes).set(updates).where(eq(deliveryRoutes.id, id));
+  return await getDeliveryRouteById(id);
+}
+
+export async function deleteDeliveryRoute(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  // Delete waypoints first
+  await db.delete(routeWaypoints).where(eq(routeWaypoints.routeId, id));
+  await db.delete(deliveryRoutes).where(eq(deliveryRoutes.id, id));
+  return true;
+}
+
+export async function getRouteWaypoints(routeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(routeWaypoints)
+    .where(eq(routeWaypoints.routeId, routeId))
+    .orderBy(asc(routeWaypoints.sequenceNumber));
+}
+
+export async function createRouteWaypoint(waypoint: InsertRouteWaypoint) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(routeWaypoints).values(waypoint);
+  return { id: Number(result[0].insertId), ...waypoint };
+}
+
+export async function updateRouteWaypoint(id: number, updates: Partial<InsertRouteWaypoint>) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db.update(routeWaypoints).set(updates).where(eq(routeWaypoints.id, id));
+  const result = await db.select().from(routeWaypoints).where(eq(routeWaypoints.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function bulkCreateRouteWaypoints(waypoints: InsertRouteWaypoint[]) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (waypoints.length === 0) return [];
+  
+  await db.insert(routeWaypoints).values(waypoints);
+  return waypoints;
+}
+
+// ============================================================================
+// Dashboard Statistics for Sprint 24 Features
+// ============================================================================
+
+export async function getSprint24Stats() {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [segmentCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(customerSegments);
+  const [automationCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(marketingAutomations);
+  const [riskCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(riskAssessments);
+  const [complianceCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(complianceChecks);
+  const [webhookCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(webhookEndpoints);
+  const [vendorCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(vendors);
+  const [vehicleCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(vehicles);
+  const [routeCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(deliveryRoutes);
+  
+  return {
+    segments: segmentCount?.count || 0,
+    automations: automationCount?.count || 0,
+    risks: riskCount?.count || 0,
+    complianceChecks: complianceCount?.count || 0,
+    webhooks: webhookCount?.count || 0,
+    vendors: vendorCount?.count || 0,
+    vehicles: vehicleCount?.count || 0,
+    routes: routeCount?.count || 0,
+  };
+}
+
+
+// ============================================================================
+// Backup Schedule Functions
+// ============================================================================
+
+export async function getBackupSchedules() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(backupSchedules).orderBy(desc(backupSchedules.createdAt));
+}
+
+export async function createBackupSchedule(data: {
+  name: string;
+  type: 'full' | 'incremental' | 'differential';
+  frequency: 'hourly' | 'daily' | 'weekly' | 'monthly';
+  time: string;
+  retentionDays: number;
+  isEnabled: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(backupSchedules).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function updateBackupSchedule(id: number, data: Partial<{
+  name: string;
+  type: 'full' | 'incremental' | 'differential';
+  frequency: 'hourly' | 'daily' | 'weekly' | 'monthly';
+  time: string;
+  retentionDays: number;
+  isEnabled: boolean;
+  lastRun: Date;
+  nextRun: Date;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(backupSchedules).set(data).where(eq(backupSchedules.id, id));
+  return { success: true };
+}
+
+export async function deleteBackupLog(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.delete(backupLogs).where(eq(backupLogs.id, id));
+  return { success: true };
 }

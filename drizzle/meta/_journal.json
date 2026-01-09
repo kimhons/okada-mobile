@@ -127,6 +127,20 @@
       "when": 1767932468868,
       "tag": "0017_melodic_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1767975613288,
+      "tag": "0018_magenta_sunspot",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1767976627600,
+      "tag": "0019_magical_darwin",
+      "breakpoints": true
     }
   ]
 }

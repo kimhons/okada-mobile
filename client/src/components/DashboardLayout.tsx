@@ -89,6 +89,14 @@ const menuItems = [
   { icon: Calendar, label: "Rider Availability", path: "/rider-availability" },
   { icon: DollarSign, label: "Rider Earnings", path: "/rider-earnings" },
   { icon: Trophy, label: "Badges & Achievements", path: "/badges" },
+  { icon: Users, label: "Customer Segmentation", path: "/customer-segmentation" },
+  { icon: Megaphone, label: "Marketing Automation", path: "/marketing-automation" },
+  { icon: AlertTriangle, label: "Risk Management", path: "/risk-management" },
+  { icon: Shield, label: "Compliance Center", path: "/compliance-center" },
+  { icon: Key, label: "Webhook Management", path: "/webhook-management" },
+  { icon: Store, label: "Vendor Management", path: "/vendor-management" },
+  { icon: Bike, label: "Fleet Management", path: "/fleet-management" },
+  { icon: Database, label: "Backup & Recovery", path: "/backup-recovery" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

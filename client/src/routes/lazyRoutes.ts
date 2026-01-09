@@ -80,3 +80,13 @@ export const LazyCustomerFeedbackAnalysis = lazy(() => import("@/pages/CustomerF
 export const LazyTransactionHistory = lazy(() => import("@/pages/TransactionHistory"));
 export const LazySMSLogs = lazy(() => import("@/pages/SMSLogs"));
 export const LazySellerOnboarding = lazy(() => import("@/pages/SellerOnboarding"));
+
+// Sprint 24 - Final Admin Screens
+export const LazyCustomerSegmentation = lazy(() => import("@/pages/CustomerSegmentation"));
+export const LazyMarketingAutomation = lazy(() => import("@/pages/MarketingAutomation"));
+export const LazyRiskManagement = lazy(() => import("@/pages/RiskManagement"));
+export const LazyComplianceCenter = lazy(() => import("@/pages/ComplianceCenter"));
+export const LazyWebhookManagement = lazy(() => import("@/pages/WebhookManagement"));
+export const LazyVendorManagement = lazy(() => import("@/pages/VendorManagement"));
+export const LazyFleetManagement = lazy(() => import("@/pages/FleetManagement"));
+export const LazyBackupRecovery = lazy(() => import("@/pages/BackupRecovery"));

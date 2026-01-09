@@ -2238,3 +2238,448 @@ export const sellerApplications = mysqlTable("sellerApplications", {
 });
 export type SellerApplication = typeof sellerApplications.$inferSelect;
 export type InsertSellerApplication = typeof sellerApplications.$inferInsert;
+
+
+/**
+ * Customer Segments for marketing segmentation
+ */
+export const customerSegments = mysqlTable("customerSegments", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Criteria stored as JSON
+  criteria: text("criteria").notNull(), // JSON: { minOrders, maxOrders, minSpent, maxSpent, location, etc. }
+  
+  // Stats
+  customerCount: int("customerCount").default(0).notNull(),
+  lastCalculated: timestamp("lastCalculated"),
+  
+  // Status
+  isActive: boolean("isActive").default(true).notNull(),
+  createdBy: int("createdBy").notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CustomerSegment = typeof customerSegments.$inferSelect;
+export type InsertCustomerSegment = typeof customerSegments.$inferInsert;
+
+/**
+ * Marketing Automation workflows
+ */
+export const marketingAutomations = mysqlTable("marketingAutomations", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Trigger configuration
+  triggerType: mysqlEnum("triggerType", ["time_based", "event_based", "segment_based"]).notNull(),
+  triggerConfig: text("triggerConfig").notNull(), // JSON: { schedule, event, segmentId, etc. }
+  
+  // Action configuration
+  actionType: mysqlEnum("actionType", ["email", "sms", "push", "discount"]).notNull(),
+  actionConfig: text("actionConfig").notNull(), // JSON: { template, message, discountCode, etc. }
+  
+  // Target audience
+  segmentId: int("segmentId"),
+  
+  // Status and metrics
+  status: mysqlEnum("status", ["draft", "active", "paused", "completed"]).default("draft").notNull(),
+  sentCount: int("sentCount").default(0).notNull(),
+  openedCount: int("openedCount").default(0).notNull(),
+  clickedCount: int("clickedCount").default(0).notNull(),
+  convertedCount: int("convertedCount").default(0).notNull(),
+  
+  // Scheduling
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  lastRunAt: timestamp("lastRunAt"),
+  nextRunAt: timestamp("nextRunAt"),
+  
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MarketingAutomation = typeof marketingAutomations.$inferSelect;
+export type InsertMarketingAutomation = typeof marketingAutomations.$inferInsert;
+
+/**
+ * Risk Assessments for platform risk management
+ */
+export const riskAssessments = mysqlTable("riskAssessments", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Risk classification
+  category: mysqlEnum("category", ["financial", "operational", "compliance", "security", "reputational"]).notNull(),
+  severity: mysqlEnum("severity", ["low", "medium", "high", "critical"]).notNull(),
+  likelihood: mysqlEnum("likelihood", ["rare", "unlikely", "possible", "likely", "certain"]).notNull(),
+  
+  // Impact and scoring
+  impactScore: int("impactScore").notNull(), // 1-10
+  riskScore: int("riskScore").notNull(), // Calculated: severity * likelihood
+  
+  // Mitigation
+  mitigationPlan: text("mitigationPlan"),
+  mitigationStatus: mysqlEnum("mitigationStatus", ["not_started", "in_progress", "completed", "ongoing"]).default("not_started").notNull(),
+  mitigationOwner: int("mitigationOwner"),
+  mitigationDeadline: timestamp("mitigationDeadline"),
+  
+  // Status
+  status: mysqlEnum("status", ["identified", "assessed", "mitigating", "resolved", "accepted"]).default("identified").notNull(),
+  
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type RiskAssessment = typeof riskAssessments.$inferSelect;
+export type InsertRiskAssessment = typeof riskAssessments.$inferInsert;
+
+/**
+ * Compliance Checks for regulatory compliance
+ */
+export const complianceChecks = mysqlTable("complianceChecks", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Compliance area
+  area: mysqlEnum("area", ["data_privacy", "financial", "tax", "labor", "consumer_protection", "licensing"]).notNull(),
+  regulation: varchar("regulation", { length: 255 }), // e.g., "GDPR", "PCI-DSS"
+  
+  // Check details
+  checkType: mysqlEnum("checkType", ["automated", "manual", "audit"]).notNull(),
+  frequency: mysqlEnum("frequency", ["daily", "weekly", "monthly", "quarterly", "annually"]).notNull(),
+  
+  // Status
+  status: mysqlEnum("status", ["compliant", "non_compliant", "pending_review", "remediation"]).default("pending_review").notNull(),
+  lastCheckDate: timestamp("lastCheckDate"),
+  nextCheckDate: timestamp("nextCheckDate"),
+  
+  // Evidence and notes
+  evidence: text("evidence"), // JSON array of document URLs
+  notes: text("notes"),
+  
+  // Responsibility
+  responsiblePerson: int("responsiblePerson"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ComplianceCheck = typeof complianceChecks.$inferSelect;
+export type InsertComplianceCheck = typeof complianceChecks.$inferInsert;
+
+/**
+ * Compliance Violations tracking
+ */
+export const complianceViolations = mysqlTable("complianceViolations", {
+  id: int("id").autoincrement().primaryKey(),
+  checkId: int("checkId").notNull(),
+  
+  // Violation details
+  description: text("description").notNull(),
+  severity: mysqlEnum("severity", ["minor", "moderate", "major", "critical"]).notNull(),
+  
+  // Remediation
+  remediationPlan: text("remediationPlan"),
+  remediationDeadline: timestamp("remediationDeadline"),
+  remediationStatus: mysqlEnum("remediationStatus", ["pending", "in_progress", "completed", "overdue"]).default("pending").notNull(),
+  
+  // Resolution
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedBy: int("resolvedBy"),
+  resolutionNotes: text("resolutionNotes"),
+  
+  reportedBy: int("reportedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ComplianceViolation = typeof complianceViolations.$inferSelect;
+export type InsertComplianceViolation = typeof complianceViolations.$inferInsert;
+
+/**
+ * Webhook Endpoints for external integrations
+ */
+export const webhookEndpoints = mysqlTable("webhookEndpoints", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  
+  // Authentication
+  secret: varchar("secret", { length: 255 }).notNull(),
+  authType: mysqlEnum("authType", ["none", "basic", "bearer", "hmac"]).default("hmac").notNull(),
+  authCredentials: text("authCredentials"), // Encrypted JSON
+  
+  // Events to send
+  events: text("events").notNull(), // JSON array: ["order.created", "order.delivered", etc.]
+  
+  // Status and health
+  isActive: boolean("isActive").default(true).notNull(),
+  lastDeliveryStatus: mysqlEnum("lastDeliveryStatus", ["success", "failed", "pending"]),
+  lastDeliveryAt: timestamp("lastDeliveryAt"),
+  failureCount: int("failureCount").default(0).notNull(),
+  
+  // Retry settings
+  maxRetries: int("maxRetries").default(3).notNull(),
+  retryDelay: int("retryDelay").default(60).notNull(), // Seconds
+  
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WebhookEndpoint = typeof webhookEndpoints.$inferSelect;
+export type InsertWebhookEndpoint = typeof webhookEndpoints.$inferInsert;
+
+/**
+ * Webhook Delivery Logs
+ */
+export const webhookLogs = mysqlTable("webhookLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  endpointId: int("endpointId").notNull(),
+  
+  // Event details
+  eventType: varchar("eventType", { length: 100 }).notNull(),
+  payload: text("payload").notNull(), // JSON payload sent
+  
+  // Delivery status
+  status: mysqlEnum("status", ["pending", "success", "failed"]).default("pending").notNull(),
+  statusCode: int("statusCode"),
+  response: text("response"),
+  errorMessage: text("errorMessage"),
+  
+  // Timing
+  attemptCount: int("attemptCount").default(1).notNull(),
+  deliveredAt: timestamp("deliveredAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WebhookLog = typeof webhookLogs.$inferSelect;
+export type InsertWebhookLog = typeof webhookLogs.$inferInsert;
+
+/**
+ * Vendors for supply chain management
+ */
+export const vendors = mysqlTable("vendors", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  contactPerson: varchar("contactPerson", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address"),
+  
+  // Business details
+  businessType: varchar("businessType", { length: 100 }),
+  taxId: varchar("taxId", { length: 100 }),
+  
+  // Status and rating
+  status: mysqlEnum("status", ["active", "inactive", "suspended", "pending"]).default("pending").notNull(),
+  rating: int("rating").default(0), // 0-50 (for 0.0-5.0)
+  
+  // Financial
+  paymentTerms: varchar("paymentTerms", { length: 100 }), // e.g., "Net 30"
+  totalPurchases: int("totalPurchases").default(0).notNull(), // In FCFA cents
+  
+  // Notes
+  notes: text("notes"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Vendor = typeof vendors.$inferSelect;
+export type InsertVendor = typeof vendors.$inferInsert;
+
+/**
+ * Vendor Contracts
+ */
+export const vendorContracts = mysqlTable("vendorContracts", {
+  id: int("id").autoincrement().primaryKey(),
+  vendorId: int("vendorId").notNull(),
+  
+  // Contract details
+  contractNumber: varchar("contractNumber", { length: 100 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Terms
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  value: int("value").notNull(), // In FCFA cents
+  
+  // Status
+  status: mysqlEnum("status", ["draft", "active", "expired", "terminated", "renewed"]).default("draft").notNull(),
+  
+  // Documents
+  documentUrl: varchar("documentUrl", { length: 500 }),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VendorContract = typeof vendorContracts.$inferSelect;
+export type InsertVendorContract = typeof vendorContracts.$inferInsert;
+
+/**
+ * Fleet Vehicles for delivery management
+ */
+export const vehicles = mysqlTable("vehicles", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Vehicle info
+  plateNumber: varchar("plateNumber", { length: 20 }).notNull().unique(),
+  type: mysqlEnum("type", ["motorcycle", "bicycle", "car", "van", "truck"]).notNull(),
+  make: varchar("make", { length: 100 }),
+  model: varchar("model", { length: 100 }),
+  year: int("year"),
+  color: varchar("color", { length: 50 }),
+  
+  // Assignment
+  assignedRiderId: int("assignedRiderId"),
+  
+  // Status
+  status: mysqlEnum("status", ["available", "in_use", "maintenance", "retired"]).default("available").notNull(),
+  
+  // Tracking
+  currentLat: varchar("currentLat", { length: 50 }),
+  currentLng: varchar("currentLng", { length: 50 }),
+  lastLocationUpdate: timestamp("lastLocationUpdate"),
+  
+  // Maintenance
+  lastMaintenanceDate: timestamp("lastMaintenanceDate"),
+  nextMaintenanceDate: timestamp("nextMaintenanceDate"),
+  totalMileage: int("totalMileage").default(0).notNull(), // In kilometers
+  
+  // Insurance
+  insuranceExpiry: timestamp("insuranceExpiry"),
+  insuranceProvider: varchar("insuranceProvider", { length: 100 }),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Vehicle = typeof vehicles.$inferSelect;
+export type InsertVehicle = typeof vehicles.$inferInsert;
+
+/**
+ * Vehicle Maintenance Records
+ */
+export const vehicleMaintenance = mysqlTable("vehicleMaintenance", {
+  id: int("id").autoincrement().primaryKey(),
+  vehicleId: int("vehicleId").notNull(),
+  
+  // Maintenance details
+  type: mysqlEnum("type", ["routine", "repair", "inspection", "emergency"]).notNull(),
+  description: text("description").notNull(),
+  
+  // Cost
+  cost: int("cost").notNull(), // In FCFA cents
+  vendorId: int("vendorId"),
+  
+  // Status
+  status: mysqlEnum("status", ["scheduled", "in_progress", "completed", "cancelled"]).default("scheduled").notNull(),
+  
+  // Dates
+  scheduledDate: timestamp("scheduledDate").notNull(),
+  completedDate: timestamp("completedDate"),
+  
+  // Mileage at maintenance
+  mileageAtMaintenance: int("mileageAtMaintenance"),
+  
+  // Notes
+  notes: text("notes"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VehicleMaintenance = typeof vehicleMaintenance.$inferSelect;
+export type InsertVehicleMaintenance = typeof vehicleMaintenance.$inferInsert;
+
+/**
+ * Delivery Routes for optimization
+ */
+export const deliveryRoutes = mysqlTable("deliveryRoutes", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  
+  // Route details
+  riderId: int("riderId"),
+  vehicleId: int("vehicleId"),
+  date: timestamp("date").notNull(),
+  
+  // Status
+  status: mysqlEnum("status", ["planned", "in_progress", "completed", "cancelled"]).default("planned").notNull(),
+  
+  // Metrics
+  totalDistance: int("totalDistance").default(0).notNull(), // In meters
+  estimatedDuration: int("estimatedDuration").default(0).notNull(), // In minutes
+  actualDuration: int("actualDuration"), // In minutes
+  totalStops: int("totalStops").default(0).notNull(),
+  completedStops: int("completedStops").default(0).notNull(),
+  
+  // Optimization
+  optimizationScore: int("optimizationScore"), // 0-100
+  fuelEstimate: int("fuelEstimate"), // In FCFA cents
+  
+  // Timing
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DeliveryRoute = typeof deliveryRoutes.$inferSelect;
+export type InsertDeliveryRoute = typeof deliveryRoutes.$inferInsert;
+
+/**
+ * Route Waypoints
+ */
+export const routeWaypoints = mysqlTable("routeWaypoints", {
+  id: int("id").autoincrement().primaryKey(),
+  routeId: int("routeId").notNull(),
+  orderId: int("orderId"),
+  
+  // Sequence
+  sequenceNumber: int("sequenceNumber").notNull(),
+  
+  // Location
+  address: text("address").notNull(),
+  lat: varchar("lat", { length: 50 }).notNull(),
+  lng: varchar("lng", { length: 50 }).notNull(),
+  
+  // Type
+  type: mysqlEnum("type", ["pickup", "delivery", "return"]).notNull(),
+  
+  // Status
+  status: mysqlEnum("status", ["pending", "arrived", "completed", "skipped"]).default("pending").notNull(),
+  
+  // Timing
+  estimatedArrival: timestamp("estimatedArrival"),
+  actualArrival: timestamp("actualArrival"),
+  completedAt: timestamp("completedAt"),
+  
+  // Notes
+  notes: text("notes"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RouteWaypoint = typeof routeWaypoints.$inferSelect;
+export type InsertRouteWaypoint = typeof routeWaypoints.$inferInsert;
+
+
+/**
+ * Backup Schedules table for automated backup configuration
+ */
+export const backupSchedules = mysqlTable("backupSchedules", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: mysqlEnum("type", ["full", "incremental", "differential"]).default("full").notNull(),
+  frequency: mysqlEnum("frequency", ["hourly", "daily", "weekly", "monthly"]).default("daily").notNull(),
+  time: varchar("time", { length: 10 }).notNull(), // HH:MM format
+  retentionDays: int("retentionDays").default(30).notNull(),
+  isEnabled: boolean("isEnabled").default(true).notNull(),
+  lastRun: timestamp("lastRun"),
+  nextRun: timestamp("nextRun"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BackupSchedule = typeof backupSchedules.$inferSelect;
+export type InsertBackupSchedule = typeof backupSchedules.$inferInsert;

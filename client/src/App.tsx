@@ -72,6 +72,14 @@ import {
   LazyTransactionHistory,
   LazySMSLogs,
   LazySellerOnboarding,
+  LazyCustomerSegmentation,
+  LazyMarketingAutomation,
+  LazyRiskManagement,
+  LazyComplianceCenter,
+  LazyWebhookManagement,
+  LazyVendorManagement,
+  LazyFleetManagement,
+  LazyBackupRecovery,
 } from "./routes/lazyRoutes";
 
 // Pages that don't have lazy versions yet - keep eager imports
@@ -212,6 +220,16 @@ function Router() {
       <Route path="/feedback-analysis" component={() => <LazyRouteNoDashboard component={LazyCustomerFeedbackAnalysis} />} />
       <Route path="/sms-logs" component={() => <LazyRoute component={LazySMSLogs} />} />
       <Route path="/seller-onboarding" component={() => <LazyRoute component={LazySellerOnboarding} />} />
+
+      {/* Sprint 24 - Final Admin Screens */}
+      <Route path="/customer-segmentation" component={() => <LazyRoute component={LazyCustomerSegmentation} />} />
+      <Route path="/marketing-automation" component={() => <LazyRoute component={LazyMarketingAutomation} />} />
+      <Route path="/risk-management" component={() => <LazyRoute component={LazyRiskManagement} />} />
+      <Route path="/compliance-center" component={() => <LazyRoute component={LazyComplianceCenter} />} />
+      <Route path="/webhook-management" component={() => <LazyRoute component={LazyWebhookManagement} />} />
+      <Route path="/vendor-management" component={() => <LazyRoute component={LazyVendorManagement} />} />
+      <Route path="/fleet-management" component={() => <LazyRoute component={LazyFleetManagement} />} />
+      <Route path="/backup-recovery" component={() => <LazyRoute component={LazyBackupRecovery} />} />
 
       {/* 404 */}
       <Route path="/404" component={NotFound} />

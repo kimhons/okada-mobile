@@ -6793,6 +6793,981 @@ export const appRouter = router({
         return { success };
       }),
   }),
+
+  // ============================================================================
+  // SPRINT 24: Customer Segmentation, Marketing Automation, Risk Management,
+  // Compliance, Webhooks, Vendors, Fleet, and Route Optimization
+  // ============================================================================
+
+  customerSegments: router({
+    list: protectedProcedure
+      .input(z.object({
+        isActive: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view customer segments');
+        }
+        return await db.getCustomerSegments(input || {});
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view customer segments');
+        }
+        return await db.getCustomerSegmentById(input.id);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        criteria: z.string(), // JSON string
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create customer segments');
+        }
+        return await db.createCustomerSegment({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        criteria: z.string().optional(),
+        isActive: z.boolean().optional(),
+        customerCount: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update customer segments');
+        }
+        const { id, ...updates } = input;
+        return await db.updateCustomerSegment(id, updates);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete customer segments');
+        }
+        return await db.deleteCustomerSegment(input.id);
+      }),
+  }),
+
+  marketingAutomations: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        segmentId: z.number().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view marketing automations');
+        }
+        return await db.getMarketingAutomations(input || {});
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view marketing automations');
+        }
+        return await db.getMarketingAutomationById(input.id);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        triggerType: z.enum(['time_based', 'event_based', 'segment_based']),
+        triggerConfig: z.string(), // JSON string
+        actionType: z.enum(['email', 'sms', 'push', 'discount']),
+        actionConfig: z.string(), // JSON string
+        segmentId: z.number().optional(),
+        status: z.enum(['draft', 'active', 'paused', 'completed']).optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create marketing automations');
+        }
+        return await db.createMarketingAutomation({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        triggerType: z.enum(['time_based', 'event_based', 'segment_based']).optional(),
+        triggerConfig: z.string().optional(),
+        actionType: z.enum(['email', 'sms', 'push', 'discount']).optional(),
+        actionConfig: z.string().optional(),
+        segmentId: z.number().optional(),
+        status: z.enum(['draft', 'active', 'paused', 'completed']).optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update marketing automations');
+        }
+        const { id, ...updates } = input;
+        return await db.updateMarketingAutomation(id, updates);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete marketing automations');
+        }
+        return await db.deleteMarketingAutomation(input.id);
+      }),
+    
+    updateMetrics: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        sentCount: z.number().optional(),
+        openedCount: z.number().optional(),
+        clickedCount: z.number().optional(),
+        convertedCount: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update automation metrics');
+        }
+        const { id, ...metrics } = input;
+        return await db.updateAutomationMetrics(id, metrics);
+      }),
+  }),
+
+  riskAssessments: router({
+    list: protectedProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        severity: z.string().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view risk assessments');
+        }
+        return await db.getRiskAssessments(input || {});
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view risk assessments');
+        }
+        return await db.getRiskAssessmentById(input.id);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        category: z.enum(['financial', 'operational', 'compliance', 'security', 'reputational']),
+        severity: z.enum(['low', 'medium', 'high', 'critical']),
+        likelihood: z.enum(['rare', 'unlikely', 'possible', 'likely', 'certain']),
+        impactScore: z.number().min(1).max(10),
+        riskScore: z.number(),
+        mitigationPlan: z.string().optional(),
+        mitigationStatus: z.enum(['not_started', 'in_progress', 'completed', 'ongoing']).optional(),
+        mitigationOwner: z.number().optional(),
+        mitigationDeadline: z.date().optional(),
+        status: z.enum(['identified', 'assessed', 'mitigating', 'resolved', 'accepted']).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create risk assessments');
+        }
+        return await db.createRiskAssessment({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        category: z.enum(['financial', 'operational', 'compliance', 'security', 'reputational']).optional(),
+        severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+        likelihood: z.enum(['rare', 'unlikely', 'possible', 'likely', 'certain']).optional(),
+        impactScore: z.number().min(1).max(10).optional(),
+        riskScore: z.number().optional(),
+        mitigationPlan: z.string().optional(),
+        mitigationStatus: z.enum(['not_started', 'in_progress', 'completed', 'ongoing']).optional(),
+        mitigationOwner: z.number().optional(),
+        mitigationDeadline: z.date().optional(),
+        status: z.enum(['identified', 'assessed', 'mitigating', 'resolved', 'accepted']).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update risk assessments');
+        }
+        const { id, ...updates } = input;
+        return await db.updateRiskAssessment(id, updates);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete risk assessments');
+        }
+        return await db.deleteRiskAssessment(input.id);
+      }),
+  }),
+
+  compliance: router({
+    listChecks: protectedProcedure
+      .input(z.object({
+        area: z.string().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view compliance checks');
+        }
+        return await db.getComplianceChecks(input || {});
+      }),
+    
+    getCheckById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view compliance checks');
+        }
+        return await db.getComplianceCheckById(input.id);
+      }),
+    
+    createCheck: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        area: z.enum(['data_privacy', 'financial', 'tax', 'labor', 'consumer_protection', 'licensing']),
+        regulation: z.string().optional(),
+        checkType: z.enum(['automated', 'manual', 'audit']),
+        frequency: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'annually']),
+        status: z.enum(['compliant', 'non_compliant', 'pending_review', 'remediation']).optional(),
+        nextCheckDate: z.date().optional(),
+        responsiblePerson: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create compliance checks');
+        }
+        return await db.createComplianceCheck(input);
+      }),
+    
+    updateCheck: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        area: z.enum(['data_privacy', 'financial', 'tax', 'labor', 'consumer_protection', 'licensing']).optional(),
+        regulation: z.string().optional(),
+        checkType: z.enum(['automated', 'manual', 'audit']).optional(),
+        frequency: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'annually']).optional(),
+        status: z.enum(['compliant', 'non_compliant', 'pending_review', 'remediation']).optional(),
+        lastCheckDate: z.date().optional(),
+        nextCheckDate: z.date().optional(),
+        evidence: z.string().optional(),
+        notes: z.string().optional(),
+        responsiblePerson: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update compliance checks');
+        }
+        const { id, ...updates } = input;
+        return await db.updateComplianceCheck(id, updates);
+      }),
+    
+    listViolations: protectedProcedure
+      .input(z.object({
+        checkId: z.number().optional(),
+        severity: z.string().optional(),
+        remediationStatus: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view compliance violations');
+        }
+        return await db.getComplianceViolations(input || {});
+      }),
+    
+    createViolation: protectedProcedure
+      .input(z.object({
+        checkId: z.number(),
+        description: z.string().min(1),
+        severity: z.enum(['minor', 'moderate', 'major', 'critical']),
+        remediationPlan: z.string().optional(),
+        remediationDeadline: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create compliance violations');
+        }
+        return await db.createComplianceViolation({
+          ...input,
+          reportedBy: ctx.user.id,
+        });
+      }),
+    
+    updateViolation: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        description: z.string().optional(),
+        severity: z.enum(['minor', 'moderate', 'major', 'critical']).optional(),
+        remediationPlan: z.string().optional(),
+        remediationDeadline: z.date().optional(),
+        remediationStatus: z.enum(['pending', 'in_progress', 'completed', 'overdue']).optional(),
+        resolvedAt: z.date().optional(),
+        resolutionNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update compliance violations');
+        }
+        const { id, ...updates } = input;
+        if (updates.resolvedAt) {
+          (updates as any).resolvedBy = ctx.user.id;
+        }
+        return await db.updateComplianceViolation(id, updates);
+      }),
+  }),
+
+  webhooks: router({
+    listEndpoints: protectedProcedure
+      .input(z.object({
+        isActive: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view webhook endpoints');
+        }
+        return await db.getWebhookEndpoints(input || {});
+      }),
+    
+    getEndpointById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view webhook endpoints');
+        }
+        return await db.getWebhookEndpointById(input.id);
+      }),
+    
+    createEndpoint: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        url: z.string().url(),
+        secret: z.string().min(16),
+        authType: z.enum(['none', 'basic', 'bearer', 'hmac']).optional(),
+        authCredentials: z.string().optional(),
+        events: z.string(), // JSON array
+        isActive: z.boolean().optional(),
+        maxRetries: z.number().optional(),
+        retryDelay: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create webhook endpoints');
+        }
+        return await db.createWebhookEndpoint({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+      }),
+    
+    updateEndpoint: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        url: z.string().url().optional(),
+        secret: z.string().min(16).optional(),
+        authType: z.enum(['none', 'basic', 'bearer', 'hmac']).optional(),
+        authCredentials: z.string().optional(),
+        events: z.string().optional(),
+        isActive: z.boolean().optional(),
+        maxRetries: z.number().optional(),
+        retryDelay: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update webhook endpoints');
+        }
+        const { id, ...updates } = input;
+        return await db.updateWebhookEndpoint(id, updates);
+      }),
+    
+    deleteEndpoint: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete webhook endpoints');
+        }
+        return await db.deleteWebhookEndpoint(input.id);
+      }),
+    
+    listLogs: protectedProcedure
+      .input(z.object({
+        endpointId: z.number().optional(),
+        status: z.string().optional(),
+        limit: z.number().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view webhook logs');
+        }
+        return await db.getWebhookLogs(input || {});
+      }),
+    
+    createLog: protectedProcedure
+      .input(z.object({
+        endpointId: z.number(),
+        eventType: z.string(),
+        payload: z.string(),
+        status: z.enum(['pending', 'success', 'failed']).optional(),
+        statusCode: z.number().optional(),
+        response: z.string().optional(),
+        errorMessage: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create webhook logs');
+        }
+        return await db.createWebhookLog(input);
+      }),
+  }),
+
+  vendors: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view vendors');
+        }
+        return await db.getVendors(input || {});
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view vendors');
+        }
+        return await db.getVendorById(input.id);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        contactPerson: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        businessType: z.string().optional(),
+        taxId: z.string().optional(),
+        status: z.enum(['active', 'inactive', 'suspended', 'pending']).optional(),
+        paymentTerms: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create vendors');
+        }
+        return await db.createVendor(input);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        contactPerson: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        businessType: z.string().optional(),
+        taxId: z.string().optional(),
+        status: z.enum(['active', 'inactive', 'suspended', 'pending']).optional(),
+        rating: z.number().optional(),
+        paymentTerms: z.string().optional(),
+        totalPurchases: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update vendors');
+        }
+        const { id, ...updates } = input;
+        return await db.updateVendor(id, updates);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete vendors');
+        }
+        return await db.deleteVendor(input.id);
+      }),
+    
+    listContracts: protectedProcedure
+      .input(z.object({
+        vendorId: z.number().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view vendor contracts');
+        }
+        return await db.getVendorContracts(input || {});
+      }),
+    
+    createContract: protectedProcedure
+      .input(z.object({
+        vendorId: z.number(),
+        contractNumber: z.string().min(1),
+        title: z.string().min(1),
+        description: z.string().optional(),
+        startDate: z.date(),
+        endDate: z.date(),
+        value: z.number(),
+        status: z.enum(['draft', 'active', 'expired', 'terminated', 'renewed']).optional(),
+        documentUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create vendor contracts');
+        }
+        return await db.createVendorContract(input);
+      }),
+    
+    updateContract: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        contractNumber: z.string().min(1).optional(),
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        value: z.number().optional(),
+        status: z.enum(['draft', 'active', 'expired', 'terminated', 'renewed']).optional(),
+        documentUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update vendor contracts');
+        }
+        const { id, ...updates } = input;
+        return await db.updateVendorContract(id, updates);
+      }),
+  }),
+
+  fleet: router({
+    listVehicles: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        type: z.string().optional(),
+        assignedRiderId: z.number().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view vehicles');
+        }
+        return await db.getVehicles(input || {});
+      }),
+    
+    getVehicleById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view vehicles');
+        }
+        return await db.getVehicleById(input.id);
+      }),
+    
+    createVehicle: protectedProcedure
+      .input(z.object({
+        plateNumber: z.string().min(1),
+        type: z.enum(['motorcycle', 'bicycle', 'car', 'van', 'truck']),
+        make: z.string().optional(),
+        model: z.string().optional(),
+        year: z.number().optional(),
+        color: z.string().optional(),
+        assignedRiderId: z.number().optional(),
+        status: z.enum(['available', 'in_use', 'maintenance', 'retired']).optional(),
+        insuranceExpiry: z.date().optional(),
+        insuranceProvider: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create vehicles');
+        }
+        return await db.createVehicle(input);
+      }),
+    
+    updateVehicle: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        plateNumber: z.string().min(1).optional(),
+        type: z.enum(['motorcycle', 'bicycle', 'car', 'van', 'truck']).optional(),
+        make: z.string().optional(),
+        model: z.string().optional(),
+        year: z.number().optional(),
+        color: z.string().optional(),
+        assignedRiderId: z.number().optional(),
+        status: z.enum(['available', 'in_use', 'maintenance', 'retired']).optional(),
+        currentLat: z.string().optional(),
+        currentLng: z.string().optional(),
+        totalMileage: z.number().optional(),
+        insuranceExpiry: z.date().optional(),
+        insuranceProvider: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update vehicles');
+        }
+        const { id, ...updates } = input;
+        return await db.updateVehicle(id, updates);
+      }),
+    
+    deleteVehicle: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete vehicles');
+        }
+        return await db.deleteVehicle(input.id);
+      }),
+    
+    listMaintenance: protectedProcedure
+      .input(z.object({
+        vehicleId: z.number().optional(),
+        status: z.string().optional(),
+        type: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view vehicle maintenance');
+        }
+        return await db.getVehicleMaintenance(input || {});
+      }),
+    
+    createMaintenance: protectedProcedure
+      .input(z.object({
+        vehicleId: z.number(),
+        type: z.enum(['routine', 'repair', 'inspection', 'emergency']),
+        description: z.string().min(1),
+        cost: z.number(),
+        vendorId: z.number().optional(),
+        status: z.enum(['scheduled', 'in_progress', 'completed', 'cancelled']).optional(),
+        scheduledDate: z.date(),
+        mileageAtMaintenance: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create vehicle maintenance');
+        }
+        return await db.createVehicleMaintenance(input);
+      }),
+    
+    updateMaintenance: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        type: z.enum(['routine', 'repair', 'inspection', 'emergency']).optional(),
+        description: z.string().optional(),
+        cost: z.number().optional(),
+        vendorId: z.number().optional(),
+        status: z.enum(['scheduled', 'in_progress', 'completed', 'cancelled']).optional(),
+        scheduledDate: z.date().optional(),
+        completedDate: z.date().optional(),
+        mileageAtMaintenance: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update vehicle maintenance');
+        }
+        const { id, ...updates } = input;
+        return await db.updateVehicleMaintenance(id, updates);
+      }),
+  }),
+
+  routes: router({
+    list: protectedProcedure
+      .input(z.object({
+        riderId: z.number().optional(),
+        vehicleId: z.number().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view delivery routes');
+        }
+        return await db.getDeliveryRoutes(input || {});
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view delivery routes');
+        }
+        const route = await db.getDeliveryRouteById(input.id);
+        const waypoints = await db.getRouteWaypoints(input.id);
+        return { route, waypoints };
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        riderId: z.number().optional(),
+        vehicleId: z.number().optional(),
+        date: z.date(),
+        status: z.enum(['planned', 'in_progress', 'completed', 'cancelled']).optional(),
+        totalDistance: z.number().optional(),
+        estimatedDuration: z.number().optional(),
+        totalStops: z.number().optional(),
+        optimizationScore: z.number().optional(),
+        fuelEstimate: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create delivery routes');
+        }
+        return await db.createDeliveryRoute(input);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        riderId: z.number().optional(),
+        vehicleId: z.number().optional(),
+        date: z.date().optional(),
+        status: z.enum(['planned', 'in_progress', 'completed', 'cancelled']).optional(),
+        totalDistance: z.number().optional(),
+        estimatedDuration: z.number().optional(),
+        actualDuration: z.number().optional(),
+        totalStops: z.number().optional(),
+        completedStops: z.number().optional(),
+        optimizationScore: z.number().optional(),
+        fuelEstimate: z.number().optional(),
+        startedAt: z.date().optional(),
+        completedAt: z.date().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update delivery routes');
+        }
+        const { id, ...updates } = input;
+        return await db.updateDeliveryRoute(id, updates);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete delivery routes');
+        }
+        return await db.deleteDeliveryRoute(input.id);
+      }),
+    
+    getWaypoints: protectedProcedure
+      .input(z.object({ routeId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view route waypoints');
+        }
+        return await db.getRouteWaypoints(input.routeId);
+      }),
+    
+    createWaypoint: protectedProcedure
+      .input(z.object({
+        routeId: z.number(),
+        orderId: z.number().optional(),
+        sequenceNumber: z.number(),
+        address: z.string().min(1),
+        lat: z.string(),
+        lng: z.string(),
+        type: z.enum(['pickup', 'delivery', 'return']),
+        status: z.enum(['pending', 'arrived', 'completed', 'skipped']).optional(),
+        estimatedArrival: z.date().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create route waypoints');
+        }
+        return await db.createRouteWaypoint(input);
+      }),
+    
+    updateWaypoint: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        sequenceNumber: z.number().optional(),
+        address: z.string().optional(),
+        lat: z.string().optional(),
+        lng: z.string().optional(),
+        type: z.enum(['pickup', 'delivery', 'return']).optional(),
+        status: z.enum(['pending', 'arrived', 'completed', 'skipped']).optional(),
+        estimatedArrival: z.date().optional(),
+        actualArrival: z.date().optional(),
+        completedAt: z.date().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can update route waypoints');
+        }
+        const { id, ...updates } = input;
+        return await db.updateRouteWaypoint(id, updates);
+      }),
+    
+    bulkCreateWaypoints: protectedProcedure
+      .input(z.object({
+        waypoints: z.array(z.object({
+          routeId: z.number(),
+          orderId: z.number().optional(),
+          sequenceNumber: z.number(),
+          address: z.string().min(1),
+          lat: z.string(),
+          lng: z.string(),
+          type: z.enum(['pickup', 'delivery', 'return']),
+          status: z.enum(['pending', 'arrived', 'completed', 'skipped']).optional(),
+          estimatedArrival: z.date().optional(),
+          notes: z.string().optional(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create route waypoints');
+        }
+        return await db.bulkCreateRouteWaypoints(input.waypoints);
+      }),
+  }),
+
+  sprint24Stats: router({
+    get: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view Sprint 24 stats');
+        }
+        return await db.getSprint24Stats();
+      }),
+  }),
+
+  backup: router({
+    list: protectedProcedure
+      .input(z.object({}).optional())
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view backups');
+        }
+        return await db.getAllBackupLogs();
+      }),
+    
+    listSchedules: protectedProcedure
+      .input(z.object({}).optional())
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can view backup schedules');
+        }
+        return await db.getBackupSchedules();
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        type: z.enum(['full', 'incremental', 'differential']),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create backups');
+        }
+        return await db.createBackupLog({
+          ...input,
+          filename: `backup_${Date.now()}.sql`,
+          status: 'pending',
+          type: input.type === 'full' ? 'manual' : 'automatic',
+          createdBy: ctx.user.id,
+        });
+      }),
+    
+    createSchedule: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        type: z.enum(['full', 'incremental', 'differential']),
+        frequency: z.enum(['hourly', 'daily', 'weekly', 'monthly']),
+        time: z.string(),
+        retentionDays: z.number().min(1).max(365),
+        isEnabled: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can create backup schedules');
+        }
+        return await db.createBackupSchedule(input);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can delete backups');
+        }
+        return await db.deleteBackupLog(input.id);
+      }),
+    
+    restore: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can restore backups');
+        }
+        // In a real implementation, this would trigger a restore process
+        return { success: true, message: 'Restore initiated' };
+      }),
+    
+    toggleSchedule: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        isEnabled: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Only admins can toggle backup schedules');
+        }
+        return await db.updateBackupSchedule(input.id, { isEnabled: input.isEnabled });
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 
