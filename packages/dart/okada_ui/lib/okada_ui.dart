@@ -11,6 +11,7 @@ export 'src/theme/okada_spacing.dart';
 export 'src/theme/okada_shadows.dart';
 export 'src/theme/okada_border_radius.dart';
 export 'src/theme/okada_theme.dart';
+export 'src/theme/okada_design_system.dart';
 
 // African Cultural Theming System
 export 'src/theme/african_countries.dart';
@@ -42,3 +43,15 @@ export 'src/widgets/okada_card.dart';
 export 'src/widgets/okada_badge.dart';
 export 'src/widgets/okada_avatar.dart';
 export 'src/widgets/country_flag.dart';
+
+// Cultural Design Elements
+export 'src/widgets/ndop_pattern.dart';
+export 'src/widgets/cultural_symbols.dart';
+
+// Components - Password
+export 'src/components/inputs/password_strength_indicator.dart';
+
+// Screens - Onboarding Flow
+export 'src/screens/splash_screen.dart';
+export 'src/screens/language_selection_screen.dart';
+export 'src/screens/onboarding_carousel_screen.dart';
