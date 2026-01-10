@@ -25,6 +25,8 @@ export 'src/errors/error_handler.dart';
 export 'src/utils/result.dart';
 export 'src/utils/logger_service.dart';
 export 'src/utils/storage_service.dart';
+export 'src/utils/hive_storage_service.dart';
+export 'src/utils/network_service.dart';
 export 'src/utils/preferences_service.dart';
 export 'src/utils/validators.dart';
 
