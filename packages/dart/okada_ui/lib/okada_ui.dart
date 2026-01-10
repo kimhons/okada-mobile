@@ -55,3 +55,11 @@ export 'src/components/inputs/password_strength_indicator.dart';
 export 'src/screens/splash_screen.dart';
 export 'src/screens/language_selection_screen.dart';
 export 'src/screens/onboarding_carousel_screen.dart';
+
+// Screens - Home & Discovery (Sequence 3)
+export 'src/screens/home_screen.dart';
+export 'src/screens/category_list_screen.dart';
+export 'src/screens/search_screen.dart';
+
+// Components - Navigation
+export 'src/components/navigation/okada_bottom_navigation.dart';
