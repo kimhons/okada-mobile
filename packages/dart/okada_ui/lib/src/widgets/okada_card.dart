@@ -1,344 +1,236 @@
 import 'package:flutter/material.dart';
-import '../theme/okada_colors.dart';
-import '../theme/okada_spacing.dart';
-import '../theme/okada_border_radius.dart';
-import '../theme/okada_shadows.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
-/// Card variants
-enum OkadaCardVariant {
-  /// Elevated card with shadow
-  elevated,
-  
-  /// Outlined card with border
-  outlined,
-  
-  /// Filled card with background color
-  filled,
-}
-
-/// Okada Platform Card Component
+/// Base card with Okada styling
 class OkadaCard extends StatelessWidget {
-  /// Card content
   final Widget child;
-  
-  /// Card variant
-  final OkadaCardVariant variant;
-  
-  /// Custom padding
-  final EdgeInsets? padding;
-  
-  /// Custom margin
-  final EdgeInsets? margin;
-  
-  /// Custom border radius
-  final BorderRadius? borderRadius;
-  
-  /// Custom background color
-  final Color? backgroundColor;
-  
-  /// Custom border color (for outlined variant)
-  final Color? borderColor;
-  
-  /// Callback when card is tapped
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final double borderRadius;
+  final bool hasBorder;
+  final bool hasShadow;
   
-  /// Whether card is selected
-  final bool isSelected;
-  
-  /// Whether card is disabled
-  final bool isDisabled;
-
   const OkadaCard({
     super.key,
     required this.child,
-    this.variant = OkadaCardVariant.outlined,
     this.padding,
     this.margin,
-    this.borderRadius,
-    this.backgroundColor,
-    this.borderColor,
     this.onTap,
-    this.isSelected = false,
-    this.isDisabled = false,
+    this.backgroundColor,
+    this.borderRadius = 16,
+    this.hasBorder = true,
+    this.hasShadow = false,
   });
-
+  
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final theme = Theme.of(context);
+    
+    Widget card = Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: _getBackgroundColor(),
-        borderRadius: borderRadius ?? OkadaBorderRadius.card,
-        border: _getBorder(),
-        boxShadow: _getShadow(),
+        color: backgroundColor ?? theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: hasBorder 
+            ? Border.all(color: theme.dividerColor)
+            : null,
+        boxShadow: hasShadow
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: borderRadius ?? OkadaBorderRadius.card,
-        child: InkWell(
-          onTap: isDisabled ? null : onTap,
-          borderRadius: borderRadius ?? OkadaBorderRadius.card,
-          child: Padding(
-            padding: padding ?? OkadaSpacing.cardEdgeInsets,
-            child: child,
-          ),
-        ),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(16),
+        child: child,
       ),
     );
-  }
-
-  Color _getBackgroundColor() {
-    if (isDisabled) return OkadaColors.neutral100;
-    if (backgroundColor != null) return backgroundColor!;
     
-    switch (variant) {
-      case OkadaCardVariant.elevated:
-      case OkadaCardVariant.outlined:
-        return OkadaColors.surface;
-      case OkadaCardVariant.filled:
-        return OkadaColors.surfaceVariant;
-    }
-  }
-
-  Border? _getBorder() {
-    if (isSelected) {
-      return Border.all(color: OkadaColors.primary, width: 2);
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: card,
+      );
     }
     
-    switch (variant) {
-      case OkadaCardVariant.elevated:
-        return null;
-      case OkadaCardVariant.outlined:
-        return Border.all(
-          color: borderColor ?? OkadaColors.borderLight,
-          width: 1,
-        );
-      case OkadaCardVariant.filled:
-        return null;
-    }
-  }
-
-  List<BoxShadow>? _getShadow() {
-    if (isDisabled) return null;
-    
-    switch (variant) {
-      case OkadaCardVariant.elevated:
-        return OkadaShadows.card;
-      case OkadaCardVariant.outlined:
-      case OkadaCardVariant.filled:
-        return null;
-    }
+    return card;
   }
 }
 
-/// Product card component
+/// Product card for displaying products
 class OkadaProductCard extends StatelessWidget {
-  /// Product image URL
-  final String? imageUrl;
-  
-  /// Product name
   final String name;
-  
-  /// Product price
+  final String? imageUrl;
   final double price;
-  
-  /// Original price (for discount)
   final double? originalPrice;
-  
-  /// Currency symbol
-  final String currency;
-  
-  /// Product rating
+  final String? sellerName;
   final double? rating;
-  
-  /// Number of reviews
   final int? reviewCount;
-  
-  /// Whether product is in stock
-  final bool inStock;
-  
-  /// Callback when card is tapped
   final VoidCallback? onTap;
-  
-  /// Callback when add to cart is tapped
   final VoidCallback? onAddToCart;
+  final bool isLoading;
   
-  /// Callback when favorite is tapped
-  final VoidCallback? onFavorite;
-  
-  /// Whether product is favorited
-  final bool isFavorite;
-  
-  /// Card width
-  final double? width;
-
   const OkadaProductCard({
     super.key,
-    this.imageUrl,
     required this.name,
+    this.imageUrl,
     required this.price,
     this.originalPrice,
-    this.currency = 'XAF',
+    this.sellerName,
     this.rating,
     this.reviewCount,
-    this.inStock = true,
     this.onTap,
     this.onAddToCart,
-    this.onFavorite,
-    this.isFavorite = false,
-    this.width,
+    this.isLoading = false,
   });
-
+  
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    if (isLoading) {
+      return _buildShimmer(context);
+    }
+    
     return OkadaCard(
-      variant: OkadaCardVariant.outlined,
       padding: EdgeInsets.zero,
       onTap: onTap,
-      child: SizedBox(
-        width: width,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Image section
-            Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          AspectRatio(
+            aspectRatio: 1,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: imageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                        color: theme.colorScheme.surfaceVariant,
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        color: theme.colorScheme.surfaceVariant,
+                        child: const Icon(Icons.image_not_supported),
+                      ),
+                    )
+                  : Container(
+                      color: theme.colorScheme.surfaceVariant,
+                      child: const Icon(Icons.image, size: 48),
+                    ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: ClipRRect(
-                    borderRadius: OkadaBorderRadius.topLg,
-                    child: imageUrl != null
-                        ? Image.network(
-                            imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                          )
-                        : _buildPlaceholder(),
-                  ),
+                Text(
+                  name,
+                  style: theme.textTheme.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                // Favorite button
-                if (onFavorite != null)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: onFavorite,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: OkadaColors.surface.withOpacity(0.9),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          size: 20,
-                          color: isFavorite 
-                              ? OkadaColors.error 
-                              : OkadaColors.textSecondary,
-                        ),
+                if (sellerName != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    sellerName!,
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      '${price.toStringAsFixed(0)} XAF',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.primaryColor,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                // Out of stock badge
-                if (!inStock)
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                    if (originalPrice != null && originalPrice! > price) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '${originalPrice!.toStringAsFixed(0)} XAF',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          decoration: TextDecoration.lineThrough,
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: OkadaColors.neutral800,
-                        borderRadius: OkadaBorderRadius.radiusSm,
-                      ),
-                      child: Text(
-                        'Out of Stock',
-                        style: TextStyle(
-                          color: OkadaColors.textInverse,
-                          fontSize: 10,
+                    ],
+                  ],
+                ),
+                if (rating != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.star, size: 16, color: Colors.amber[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        rating!.toStringAsFixed(1),
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
+                      if (reviewCount != null) ...[
+                        Text(
+                          ' ($reviewCount)',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
                   ),
+                ],
               ],
             ),
-            // Content section
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildShimmer(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: OkadaCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: OkadaColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  OkadaSpacing.gapVerticalXs,
-                  // Rating
-                  if (rating != null) ...[
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star,
-                          size: 14,
-                          color: OkadaColors.warning,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          rating!.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: OkadaColors.textSecondary,
-                          ),
-                        ),
-                        if (reviewCount != null) ...[
-                          Text(
-                            ' ($reviewCount)',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: OkadaColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    OkadaSpacing.gapVerticalXs,
-                  ],
-                  // Price
-                  Row(
-                    children: [
-                      Text(
-                        '$currency ${price.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: OkadaColors.textPrimary,
-                        ),
-                      ),
-                      if (originalPrice != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          '$currency ${originalPrice!.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: OkadaColors.textTertiary,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                  Container(height: 16, width: double.infinity, color: Colors.white),
+                  const SizedBox(height: 8),
+                  Container(height: 12, width: 100, color: Colors.white),
+                  const SizedBox(height: 8),
+                  Container(height: 16, width: 80, color: Colors.white),
                 ],
               ),
             ),
@@ -347,15 +239,212 @@ class OkadaProductCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildPlaceholder() {
-    return Container(
-      color: OkadaColors.neutral100,
-      child: const Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: 48,
-          color: OkadaColors.neutral400,
+/// Order card for displaying orders
+class OkadaOrderCard extends StatelessWidget {
+  final String orderNumber;
+  final String status;
+  final Color statusColor;
+  final String sellerName;
+  final String? sellerImage;
+  final int itemCount;
+  final double total;
+  final DateTime createdAt;
+  final VoidCallback? onTap;
+  final VoidCallback? onReorder;
+  
+  const OkadaOrderCard({
+    super.key,
+    required this.orderNumber,
+    required this.status,
+    required this.statusColor,
+    required this.sellerName,
+    this.sellerImage,
+    required this.itemCount,
+    required this.total,
+    required this.createdAt,
+    this.onTap,
+    this.onReorder,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return OkadaCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              // Seller image
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: theme.colorScheme.surfaceVariant,
+                backgroundImage: sellerImage != null
+                    ? CachedNetworkImageProvider(sellerImage!)
+                    : null,
+                child: sellerImage == null
+                    ? Text(sellerName[0].toUpperCase())
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              // Seller name and order number
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sellerName,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    Text(
+                      '#$orderNumber',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              // Status badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          // Details
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$itemCount item${itemCount > 1 ? 's' : ''}',
+                style: theme.textTheme.bodyMedium,
+              ),
+              Text(
+                '${total.toStringAsFixed(0)} XAF',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatDate(createdAt),
+                style: theme.textTheme.bodySmall,
+              ),
+              if (onReorder != null)
+                TextButton(
+                  onPressed: onReorder,
+                  child: const Text('Reorder'),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    
+    if (diff.inDays == 0) {
+      return 'Today';
+    } else if (diff.inDays == 1) {
+      return 'Yesterday';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays} days ago';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+}
+
+/// Empty state card
+class OkadaEmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final String? actionText;
+  final VoidCallback? onAction;
+  
+  const OkadaEmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.actionText,
+    this.onAction,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceVariant,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 40,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: theme.textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (actionText != null && onAction != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: onAction,
+                child: Text(actionText!),
+              ),
+            ],
+          ],
         ),
       ),
     );

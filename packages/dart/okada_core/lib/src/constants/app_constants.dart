@@ -2,133 +2,200 @@
 class AppConstants {
   AppConstants._();
 
-  // ============================================
-  // APP INFO
-  // ============================================
-  
+  // App Info
   static const String appName = 'Okada';
-  static const String appNameCustomer = 'Okada';
-  static const String appNameRider = 'Okada Rider';
   static const String appVersion = '1.0.0';
-  static const int appBuildNumber = 1;
+  static const String appBuildNumber = '1';
+  static const String appPackageName = 'cm.okada.customer';
+  static const String riderAppPackageName = 'cm.okada.rider';
 
-  // ============================================
-  // PAGINATION
-  // ============================================
-  
-  static const int defaultPageSize = 20;
-  static const int maxPageSize = 100;
-  static const int searchResultsLimit = 50;
+  // Supported Locales
+  static const String defaultLocale = 'fr';
+  static const List<String> supportedLocales = ['fr', 'en'];
 
-  // ============================================
-  // TIMEOUTS
-  // ============================================
-  
-  static const Duration connectionTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
-  static const Duration sendTimeout = Duration(seconds: 30);
-  static const Duration otpTimeout = Duration(minutes: 5);
-  static const Duration sessionTimeout = Duration(days: 7);
-  static const Duration locationUpdateInterval = Duration(seconds: 10);
-  static const Duration orderRefreshInterval = Duration(seconds: 30);
+  // Currency
+  static const String currencyCode = 'XAF';
+  static const String currencySymbol = 'FCFA';
+  static const int currencyDecimals = 0;
 
-  // ============================================
-  // CACHE DURATIONS
-  // ============================================
-  
-  static const Duration categoryCacheDuration = Duration(hours: 24);
-  static const Duration productCacheDuration = Duration(hours: 1);
-  static const Duration userCacheDuration = Duration(minutes: 30);
-  static const Duration locationCacheDuration = Duration(minutes: 5);
+  // Phone Number
+  static const String defaultCountryCode = '+237';
+  static const int phoneNumberLength = 9;
+  static const List<String> validPhonePrefixes = ['6', '2'];
 
-  // ============================================
-  // LIMITS
-  // ============================================
-  
-  static const int maxCartItems = 50;
-  static const int maxAddresses = 10;
-  static const int maxFavorites = 100;
-  static const int maxSearchHistory = 20;
-  static const int maxRecentOrders = 50;
-  static const int maxImageSize = 5 * 1024 * 1024; // 5MB
-  static const int maxUploadRetries = 3;
-
-  // ============================================
-  // VALIDATION
-  // ============================================
-  
-  static const int minPasswordLength = 8;
-  static const int maxPasswordLength = 128;
+  // OTP
   static const int otpLength = 6;
-  static const int phoneNumberLength = 9; // Cameroon format
-  static const int minNameLength = 2;
-  static const int maxNameLength = 50;
-  static const int maxAddressLength = 200;
-  static const int maxNoteLength = 500;
+  static const int otpExpirySeconds = 300; // 5 minutes
+  static const int otpResendDelaySeconds = 60;
 
-  // ============================================
-  // CURRENCY (Default: Cameroon)
-  // ============================================
-  
-  static const String defaultCurrencyCode = 'XAF';
-  static const String defaultCurrencySymbol = 'FCFA';
-  static const int defaultCurrencyDecimals = 0; // CFA has no decimals
+  // Location
+  static const double defaultLatitude = 4.0511; // Douala
+  static const double defaultLongitude = 9.7679;
+  static const double defaultZoom = 14.0;
+  static const double maxDeliveryRadiusKm = 20.0;
 
-  // ============================================
-  // DELIVERY
-  // ============================================
-  
-  static const double defaultDeliveryRadius = 10.0; // km
-  static const double maxDeliveryRadius = 50.0; // km
-  static const double minOrderAmount = 500.0; // XAF
-  static const double freeDeliveryThreshold = 10000.0; // XAF
-  static const double baseDeliveryFee = 500.0; // XAF
-  static const double perKmDeliveryFee = 100.0; // XAF per km
+  // Order
+  static const int minOrderAmount = 500; // FCFA
+  static const int maxOrderAmount = 500000; // FCFA
+  static const int defaultDeliveryFee = 500; // FCFA
+  static const int freeDeliveryThreshold = 10000; // FCFA
+  static const int maxOrderItems = 50;
 
-  // ============================================
-  // RIDER
-  // ============================================
-  
-  static const double riderAcceptanceRadius = 5.0; // km
-  static const Duration riderAcceptanceTimeout = Duration(seconds: 60);
-  static const int maxActiveDeliveries = 3;
-  static const double minRiderRating = 3.0;
+  // Cart
+  static const int cartExpiryHours = 24;
+  static const int maxCartItems = 50;
+  static const int maxItemQuantity = 99;
 
-  // ============================================
-  // RATINGS
-  // ============================================
-  
-  static const double minRating = 1.0;
-  static const double maxRating = 5.0;
-  static const double defaultRating = 5.0;
+  // Rider
+  static const int minRiderAge = 18;
+  static const int maxActiveOrders = 3;
+  static const double minAcceptanceRate = 0.7; // 70%
+  static const double minRating = 4.0;
 
-  // ============================================
-  // LOCATION
-  // ============================================
-  
-  // Cameroon center coordinates (Yaoundé)
-  static const double defaultLatitude = 3.8480;
-  static const double defaultLongitude = 11.5021;
-  static const double defaultZoom = 12.0;
-  static const double minZoom = 5.0;
-  static const double maxZoom = 20.0;
+  // Images
+  static const int maxImageSizeBytes = 5 * 1024 * 1024; // 5MB
+  static const List<String> allowedImageTypes = ['jpg', 'jpeg', 'png', 'webp'];
+  static const int thumbnailSize = 200;
+  static const int mediumImageSize = 600;
+  static const int largeImageSize = 1200;
 
-  // ============================================
-  // ANIMATION DURATIONS
-  // ============================================
-  
-  static const Duration shortAnimation = Duration(milliseconds: 200);
-  static const Duration mediumAnimation = Duration(milliseconds: 300);
-  static const Duration longAnimation = Duration(milliseconds: 500);
-  static const Duration pageTransition = Duration(milliseconds: 300);
+  // Cache
+  static const int cacheExpiryMinutes = 30;
+  static const int maxCacheItems = 100;
 
-  // ============================================
-  // SUPPORT
-  // ============================================
-  
+  // Animation
+  static const Duration shortAnimationDuration = Duration(milliseconds: 200);
+  static const Duration mediumAnimationDuration = Duration(milliseconds: 350);
+  static const Duration longAnimationDuration = Duration(milliseconds: 500);
+
+  // Debounce
+  static const Duration searchDebounce = Duration(milliseconds: 500);
+  static const Duration locationUpdateDebounce = Duration(seconds: 5);
+
+  // Support
   static const String supportEmail = 'support@okada.cm';
   static const String supportPhone = '+237 6XX XXX XXX';
   static const String websiteUrl = 'https://okada.cm';
   static const String privacyPolicyUrl = 'https://okada.cm/privacy';
   static const String termsOfServiceUrl = 'https://okada.cm/terms';
+
+  // Social
+  static const String facebookUrl = 'https://facebook.com/okadacm';
+  static const String instagramUrl = 'https://instagram.com/okadacm';
+  static const String twitterUrl = 'https://twitter.com/okadacm';
+
+  // Feature Flags
+  static const bool enableDarkMode = true;
+  static const bool enableBiometricAuth = true;
+  static const bool enablePushNotifications = true;
+  static const bool enableAnalytics = true;
+  static const bool enableCrashReporting = true;
+}
+
+/// Order status enum
+enum OrderStatus {
+  pending,
+  confirmed,
+  preparing,
+  readyForPickup,
+  pickedUp,
+  inTransit,
+  delivered,
+  cancelled,
+  failed;
+
+  String get displayName {
+    switch (this) {
+      case OrderStatus.pending:
+        return 'En attente';
+      case OrderStatus.confirmed:
+        return 'Confirmée';
+      case OrderStatus.preparing:
+        return 'En préparation';
+      case OrderStatus.readyForPickup:
+        return 'Prête';
+      case OrderStatus.pickedUp:
+        return 'Récupérée';
+      case OrderStatus.inTransit:
+        return 'En livraison';
+      case OrderStatus.delivered:
+        return 'Livrée';
+      case OrderStatus.cancelled:
+        return 'Annulée';
+      case OrderStatus.failed:
+        return 'Échouée';
+    }
+  }
+
+  bool get isActive => [
+        OrderStatus.pending,
+        OrderStatus.confirmed,
+        OrderStatus.preparing,
+        OrderStatus.readyForPickup,
+        OrderStatus.pickedUp,
+        OrderStatus.inTransit,
+      ].contains(this);
+
+  bool get isCompleted => [
+        OrderStatus.delivered,
+        OrderStatus.cancelled,
+        OrderStatus.failed,
+      ].contains(this);
+}
+
+/// Payment method enum
+enum PaymentMethod {
+  mtnMomo,
+  orangeMoney,
+  cash,
+  card,
+  wallet;
+
+  String get displayName {
+    switch (this) {
+      case PaymentMethod.mtnMomo:
+        return 'MTN Mobile Money';
+      case PaymentMethod.orangeMoney:
+        return 'Orange Money';
+      case PaymentMethod.cash:
+        return 'Espèces';
+      case PaymentMethod.card:
+        return 'Carte bancaire';
+      case PaymentMethod.wallet:
+        return 'Portefeuille Okada';
+    }
+  }
+
+  String get iconAsset {
+    switch (this) {
+      case PaymentMethod.mtnMomo:
+        return 'assets/icons/mtn_momo.svg';
+      case PaymentMethod.orangeMoney:
+        return 'assets/icons/orange_money.svg';
+      case PaymentMethod.cash:
+        return 'assets/icons/cash.svg';
+      case PaymentMethod.card:
+        return 'assets/icons/card.svg';
+      case PaymentMethod.wallet:
+        return 'assets/icons/wallet.svg';
+    }
+  }
+}
+
+/// Vehicle type enum
+enum VehicleType {
+  motorcycle,
+  bicycle,
+  car;
+
+  String get displayName {
+    switch (this) {
+      case VehicleType.motorcycle:
+        return 'Moto';
+      case VehicleType.bicycle:
+        return 'Vélo';
+      case VehicleType.car:
+        return 'Voiture';
+    }
+  }
 }

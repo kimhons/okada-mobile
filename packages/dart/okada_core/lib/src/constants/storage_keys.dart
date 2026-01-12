@@ -1,140 +1,60 @@
-/// Storage key constants for Okada Platform
-/// Used for SharedPreferences and SecureStorage
+/// Storage key constants for secure and local storage
 class StorageKeys {
   StorageKeys._();
 
-  // ============================================
-  // AUTHENTICATION (Secure Storage)
-  // ============================================
-  
+  // Secure Storage Keys (encrypted)
   static const String accessToken = 'access_token';
   static const String refreshToken = 'refresh_token';
-  static const String tokenExpiry = 'token_expiry';
   static const String userId = 'user_id';
   static const String userRole = 'user_role';
   static const String biometricEnabled = 'biometric_enabled';
-  static const String biometricKey = 'biometric_key';
   static const String pinCode = 'pin_code';
 
-  // ============================================
-  // USER DATA (Secure Storage)
-  // ============================================
-  
-  static const String userProfile = 'user_profile';
-  static const String userPhone = 'user_phone';
-  static const String userEmail = 'user_email';
-  static const String userName = 'user_name';
+  // Hive Box Names
+  static const String userBox = 'user_box';
+  static const String cartBox = 'cart_box';
+  static const String settingsBox = 'settings_box';
+  static const String cacheBox = 'cache_box';
+  static const String searchHistoryBox = 'search_history_box';
+  static const String recentlyViewedBox = 'recently_viewed_box';
+  static const String favoritesBox = 'favorites_box';
+  static const String addressesBox = 'addresses_box';
+  static const String notificationsBox = 'notifications_box';
 
-  // ============================================
-  // PREFERENCES (SharedPreferences)
-  // ============================================
-  
-  static const String language = 'language';
-  static const String country = 'country';
-  static const String theme = 'theme';
+  // User Preferences
+  static const String locale = 'locale';
+  static const String themeMode = 'theme_mode';
   static const String notificationsEnabled = 'notifications_enabled';
   static const String soundEnabled = 'sound_enabled';
   static const String vibrationEnabled = 'vibration_enabled';
-  static const String locationPermissionAsked = 'location_permission_asked';
-  static const String notificationPermissionAsked = 'notification_permission_asked';
+  static const String locationEnabled = 'location_enabled';
 
-  // ============================================
-  // ONBOARDING
-  // ============================================
-  
+  // Onboarding
   static const String onboardingCompleted = 'onboarding_completed';
   static const String firstLaunch = 'first_launch';
-  static const String lastVersionSeen = 'last_version_seen';
-  static const String whatsNewSeen = 'whats_new_seen';
+  static const String lastVersion = 'last_version';
 
-  // ============================================
-  // CART
-  // ============================================
-  
-  static const String cartItems = 'cart_items';
-  static const String cartVendorId = 'cart_vendor_id';
-  static const String cartLastUpdated = 'cart_last_updated';
-  static const String appliedCoupon = 'applied_coupon';
-
-  // ============================================
-  // ADDRESSES
-  // ============================================
-  
-  static const String savedAddresses = 'saved_addresses';
-  static const String defaultAddressId = 'default_address_id';
-  static const String lastUsedAddress = 'last_used_address';
-  static const String currentLocation = 'current_location';
-
-  // ============================================
-  // SEARCH
-  // ============================================
-  
-  static const String searchHistory = 'search_history';
-  static const String recentProducts = 'recent_products';
-  static const String recentVendors = 'recent_vendors';
-
-  // ============================================
-  // FAVORITES
-  // ============================================
-  
-  static const String favoriteProducts = 'favorite_products';
-  static const String favoriteVendors = 'favorite_vendors';
-
-  // ============================================
-  // RIDER SPECIFIC
-  // ============================================
-  
-  static const String riderStatus = 'rider_status';
-  static const String riderVehicleType = 'rider_vehicle_type';
-  static const String riderActiveDelivery = 'rider_active_delivery';
-  static const String riderLocationTracking = 'rider_location_tracking';
-  static const String riderEarningsCache = 'rider_earnings_cache';
-  static const String riderPerformanceCache = 'rider_performance_cache';
-
-  // ============================================
-  // OFFLINE SYNC
-  // ============================================
-  
-  static const String offlineOrders = 'offline_orders';
-  static const String offlineActions = 'offline_actions';
-  static const String lastSyncTime = 'last_sync_time';
-  static const String pendingSyncItems = 'pending_sync_items';
-  static const String offlineCategories = 'offline_categories';
-  static const String offlineProducts = 'offline_products';
-
-  // ============================================
-  // CACHE
-  // ============================================
-  
+  // Cache Keys
   static const String categoriesCache = 'categories_cache';
-  static const String categoriesCacheTime = 'categories_cache_time';
-  static const String vendorsCache = 'vendors_cache';
-  static const String vendorsCacheTime = 'vendors_cache_time';
-  static const String configCache = 'config_cache';
-  static const String configCacheTime = 'config_cache_time';
+  static const String productsCache = 'products_cache';
+  static const String storesCache = 'stores_cache';
+  static const String promotionsCache = 'promotions_cache';
+  static const String userProfileCache = 'user_profile_cache';
 
-  // ============================================
-  // ANALYTICS
-  // ============================================
-  
-  static const String analyticsUserId = 'analytics_user_id';
-  static const String analyticsSessionId = 'analytics_session_id';
-  static const String analyticsOptOut = 'analytics_opt_out';
+  // Rider Specific
+  static const String riderOnlineStatus = 'rider_online_status';
+  static const String riderLastLocation = 'rider_last_location';
+  static const String riderActiveOrder = 'rider_active_order';
+  static const String riderShiftStart = 'rider_shift_start';
 
-  // ============================================
-  // PUSH NOTIFICATIONS
-  // ============================================
-  
+  // Session
+  static const String sessionExpiry = 'session_expiry';
+  static const String lastActivity = 'last_activity';
+  static const String deviceId = 'device_id';
   static const String fcmToken = 'fcm_token';
-  static const String fcmTokenLastUpdated = 'fcm_token_last_updated';
-  static const String notificationChannels = 'notification_channels';
 
-  // ============================================
-  // APP STATE
-  // ============================================
-  
-  static const String lastActiveTime = 'last_active_time';
-  static const String appOpenCount = 'app_open_count';
-  static const String rateAppPromptShown = 'rate_app_prompt_shown';
-  static const String lastRateAppPrompt = 'last_rate_app_prompt';
+  // Analytics
+  static const String analyticsUserId = 'analytics_user_id';
+  static const String analyticsEnabled = 'analytics_enabled';
+  static const String crashReportingEnabled = 'crash_reporting_enabled';
 }

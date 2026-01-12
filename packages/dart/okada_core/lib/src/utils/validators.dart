@@ -1,230 +1,224 @@
-/// Validation utilities for Okada Platform
-/// Supports Cameroon-specific validations with extensibility for other African countries
+/// Input validators for Okada Platform
 class Validators {
   Validators._();
 
-  // ============================================
-  // PHONE NUMBER VALIDATION
-  // ============================================
-
-  /// Validate Cameroon phone number
-  /// Valid formats: 6XXXXXXXX (9 digits starting with 6)
-  /// Carriers: MTN (67, 68, 650-654), Orange (69, 655-659)
-  static bool isValidCameroonPhone(String phone) {
-    final cleaned = phone.replaceAll(RegExp(r'\D'), '');
-    if (cleaned.length != 9) return false;
-    if (!cleaned.startsWith('6')) return false;
-    
-    final prefix = cleaned.substring(0, 2);
-    return ['67', '68', '69', '65'].contains(prefix);
-  }
-
-  /// Validate Nigerian phone number
-  /// Valid formats: 0XXXXXXXXXX (11 digits) or XXXXXXXXXX (10 digits)
-  static bool isValidNigerianPhone(String phone) {
-    final cleaned = phone.replaceAll(RegExp(r'\D'), '');
-    if (cleaned.length == 11 && cleaned.startsWith('0')) return true;
-    if (cleaned.length == 10) return true;
-    return false;
-  }
-
-  /// Validate Kenyan phone number
-  /// Valid formats: 07XXXXXXXX or 01XXXXXXXX (10 digits)
-  static bool isValidKenyanPhone(String phone) {
-    final cleaned = phone.replaceAll(RegExp(r'\D'), '');
-    if (cleaned.length != 10) return false;
-    return cleaned.startsWith('07') || cleaned.startsWith('01');
-  }
-
-  /// Validate phone number with country code
-  static bool isValidPhoneWithCountryCode(String phone, String countryCode) {
-    switch (countryCode.toUpperCase()) {
-      case 'CM': return isValidCameroonPhone(phone);
-      case 'NG': return isValidNigerianPhone(phone);
-      case 'KE': return isValidKenyanPhone(phone);
-      default: return phone.replaceAll(RegExp(r'\D'), '').length >= 9;
+  /// Validate phone number (Cameroon format)
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Le numéro de téléphone est requis';
     }
-  }
-
-  /// Get phone validation error message
-  static String? getPhoneError(String phone, String countryCode) {
-    if (phone.isEmpty) return 'Phone number is required';
-    if (!isValidPhoneWithCountryCode(phone, countryCode)) {
-      return 'Please enter a valid phone number';
+    final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.length < 9) {
+      return 'Le numéro doit contenir au moins 9 chiffres';
+    }
+    if (cleaned.length == 9) {
+      if (!cleaned.startsWith('6') && !cleaned.startsWith('2')) {
+        return 'Le numéro doit commencer par 6 ou 2';
+      }
+    } else if (cleaned.length == 12) {
+      if (!cleaned.startsWith('237')) {
+        return 'Indicatif pays invalide';
+      }
+      final local = cleaned.substring(3);
+      if (!local.startsWith('6') && !local.startsWith('2')) {
+        return 'Le numéro doit commencer par 6 ou 2';
+      }
+    } else {
+      return 'Format de numéro invalide';
     }
     return null;
   }
 
-  // ============================================
-  // EMAIL VALIDATION
-  // ============================================
+  /// Validate OTP code
+  static String? validateOtp(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Le code OTP est requis';
+    }
+    final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.length != 6) {
+      return 'Le code doit contenir 6 chiffres';
+    }
+    return null;
+  }
 
-  /// Validate email address
-  static bool isValidEmail(String email) {
-    if (email.isEmpty) return false;
+  /// Validate email
+  static String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'L\'email est requis';
+    }
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
-    return emailRegex.hasMatch(email);
-  }
-
-  /// Get email validation error message
-  static String? getEmailError(String email) {
-    if (email.isEmpty) return 'Email is required';
-    if (!isValidEmail(email)) return 'Please enter a valid email address';
-    return null;
-  }
-
-  // ============================================
-  // PASSWORD VALIDATION
-  // ============================================
-
-  /// Validate password strength
-  /// Requirements: min 8 chars, 1 uppercase, 1 lowercase, 1 number
-  static bool isValidPassword(String password) {
-    if (password.length < 8) return false;
-    if (!password.contains(RegExp(r'[A-Z]'))) return false;
-    if (!password.contains(RegExp(r'[a-z]'))) return false;
-    if (!password.contains(RegExp(r'[0-9]'))) return false;
-    return true;
-  }
-
-  /// Get password validation error message
-  static String? getPasswordError(String password) {
-    if (password.isEmpty) return 'Password is required';
-    if (password.length < 8) return 'Password must be at least 8 characters';
-    if (!password.contains(RegExp(r'[A-Z]'))) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!password.contains(RegExp(r'[a-z]'))) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!password.contains(RegExp(r'[0-9]'))) {
-      return 'Password must contain at least one number';
+    if (!emailRegex.hasMatch(value)) {
+      return 'Format d\'email invalide';
     }
     return null;
   }
-
-  /// Check if passwords match
-  static String? getConfirmPasswordError(String password, String confirmPassword) {
-    if (confirmPassword.isEmpty) return 'Please confirm your password';
-    if (password != confirmPassword) return 'Passwords do not match';
-    return null;
-  }
-
-  // ============================================
-  // OTP VALIDATION
-  // ============================================
-
-  /// Validate OTP code
-  static bool isValidOtp(String otp, {int length = 6}) {
-    if (otp.length != length) return false;
-    return RegExp(r'^\d+$').hasMatch(otp);
-  }
-
-  /// Get OTP validation error message
-  static String? getOtpError(String otp, {int length = 6}) {
-    if (otp.isEmpty) return 'Please enter the verification code';
-    if (otp.length != length) return 'Please enter all $length digits';
-    if (!RegExp(r'^\d+$').hasMatch(otp)) return 'Code must contain only numbers';
-    return null;
-  }
-
-  // ============================================
-  // NAME VALIDATION
-  // ============================================
-
-  /// Validate name (first name or last name)
-  static bool isValidName(String name) {
-    if (name.trim().isEmpty) return false;
-    if (name.trim().length < 2) return false;
-    // Allow letters, spaces, hyphens, and apostrophes (for names like O'Brien)
-    return RegExp(r"^[a-zA-ZÀ-ÿ\s'-]+$").hasMatch(name);
-  }
-
-  /// Get name validation error message
-  static String? getNameError(String name, {String fieldName = 'Name'}) {
-    if (name.trim().isEmpty) return '$fieldName is required';
-    if (name.trim().length < 2) return '$fieldName must be at least 2 characters';
-    if (!RegExp(r"^[a-zA-ZÀ-ÿ\s'-]+$").hasMatch(name)) {
-      return '$fieldName contains invalid characters';
-    }
-    return null;
-  }
-
-  // ============================================
-  // ADDRESS VALIDATION
-  // ============================================
-
-  /// Validate address
-  static bool isValidAddress(String address) {
-    return address.trim().length >= 5;
-  }
-
-  /// Get address validation error message
-  static String? getAddressError(String address) {
-    if (address.trim().isEmpty) return 'Address is required';
-    if (address.trim().length < 5) return 'Please enter a valid address';
-    return null;
-  }
-
-  // ============================================
-  // AMOUNT VALIDATION
-  // ============================================
-
-  /// Validate amount (positive number)
-  static bool isValidAmount(String amount) {
-    final parsed = double.tryParse(amount.replaceAll(',', ''));
-    return parsed != null && parsed > 0;
-  }
-
-  /// Validate amount within range
-  static bool isValidAmountInRange(String amount, double min, double max) {
-    final parsed = double.tryParse(amount.replaceAll(',', ''));
-    if (parsed == null) return false;
-    return parsed >= min && parsed <= max;
-  }
-
-  /// Get amount validation error message
-  static String? getAmountError(String amount, {double? min, double? max, String currency = 'XAF'}) {
-    if (amount.isEmpty) return 'Amount is required';
-    final parsed = double.tryParse(amount.replaceAll(',', ''));
-    if (parsed == null) return 'Please enter a valid amount';
-    if (parsed <= 0) return 'Amount must be greater than 0';
-    if (min != null && parsed < min) {
-      return 'Minimum amount is $currency ${min.toStringAsFixed(0)}';
-    }
-    if (max != null && parsed > max) {
-      return 'Maximum amount is $currency ${max.toStringAsFixed(0)}';
-    }
-    return null;
-  }
-
-  // ============================================
-  // GENERIC VALIDATORS
-  // ============================================
 
   /// Validate required field
-  static String? requiredField(String? value, {String fieldName = 'This field'}) {
+  static String? validateRequired(String? value, {String? fieldName}) {
     if (value == null || value.trim().isEmpty) {
-      return '$fieldName is required';
+      return '${fieldName ?? 'Ce champ'} est requis';
     }
     return null;
   }
 
   /// Validate minimum length
-  static String? minLength(String value, int min, {String fieldName = 'This field'}) {
-    if (value.length < min) {
-      return '$fieldName must be at least $min characters';
+  static String? validateMinLength(String? value, int minLength,
+      {String? fieldName}) {
+    if (value == null || value.length < minLength) {
+      return '${fieldName ?? 'Ce champ'} doit contenir au moins $minLength caractères';
     }
     return null;
   }
 
   /// Validate maximum length
-  static String? maxLength(String value, int max, {String fieldName = 'This field'}) {
-    if (value.length > max) {
-      return '$fieldName must be at most $max characters';
+  static String? validateMaxLength(String? value, int maxLength,
+      {String? fieldName}) {
+    if (value != null && value.length > maxLength) {
+      return '${fieldName ?? 'Ce champ'} ne doit pas dépasser $maxLength caractères';
     }
     return null;
+  }
+
+  /// Validate name (letters, spaces, hyphens only)
+  static String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Le nom est requis';
+    }
+    if (value.length < 2) {
+      return 'Le nom doit contenir au moins 2 caractères';
+    }
+    final nameRegex = RegExp(r"^[a-zA-ZÀ-ÿ\s\-']+$");
+    if (!nameRegex.hasMatch(value)) {
+      return 'Le nom ne peut contenir que des lettres';
+    }
+    return null;
+  }
+
+  /// Validate password
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Le mot de passe est requis';
+    }
+    if (value.length < 8) {
+      return 'Le mot de passe doit contenir au moins 8 caractères';
+    }
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Le mot de passe doit contenir au moins une majuscule';
+    }
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'Le mot de passe doit contenir au moins une minuscule';
+    }
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Le mot de passe doit contenir au moins un chiffre';
+    }
+    return null;
+  }
+
+  /// Validate password confirmation
+  static String? validatePasswordConfirmation(
+      String? value, String? password) {
+    if (value == null || value.isEmpty) {
+      return 'La confirmation est requise';
+    }
+    if (value != password) {
+      return 'Les mots de passe ne correspondent pas';
+    }
+    return null;
+  }
+
+  /// Validate PIN code
+  static String? validatePin(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Le code PIN est requis';
+    }
+    final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.length != 4) {
+      return 'Le code PIN doit contenir 4 chiffres';
+    }
+    return null;
+  }
+
+  /// Validate amount
+  static String? validateAmount(String? value,
+      {int? min, int? max, String? currency}) {
+    if (value == null || value.isEmpty) {
+      return 'Le montant est requis';
+    }
+    final amount = int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
+    if (amount == null) {
+      return 'Montant invalide';
+    }
+    if (min != null && amount < min) {
+      return 'Le montant minimum est $min ${currency ?? 'FCFA'}';
+    }
+    if (max != null && amount > max) {
+      return 'Le montant maximum est $max ${currency ?? 'FCFA'}';
+    }
+    return null;
+  }
+
+  /// Validate vehicle plate number (Cameroon format)
+  static String? validateVehiclePlate(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Le numéro de plaque est requis';
+    }
+    // Cameroon plate format: XX 000 XX or similar
+    final plateRegex = RegExp(r'^[A-Z]{2}\s?\d{3}\s?[A-Z]{2}$');
+    final cleaned = value.toUpperCase().replaceAll(RegExp(r'\s+'), ' ');
+    if (!plateRegex.hasMatch(cleaned.replaceAll(' ', ''))) {
+      return 'Format de plaque invalide (ex: CE 123 AB)';
+    }
+    return null;
+  }
+
+  /// Validate license number
+  static String? validateLicenseNumber(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Le numéro de permis est requis';
+    }
+    if (value.length < 8) {
+      return 'Numéro de permis invalide';
+    }
+    return null;
+  }
+
+  /// Validate address
+  static String? validateAddress(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'L\'adresse est requise';
+    }
+    if (value.length < 10) {
+      return 'L\'adresse doit être plus détaillée';
+    }
+    return null;
+  }
+
+  /// Validate quantity
+  static String? validateQuantity(String? value, {int? max}) {
+    if (value == null || value.isEmpty) {
+      return 'La quantité est requise';
+    }
+    final quantity = int.tryParse(value);
+    if (quantity == null || quantity < 1) {
+      return 'La quantité doit être au moins 1';
+    }
+    if (max != null && quantity > max) {
+      return 'La quantité maximum est $max';
+    }
+    return null;
+  }
+
+  /// Combine multiple validators
+  static String? Function(String?) combine(
+      List<String? Function(String?)> validators) {
+    return (String? value) {
+      for (final validator in validators) {
+        final error = validator(value);
+        if (error != null) return error;
+      }
+      return null;
+    };
   }
 }
